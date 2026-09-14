@@ -1,0 +1,31 @@
+cd '/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-herdr-strandproof.DQfKT8/scra
+tch' && CODEX_HOME='/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-herdr-strandp
+roof.DQfKT8/codex-home' exec codex --dangerously-bypass-approvals-and-sandbox
+     /private/v/f/v/y/T/fm-herdr-s/scratch  cd '/private/var/folders/vm/y9zpsxps43q2cvqmb
+q1xpqd00000gn/T/fm-herdr-strandproof.DQfKT8/scratch' && CODEX_HOME='/private/var/folders/vm/y
+9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-herdr-strandproof.DQfKT8/codex-home' exec codex --dangerou
+sly-bypass-approvals-and-sandbox
+╭────────────────────────────────────────────────╮
+│ >_ OpenAI Codex (v0.154.0)                     │
+│                                                │
+│ model:       gpt-6-astra   /model to change    │
+│ directory:   /private/var/folders/vm/…/scratch │
+│ permissions: YOLO mode                         │
+╰────────────────────────────────────────────────╯
+
+  Tip: This is GPT-6, a new generation of intelligence. Astra is state-of-the-art in coding,
+  computer use, science, and professional work. Give it a hard problem, a half-formed idea,
+  or anything you've been meaning to build. See where it takes you.
+
+• You have 3 usage limit resets available. Run /usage to use one.
+
+
+› Print the numbers 1 through 60, one per line, slowly, then stop.
+
+
+• Working (3s • esc to interrupt)
+
+
+› Ask Codex to do anything
+
+  gpt-6-astra default · /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-herdr-st…

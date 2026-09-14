@@ -1,0 +1,21 @@
+viewer attached to fm-lab-strandproof-17049-16348 (pid 17212)
+lab session fm-lab-strandproof-17049-16348, pane w2:p1, codex-cli 0.154.0 on herdr 0.7.5
+
+==== scenario 1: an IDLE real Codex pane keeps the per-pane stranded proof ====
+live herdr agent_status = idle
+production predicate: pending-is-proof=yes
+PASS - an idle Codex pane still proves a stranded doorbell
+fm_task_inbox_ring rc=4
+PASS - the real ring reports rc=4 (stranded input) on an idle Codex pane
+
+==== scenario 2: a WORKING real Codex pane must NOT be read as a swallowed Enter ====
+landed-steer submit verdict = empty
+live herdr agent_status = working
+production predicate: pending-is-proof=no
+pre-fix (870079a) predicate: pending-is-proof=yes
+PASS - a post-submit working Codex pane is NOT proof of a swallowed Enter
+PASS - the pre-fix adapter DID call the same live pane a swallowed Enter (regression reproduced)
+fm_task_inbox_ring rc=0
+PASS - the real ring keeps a working pane advisory (rc=0), never reporting a delivered steer as stranded
+
+==== result: ALL-PASS (codex-cli 0.154.0 on herdr 0.7.5, lab fm-lab-strandproof-17049-16348) ====

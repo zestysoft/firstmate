@@ -1,0 +1,40 @@
+codex-like pane agent  (mode=submit)
+
+  • : Firstmate instruction waiting: list '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-watch-strand.3WibW9/submit/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv eac
+  • : Firstmate instruction waiting: list '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-watch-strand.3WibW9/submit/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv eac
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
