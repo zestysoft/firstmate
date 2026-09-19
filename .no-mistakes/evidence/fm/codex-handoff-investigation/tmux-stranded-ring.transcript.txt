@@ -1,0 +1,42 @@
+== tmux 3.7c isolated socket fm-live-strand-29014, target lab:fm-t1
+== pane process as seen by tmux: python3.14 (argv0 grok)
+== agent_state=alive  composer_state=empty
+== idle pane before any ring:
+╭────────────────────────────────────────╮
+│                                        │
+╰────────────────────────────────────────╯
+== durable record: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-live-strand.TlRAaQ/state/t1.inbox/001.msg
+
+### attempt 1: ring into an empty composer whose Enter is swallowed
+fm_task_inbox_ring rc=4   (expect 4 = typed, submit provenly swallowed, line stranded)
+-- pane after attempt 1:
+╭────────────────────────────────────────╮
+│ : Firstmate instruction waiting: list  │
+╰────────────────────────────────────────╯
+-- keys the worker actually received:
+started pid=29337
+KEY Enter (SWALLOWED) composer=": Firstmate instruction waiting: list '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/handled/."
+KEY Enter (SWALLOWED) composer=": Firstmate instruction waiting: list '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/handled/."
+KEY Enter (SWALLOWED) composer=": Firstmate instruction waiting: list '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/handled/."
+-- record still unhandled: yes
+
+### attempt 2: ring again while our own doorbell text is stranded
+fm_task_inbox_ring rc=1   (expect 1 = skipped, composer provenly holds pending text)
+-- pane bytes unchanged across the suppressed attempt: yes
+-- keystrokes received by worker during suppressed attempt: 0 (expect 0)
+-- clear/cancel key seen: none
+
+### adversarial: operator clears the line (SIGUSR1 to the worker), then the ring lands the doorbell again
+-- composer_state after operator clear: empty
+fm_task_inbox_ring rc=4   (expect 4 again: typed fresh, Enter still swallowed by this worker)
+-- final key log:
+started pid=29337
+KEY Enter (SWALLOWED) composer=": Firstmate instruction waiting: list '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/handled/."
+KEY Enter (SWALLOWED) composer=": Firstmate instruction waiting: list '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/handled/."
+KEY Enter (SWALLOWED) composer=": Firstmate instruction waiting: list '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/handled/."
+SIGUSR1: composer cleared by operator
+KEY Enter (SWALLOWED) composer=": Firstmate instruction waiting: list '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/handled/."
+KEY Enter (SWALLOWED) composer=": Firstmate instruction waiting: list '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/handled/."
+KEY Enter (SWALLOWED) composer=": Firstmate instruction waiting: list '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-strand.TlRAaQ/state/t1.inbox'/handled/."
+
+RESULT: pass

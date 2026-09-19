@@ -1,0 +1,10 @@
+== BASE COMMIT 1bb72cc5 library, real tmux socket fm-live-strand-base-35875, target lab:fm-t1
+attempt 1 (Enter swallowed): fm_task_inbox_ring rc=0   <-- base commit reports RUNG (0) although the line is stranded
+-- pane after attempt 1:
+╭────────────────────────────────────────╮
+│ : Firstmate instruction waiting: list  │
+╰────────────────────────────────────────╯
+attempt 2: fm_task_inbox_ring rc=1   <-- suppressed by its own doorbell; base ladder has no way to tell this from a delivered ring
+-- keys the worker received (base):
+Enter presses: 1
+RESULT: base commit reproduces the defect (rc=0 then rc=1)

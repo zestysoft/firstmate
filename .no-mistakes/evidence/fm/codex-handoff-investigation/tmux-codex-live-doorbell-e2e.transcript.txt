@@ -1,0 +1,4 @@
+# codex (codex-cli 0.155.1): idle composer never classified empty; proceeding as production does (advisory check skips only on pending)
+# codex (codex-cli 0.155.1): re-rang the doorbell once (watcher's role) at 90s
+not ok - codex (codex-cli 0.155.1): doorbell not honored within 180s (acted=no acked=no)
+not ok - live steering-inbox doorbell guard found failures above

@@ -1,0 +1,37 @@
+== herdr lab fm-lab-strand-69334-24189 pane w1:p1; stand-in worker process: 
+== native agent_status=idle  adapter agent_state=alive  composer_state=empty
+-- idle pane:
+╭────────────────────────────────────────╮
+│                                        │
+╰────────────────────────────────────────╯
+
+### A1. ring into an idle-registered herdr pane whose Enter is swallowed
+fm_task_inbox_ring herdr rc=4   (expect 4)
+-- pane:
+╭────────────────────────────────────────╮
+│ : Firstmate instruction waiting: list  │
+╰────────────────────────────────────────╯
+-- Enter presses received by worker: 3
+
+### A2. ring again while our doorbell is stranded
+fm_task_inbox_ring herdr rc=1   (expect 1)
+-- pane unchanged: yes; keys sent during suppressed attempt: 0 (expect 0)
+
+### B. same pane registered 'blocked' (Cursor reads blocked in every state): operator clears the line, ring again
+-- native agent_status=blocked  composer_state after clear=empty
+fm_task_inbox_ring herdr rc=0   (expect 0: a blocked pane cannot prove a swallow, so pending stays advisory)
+-- pane after B (doorbell typed, still stranded, but NOT claimed as stranded):
+╭────────────────────────────────────────╮
+│ : Firstmate instruction waiting: list  │
+╰────────────────────────────────────────╯
+-- full key log:
+started pid=69402
+KEY Enter (SWALLOWED) composer=<doorbell line>
+KEY Enter (SWALLOWED) composer=<doorbell line>
+KEY Enter (SWALLOWED) composer=<doorbell line>
+SIGUSR1: composer cleared by operator
+KEY Enter (SWALLOWED) composer=<doorbell line>
+KEY Enter (SWALLOWED) composer=<doorbell line>
+KEY Enter (SWALLOWED) composer=<doorbell line>
+
+RESULT: pass

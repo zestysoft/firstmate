@@ -1,0 +1,16 @@
+== real fm-watch.sh, real tmux socket fm-live-watch-47262, stranded worker at lab:fm-t1, record /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-live-watch.WiLTw8/state/t1.inbox/001.msg, FM_TASK_INBOX_RING_MAX=1
+-- watcher stdout:
+stale: lab:fm-t1 (unread firstmate instruction: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-live-watch.WiLTw8/state/t1.inbox/001.msg still unhandled; all 1 doorbell delivery attempts were suppressed because the endpoint's input line holds unsubmitted text while the pane is idle - the worker is not the blocker; inspect that input line, submit it when it is firstmate's own stranded doorbell or clear it when it is the worker's own half-typed text, then deliver the steer yourself with bin/fm-send.sh or hand /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-live-watch.WiLTw8/state/t1.inbox/001.msg to the worker - this ladder has already escalated and will not ring this record again)
+-- pane after the watcher's single ring attempt:
+╭────────────────────────────────────────╮
+│ : Firstmate instruction waiting: list  │
+╰────────────────────────────────────────╯
+-- keys received by worker:
+Enter presses: 3
+-- .ring-state (msg, count, epoch, input-blocked streak):
+001.msg	1	1789776457	1
+-- .wake-queue:
+1789776458	1	stale	lab:fm-t1	stale: lab:fm-t1 (unread firstmate instruction: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-live-watch.WiLTw8/state/t1.inbox/001.msg still unhandled; all 1 doorbell delivery attempts were suppressed because the endpoint's input line holds unsubmitted text while the pane is idle - the worker is not the blocker; inspect that input line, submit it when it is firstmate's own stranded doorbell or clear it when it is the worker's own half-typed text, then deliver the steer yourself with bin/fm-send.sh or hand /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-live-watch.WiLTw8/state/t1.inbox/001.msg to the worker - this ladder has already escalated and will not ring this record again)
+-- escalations queued: 1
+-- next due_action for the record: quiet
+RESULT: pass

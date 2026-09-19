@@ -1,0 +1,41 @@
+== real codex-cli 0.155.1 in real tmux 3.7c, isolated socket fm-live-codex-23395, target lab:fm-codex
+== composer_state after 1s: empty   agent_state=alive
+-- idle codex screen (tail):
+╰────────────────────────────────────────────────────────╯
+  Tip: This is GPT-6, a new generation of intelligence. Astra is state-of-the-art in coding, computer use, science, and professional work.
+  Give it a hard problem, a half-formed idea, or anything you've been meaning to build. See where it takes you.
+• You have 1 usage limit reset available. Run /usage to use one.
+› Ask Codex to do anything
+  gpt-6-astra default · /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-codex.5AqkKU/cwd
+
+### real fm-send.sh steer into idle codex
+exit=0
+-- stderr (fm-send lines only):
+-- screen right after the doorbell:
+  Give it a hard problem, a half-formed idea, or anything you've been meaning to build. See where it takes you.
+• You have 1 usage limit reset available. Run /usage to use one.
+› : Firstmate instruction waiting: list '/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-codex.5AqkKU/home/state/
+  t1.inbox'/*.msg and, in numeric order, read and act on each, then mv each handled file to '/private/var/folders/vm/
+  y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-codex.5AqkKU/home/state/t1.inbox'/handled/.
+• Working (2s • esc to interrupt)
+› Ask Codex to do anything
+  gpt-6-astra default · /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-codex.5AqkKU/cwd · Process Firstmate instructions
+-- composer_state right after the doorbell: empty
+
+== after 15s: acted=yes acked(handled/001.msg)=yes
+-- final codex screen (tail):
+• Ran ls -1 /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-codex.5AqkKU/home/state/t1.inbox/*.msg
+  └ /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-codex.5AqkKU/home/state/t1.inbox/001.msg
+• Explored
+  └ Read 001.msg
+• Ran touch /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-codex.5AqkKU/acted
+  └ (no output)
+• Ran mkdir -p /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-codex.5AqkKU/home/state/t1.inbox/handled
+  └ (no output)
+• Ran mv /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-codex.5AqkKU/home/state/t1.inbox/001.msg /private/var/folders/vm/
+  │ y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-codex.5AqkKU/home/state/t1.inbox/handled/
+  └ (no output)
+• Working (18s • esc to interrupt)
+› Ask Codex to do anything
+  gpt-6-astra default · /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-codex.5AqkKU/cwd · Process Firstmate instructions
+RESULT: pass
