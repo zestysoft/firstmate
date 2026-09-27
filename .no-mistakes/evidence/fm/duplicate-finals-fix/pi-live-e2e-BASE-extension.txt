@@ -1,0 +1,20 @@
+FM_TEST_BEGIN 2026-09-27T04:29:40Z tests/fm-pi-branch-live-e2e.test.sh family=live-harness-optin expected_gate_skip=live-capability
+ok - real Pi SDK 0.87.1 accepts the branch session construction and preserves an unpromptable wake
+ok - real Pi SDK 0.87.1 rejects a post-construction 429 to watcher-owned main delivery without losing its durable row
+ok - real Pi SDK 0.87.1 applies an explicit branch model on create and over a reopened session's recorded model
+ok - real Pi SDK 0.87.1 reports its own supported effort levels and applies an explicit branch effort over a reopened session's recorded level
+ok - real Pi SDK 0.87.1 immediately renders appendEntry in the active transcript, persists it across reopen, and excludes it from model context
+ok - real Pi SDK 0.87.1 queues a streaming-time watcher wake without before_agent_start, keeps the successor chain, and surfaces consumption of both follow-ups
+not ok - real-SDK processing retry visibility guard (repeated) failed against pi-coding-agent 0.87.1: file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M3GHRGTZ96SR5TWAQ9RMMJV5/[eval1]:70
+if ((retryReply && streamedRetries === 0) || failures.length) throw new Error(`streaming suppression failed: ${streamedRetries} updates, ${failures}`);
+                                                                    ^
+
+Error: streaming suppression failed: 3 updates, retry prose leaked from the streaming renderer,retry prose leaked from the streaming renderer,retry prose leaked from the streaming renderer
+    at file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M3GHRGTZ96SR5TWAQ9RMMJV5/[eval1]:70:69
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+Node.js v26.9.0
+FM_TEST_END 2026-09-27T04:29:46Z tests/fm-pi-branch-live-e2e.test.sh exit=1 duration_ms=5872 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=1 skipped_gate=0 duration_ms=5928
+FM_TEST_SUMMARY_FAMILY family=live-harness-optin count=1 duration_ms=5872 failed=1
+FM_TEST_SLOWEST rank=1 script=tests/fm-pi-branch-live-e2e.test.sh duration_ms=5872
