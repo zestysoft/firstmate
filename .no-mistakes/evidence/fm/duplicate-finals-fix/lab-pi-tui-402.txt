@@ -1,0 +1,85 @@
+Warning: No models match pattern "openai-codex/gpt-5.4-mini"
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Updated to v0.87.1. Use /changelog to view full changelog.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ ⚓ [seq 1] demo-task: demo-task needs a decision: ship option A or option B?
+
+ Warning: tmux extended-keys-format is xterm. Pi works best with csi-u. Add `set -g extended-keys-format csi-u` to ~/.tmux.conf and restart tmux.
+
+ Error: 402: {"message":"This request requires more credits, or fewer max_tokens. You requested up to 939416 tokens, but can only afford 47054. To increase,
+ visit https://openrouter.ai/settings/credits and add more credits","code":402,"metadata":{"limit_source":"openrouter_credits","remedy_hint":"Add credits at
+ https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining
+ balance.","provider_name":null,"previous_errors":[{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up to 939416
+ tokens, but can only afford 51759. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request
+ requires more credits, or fewer max_tokens. You requested up to 939416 tokens, but can only afford 51759. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 939416 tokens, but can only afford 47054. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 939416 tokens, but can only afford 47054. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 939416 tokens, but can only afford 47054. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 939416 tokens, but can only afford 47054. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 939416 tokens, but can only afford 47054. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 939415 tokens, but can only afford 47054. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 939416 tokens, but can only afford 86022. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 939416 tokens, but can only afford 73811. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 939416 tokens, but can only afford 55358. To increase, visit https://openrouter.ai/settings/credits and add more credits"}]}}
+ If this looks like a pi bug, /bug sends a report to the developers.
+
+ Error: 402: {"message":"This request requires more credits, or fewer max_tokens. You requested up to 939019 tokens, but can only afford 47054. To increase,
+ visit https://openrouter.ai/settings/credits and add more credits","code":402,"metadata":{"limit_source":"openrouter_credits","remedy_hint":"Add credits at
+ https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining
+ balance.","provider_name":null,"previous_errors":[{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up to 939019
+ tokens, but can only afford 51759. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request
+ requires more credits, or fewer max_tokens. You requested up to 939019 tokens, but can only afford 47054. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 939019 tokens, but can only afford 51759. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 939019 tokens, but can only afford 47054. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 939019 tokens, but can only afford 47054. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 939019 tokens, but can only afford 47054. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 939019 tokens, but can only afford 47054. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 939018 tokens, but can only afford 47054. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 939019 tokens, but can only afford 86022. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 939019 tokens, but can only afford 73811. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 939019 tokens, but can only afford 55358. To increase, visit https://openrouter.ai/settings/credits and add more credits"}]}}
+
+
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: watcher: FAILED - Pi extension could not restore watcher continuity after 5 retries
+ watcher: FAILED - refusing to arm from a disposable validation checkout: /Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M3KDC5VP45RR2QRAKS4A5SE1/bin
+
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+
+
+ Error: 402: {"message":"This request requires more credits, or fewer max_tokens. You requested up to 920507 tokens, but can only afford 47054. To increase,
+ visit https://openrouter.ai/settings/credits and add more credits","code":402,"metadata":{"limit_source":"openrouter_credits","remedy_hint":"Add credits at
+ https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining
+ balance.","provider_name":null,"previous_errors":[{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up to 920507
+ tokens, but can only afford 47054. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request
+ requires more credits, or fewer max_tokens. You requested up to 920507 tokens, but can only afford 51759. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 920507 tokens, but can only afford 51759. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 920507 tokens, but can only afford 47054. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 920507 tokens, but can only afford 47054. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 920507 tokens, but can only afford 47054. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 920506 tokens, but can only afford 47054. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 920507 tokens, but can only afford 47054. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 920507 tokens, but can only afford 86022. To increase, visit https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This
+ request requires more credits, or fewer max_tokens. You requested up to 920507 tokens, but can only afford 73811. To increase, visit
+ https://openrouter.ai/settings/credits and add more credits"},{"code":402,"message":"This request requires more credits, or fewer max_tokens. You requested up
+ to 920507 tokens, but can only afford 55358. To increase, visit https://openrouter.ai/settings/credits and add more credits"}]}}
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/.no-mistakes/worktrees/260e8caa837a/01M3KDC5VP45RR2QRAKS4A5SE1 (detached)
+2.2%/1.0M (auto)                                                                                                                (openrouter) z-ai/glm-5.3 • high
