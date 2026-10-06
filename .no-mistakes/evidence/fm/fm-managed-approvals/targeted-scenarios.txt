@@ -1,0 +1,9 @@
+Targeted scenario results for fm/fm-managed-approvals (5e90962):
+
+ok - codex crewmate uses --approve-for-me, disables hooks, and keeps turn-end
+ok - claude defaults to --permission-mode auto when no config file present
+ok - claude explicit 'auto' config matches absent-file behavior
+ok - claude explicit 'bypass' config opts into --dangerously-skip-permissions
+ok - codex secondmate uses --approve-for-me while keeping hooks on
+
+All 5 scenarios passed. Exit: 0
