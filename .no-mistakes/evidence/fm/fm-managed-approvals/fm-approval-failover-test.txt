@@ -1,0 +1,11 @@
+ok - codex classifier requires concrete refusal evidence, not generic auth errors
+ok - claude classifier requires concrete refusal evidence, not generic auth errors
+ok - codex fallback persists once and recovers through the lifecycle plane
+ok - codex preserves all explicit settings and launch choices
+ok - codex rejects changed launch records and preserves concurrent explicit writes
+ok - codex retains the remedy but reports lifecycle failure honestly
+ok - claude fallback persists once and recovers through the lifecycle plane
+ok - claude preserves all explicit settings and launch choices
+ok - claude rejects changed launch records and preserves concurrent explicit writes
+ok - claude retains the remedy but reports lifecycle failure honestly
+# all fm-approval-failover tests passed
