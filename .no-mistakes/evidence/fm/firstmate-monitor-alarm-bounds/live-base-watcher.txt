@@ -1,0 +1,26 @@
+== BASE: liveness/busy probes
+lab:fm-prog alive=alive busy=unknown codex-unverified
+lab:fm-noprog alive=alive busy=unknown codex-unverified
+03:41:32 cycle=1 rc=0 out=[signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.305eO2/state/noprog.status /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.305eO2/state/prog.status ]
+03:41:47 cycle=2 rc=0 out=[stale: lab:fm-noprog ]
+03:41:51 cycle=3 rc=0 out=[stale: lab:fm-prog ]
+03:42:00 cycle=4 rc=0 out=[stale: lab:fm-noprog ]
+03:42:04 cycle=5 rc=0 out=[stale: lab:fm-prog ]
+03:42:13 cycle=6 rc=0 out=[stale: lab:fm-noprog ]
+03:42:17 cycle=7 rc=0 out=[stale: lab:fm-prog ]
+03:42:26 cycle=8 rc=0 out=[stale: lab:fm-noprog ]
+03:42:35 cycle=9 rc=0 out=[stale: lab:fm-noprog ]
+03:42:39 cycle=10 rc=0 out=[stale: lab:fm-prog ]
+03:42:48 cycle=11 rc=0 out=[stale: lab:fm-noprog ]
+03:42:52 cycle=12 rc=0 out=[stale: lab:fm-prog ]
+03:43:01 cycle=13 rc=0 out=[stale: lab:fm-noprog ]
+03:43:04 cycle=14 rc=0 out=[stale: lab:fm-prog ]
+03:43:14 cycle=15 rc=0 out=[stale: lab:fm-noprog ]
+03:43:17 cycle=16 rc=0 out=[stale: lab:fm-prog ]
+03:43:27 cycle=17 rc=0 out=[stale: lab:fm-noprog ]
+03:43:36 cycle=18 rc=0 out=[stale: lab:fm-noprog ]
+03:43:40 cycle=19 rc=0 out=[stale: lab:fm-prog ]
+03:43:49 cycle=20 rc=0 out=[stale: lab:fm-noprog ]
+03:43:53 cycle=21 rc=0 out=[stale: lab:fm-prog ]
+03:43:59 cycle=22 rc=124 out=[ ]
+== BASE: triage log tail
