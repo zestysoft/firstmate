@@ -1,0 +1,26 @@
+== evidence mode: status
+== pane command: codex
+== real classifier verdict + endpoint liveness:
+busy=unknown codex-unverified
+alive=alive
+[warmup-status-signal] watcher EXITED rc=0 after ~4s; stdout='signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.29YNYl/state/cx.status'
+[warmup-status-signal] no bound marker
+[warmup-status-signal] acked wake through 2
+[first-stale-sight] watcher EXITED rc=0 after ~5s; stdout='stale: lab:fm-cx'
+[first-stale-sight] bound marker present: .paused-resurfaced-lab_fm-cx
+[first-stale-sight] acked wake through 3
+== codex pane re-renders (window resized: new viewport hash), endpoint still alive
+[second-stale-sight] watcher STILL RUNNING after 25s (absorbed); stdout=''
+[second-stale-sight] bound marker present: .paused-resurfaced-lab_fm-cx
+[second-stale-sight] acked wake through 0
+== codex pane re-renders again
+[third-stale-sight] watcher STILL RUNNING after 25s (absorbed); stdout=''
+[third-stale-sight] bound marker present: .paused-resurfaced-lab_fm-cx
+[third-stale-sight] acked wake through 0
+== pane after test:
+  settings. Folder settings can run code automatically, even without a model request. Continue
+  only if you trust these files. Your trust decision will be saved.
+› 1. Trust and continue
+  2. Back to Agent Command Center
+  enter continue · esc back
+== lab torn down

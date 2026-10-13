@@ -1,0 +1,17 @@
+== 1. captain persists tuning; a stale Relay artifact also exists; no Relay token in .env
+watch.env
+x-mode.env
+== 2. real session-start bootstrap
+  bootstrap> FMX: X mode off - removed relay poll shim and 30s cadence; default cadence applies on the next supervision cycle; watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+config after bootstrap: startup-memory-budget watch.env 
+export FM_PAUSE_RESURFACE_SECS=777
+== 3. real watcher arm
+watcher pid=3484 FM_PAUSE_RESURFACE_SECS=777
+== 4. Relay-opted-in home: x-mode.env sourced after watch.env wins
+  stop> watcher: stopped pid=3484
+watcher pid=4173 FM_PAUSE_RESURFACE_SECS=30
+  stop> watcher: none running
+  arm1> watcher: started pid=3484 (beacon fresh)
+  arm1> watcher: FAILED - watcher cycle exited 143 without an actionable reason
+watcher stopped
+== lab torn down

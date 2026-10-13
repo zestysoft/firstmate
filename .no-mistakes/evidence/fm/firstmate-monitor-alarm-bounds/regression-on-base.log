@@ -1,0 +1,5 @@
+### Against BASE 6407052f product code (new tests must fail)
+not ok - [status] the first alarm with progress evidence did not record its bound
+rc=1
+not ok - the watcher did not inherit watch.env tuning: saw 'unset'
+rc=1
