@@ -1,0 +1,36 @@
+=== FIX (HEAD 39d9505) ===
+ok - Pi actionable close starts one successor before wake delivery settles
+[test_pi_actionable_close_starts_single_successor_before_delivery exit=0]
+ok - Pi restoration retries a dead-but-ready successor before delivering the wake
+[test_pi_dead_ready_successor_is_retried_before_delivery exit=0]
+ok - Pi successor exit with a held pipe schedules the bounded retry
+[test_pi_successor_exit_with_held_pipe_schedules_retry exit=0]
+ok - Pi repair starts a fresh arm instead of no-opping on a dead child
+[test_pi_repair_starts_fresh_arm_over_dead_child exit=0]
+ok - Pi scheduled retry starts a fresh arm instead of stalling on a dead child
+[test_pi_scheduled_retry_starts_fresh_arm_over_dead_child exit=0]
+=== BASE (0397cb2 extension) ===
+ok - Pi actionable close starts one successor before wake delivery settles
+[test_pi_actionable_close_starts_single_successor_before_delivery exit=0]
+not ok - Pi restoration must retry a dead-but-ready successor before delivering the wake: file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4WZA7V2JQ1Z1BDSY8PH0JQ9/[eval1]:37
+if (failure) throw new Error(failure);
+                   ^
+
+Error: wake reached Pi with no live successor; arms at delivery=2: arm=79701 | arm=79721
+    at file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4WZA7V2JQ1Z1BDSY8PH0JQ9/[eval1]:37:20
+
+Node.js v26.11.1: expected exit 0, got 1
+[test_pi_dead_ready_successor_is_retried_before_delivery exit=1]
+not ok - Pi successor exit with a held pipe must schedule the bounded retry: file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4WZA7V2JQ1Z1BDSY8PH0JQ9/[eval1]:36
+if (failure) throw new Error(failure);
+                   ^
+
+Error: successor exit with a held pipe left no retry: arm=79966 | arm=79994
+    at file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4WZA7V2JQ1Z1BDSY8PH0JQ9/[eval1]:36:20
+
+Node.js v26.11.1: expected exit 0, got 1
+[test_pi_successor_exit_with_held_pipe_schedules_retry exit=1]
+ok - Pi repair starts a fresh arm instead of no-opping on a dead child
+[test_pi_repair_starts_fresh_arm_over_dead_child exit=0]
+ok - Pi scheduled retry starts a fresh arm instead of stalling on a dead child
+[test_pi_scheduled_retry_starts_fresh_arm_over_dead_child exit=0]

@@ -1,0 +1,44 @@
+# Real Pi 1.2.0 primary (agent2/qwen3.8-flash-next) in marked lab FM_HOME=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.Zl7qu0, code = rsync copy of HEAD 39d9505 (outside .no-mistakes/worktrees so fm-watch-arm.sh's disposable-checkout guard allows the extension's FM_ROOT_OVERRIDE)
+## date
+Wed Oct 14 03:54:47 PDT 2026
+## session lock holder vs pi pane pid
+91733
+pane_pid=91733
+## live arm/watch processes for this lab copy
+ 1057 91733 Wed Oct 14 03:53:22 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmcopy.lFbq/bin/fm-watch-arm.sh --restart
+ 1140  1057 Wed Oct 14 03:53:22 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmcopy.lFbq/bin/fm-watch.sh
+## state/.watch-cycle-exits.log
+arm_pid=141	watcher_pid=223	origin=started	started_at=1791975201	ended_at=1791975202	exit_code=0	signal=none	reason=actionable-check	beacon_age=1	lock_before=pid:none|identity:none	lock_after=pid:none|identity:none	successor=started:1140
+## state/.watch-deliveries.log
+223	Wed Oct 14 03:53:21 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmcopy.lFbq/bin/fm-watch.sh	check: rearm-resurface
+## Pi pane
+ ... (8 earlier lines, ctrl+o to expand)
+   phase       secondmate-sync                            start=+581     elapsed=26
+   phase       handoff-delivery                           start=+614     elapsed=2
+   phase       fleet-sync                                 start=+562     elapsed=1175
+   stage       network-checks probe_sweeps                start=+48      elapsed=1740
+   slowest: stage network-checks probe_sweeps 1740ms, phase fleet-sync 1175ms, phase gh-auth 254ms
+ Took 0.1s
+ Thinking...
+ $ cd /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmcopy.lFbq && bin/fm-startup-network.sh --help 2>&1 | head -60
+ ... (55 earlier lines, ctrl+o to expand)
+          names the session-start process
+          that will try to print the result inline, so the worker can tell
+          whether a wake is still needed.
+        fm-startup-network.sh run --locked <0|1>
+          Run the checks in the foreground and publish the result. This is what
+ Took 0.0s
+ Thinking...
+ $ cd /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmcopy.lFbq && ls -la state/.startup-network.report 2>&1; echo '---'; cat state/.startup-network.report 2>&1 | head -80
+ ls: state/.startup-network.report: No such file or directory
+ ---
+ cat: state/.startup-network.report: No such file or directory
+ Took 0.0s
+ Thinking...
+ $ cd /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmcopy.lFbq && ls state | head -40; echo '--- network files:'; ls -la state/.startup-network* state/*network* 2>/dev/null; echo '---
+ projects:'; ls projects 2>&1 | head; echo '--- crew:'; bin/fm-crew-state.sh 2>&1
+── ⠙ Working ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmcopy.lFbq
+↑23k ↓557 R66k CH96.0% 8.9%/262k (auto)                                                                                                                               (agent2) qwen3.8-flash-next • high
+after kill-server leftover: none
