@@ -1,0 +1,4 @@
+not ok - the away posture must park main and present after archive: file:///private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-mut.AXVeZd/[eval1]:117
+if (!aborted) throw new Error("a dedicated processing turn with history was not aborted under the record");
+Error: a dedicated processing turn with history was not aborted under the record
+exit=

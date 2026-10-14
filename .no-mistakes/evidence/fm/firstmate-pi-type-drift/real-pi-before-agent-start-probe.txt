@@ -1,0 +1,16 @@
+== 7df545b ==
+extensions loaded: ["fm-branch-supervision.ts","fm-primary-pi-watch.ts","fm-calm.ts","fm-primary-turnend-guard.ts","<inline:probe>"] load errors: []
+before_agent_start events seen by a Pi 1.2.0 extension:
+  {"messageType":"user","hasPromptField":true,"prompt":"Captain says: reply OK."}
+  {"messageType":"custom","hasPromptField":false,"customType":"fm-probe-custom","content":"custom-triggered run"}
+model completions: 2
+extension handler errors: []
+exit=0
+== abd34d8 ==
+extensions loaded: ["fm-branch-supervision.ts","fm-primary-pi-watch.ts","fm-calm.ts","fm-primary-turnend-guard.ts","<inline:probe>"] load errors: []
+before_agent_start events seen by a Pi 1.2.0 extension:
+  {"messageType":"user","hasPromptField":true,"prompt":"Captain says: reply OK."}
+  {"messageType":"custom","hasPromptField":false,"customType":"fm-probe-custom","content":"custom-triggered run"}
+model completions: 2
+extension handler errors: []
+exit=0
