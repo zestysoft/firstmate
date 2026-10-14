@@ -1,0 +1,8 @@
+=== arm.log (base)
+arm=50029 t=1791944933832
+trigger t=1791944941891
+arm=53726 t=1791944942014
+holder: parent 53726 dead, printing ready
+WAKE_VISIBLE_IN_PI t=1791944942188 live_arm_pids=[]
+AFTER_SETTLE live_arm_pids=[]
+=== .watch-extension.log (base)

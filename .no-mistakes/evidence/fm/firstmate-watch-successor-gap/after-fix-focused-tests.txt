@@ -1,0 +1,8 @@
+ok - Pi restoration retries a dead-but-ready successor before delivering the wake
+ok - Pi actionable close starts one successor before wake delivery settles
+ok - Pi actionable output waits for predecessor close before successor restoration
+ok - Pi hung successor falls back to one typed actionable wake
+ok - Pi repair starts a fresh arm instead of no-opping on a dead child
+ok - Pi unretired successor falls back without an overlapping retry
+DONE
+bash $R/run.sh  1.79s user 1.04s system 22% cpu 12.461 total

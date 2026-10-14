@@ -1,0 +1,40 @@
+=== live lab: variant=base rev=7df545b fault=dead-ready
+lab root=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.CDa78y/root
+lab home=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.CDa78y/home (marker: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.CDa78y/home/.fm-lab-home)
+pi pid=25292 lock=25292
+pi: 1.2.0 model=vultr/deepseek-v4.1-flash (CLI flag only) (watcher thresholds at product defaults)
+--- 19:51:42 watcher up before wake:
+    27755 26574 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.CDa78y/root/bin/fm-watch-arm-real.sh --restart
+    28101 27755 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.CDa78y/root/bin/fm-watch.sh
+--- 19:51:43 wrote real worker event: state/crew.status 'done: lab crew finished its task'
+--- 19:52:28 WAKE visible in Pi pane (#1). arm invocations so far:
+    19:51:39.693633000 arm=27755
+    19:52:27.566139000 arm=51073
+  live lab watcher/arm processes at that moment:
+    51110     1 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.CDa78y/root/bin/fm-watch-arm.sh --restart
+--- 19:52:59 after settle (~30s after first wake):
+    51110     1 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.CDa78y/root/bin/fm-watch-arm.sh --restart
+--- extension log:
+--- arm log:
+    19:51:39.693633000 arm=27755
+    19:52:27.566139000 arm=51073
+--- pi pane tail:
+    Warning: No models match pattern "openai-codex/gpt-5.4-mini"
+     This project is not trusted. Project .pi resources and packages are ignored. Use /trust to save a trust decision, then restart pi.
+     You are a lab test harness. Step 1: call the fm_watch_arm_pi tool exactly once now, then reply DONE. Later, whenever a watcher wake notification arrives, do NOT call any tool and do NOT run any
+     command; reply only with the single word ACK.
+     Warning: tmux extended-keys-format is xterm. Pi works best with csi-u. Add `set -g extended-keys-format csi-u` to ~/.tmux.conf and restart tmux.
+     Thinking...
+     fm_watch_arm_pi
+     watcher: unchanged - Pi extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_pi again only after a later notification says the cycle is missing, failed, or unhealthy
+     DONE
+     ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.CDa78y/home/state/crew.status
+     watcher: FAILED - handling delivery confirmation was rejected (status=1 generation=lab-dead-ready watcherPid=51073)
+     Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+     Thinking...
+     ACK
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.CDa78y/root
+    ↑1.5k ↓255 R4.4k CH92.2% $0.000 0.2%/1.0M (auto)                                                                                                                   (vultr) deepseek-v4.1-flash • minimal
+--- teardown: leftover lab processes: none

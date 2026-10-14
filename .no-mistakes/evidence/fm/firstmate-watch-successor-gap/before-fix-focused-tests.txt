@@ -1,0 +1,8 @@
+not ok - Pi restoration must retry a dead-but-ready successor before delivering the wake: file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4VWREHES97K2GJD3ZV6WPWH/[eval1]:37
+if (failure) throw new Error(failure);
+                   ^
+
+Error: wake reached Pi with no live successor; arms at delivery=2: arm=36954 | arm=36964
+    at file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4VWREHES97K2GJD3ZV6WPWH/[eval1]:37:20
+
+Node.js v26.11.1: expected exit 0, got 1

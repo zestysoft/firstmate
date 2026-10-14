@@ -1,0 +1,60 @@
+
+ Warning: tmux extended-keys-format is xterm. Pi works best with csi-u. Add `set -g extended-keys-format csi-u` to ~/.tmux.conf and restart tmux.
+
+
+ Call the fm_watch_arm_pi tool once now (never use bash). Later a watcher notification will arrive; when it does, reply exactly GOT_WAKE and do nothing else.
+
+
+
+ fm_watch_arm_pi
+ watcher: unchanged - Pi extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_pi again only after a later notification says the cycle is missing, failed, or unhealthy
+
+
+ GOT_WAKE
+
+
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: DEADREADY_WAKE from fixture watcher
+
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+── ⠧ Working ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-deadready.AQAY84/target/project (fm/firstmate-watch-successor-gap)
+↑6.7k ↓23 R6.4k CH96.8% $0.030 (sub) 2.5%/272k (auto)                                                                                                                         (openai) gpt-5.6-sol • low

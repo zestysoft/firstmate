@@ -1,0 +1,35 @@
+total 168
+drwxr-xr-x@ 34 Ian  staff  1088 Oct 13 19:54 .
+drwxr-xr-x@  4 Ian  staff   128 Oct 13 19:53 ..
+-rw-r--r--@  1 Ian  staff   231 Oct 13 19:53 .hb-surfaced-pi-e2e
+-rw-r--r--@  1 Ian  staff     2 Oct 13 19:53 .heartbeat-streak
+-rw-------@  1 Ian  staff    25 Oct 13 19:53 .inactive-outcome-reconcile
+-rw-r--r--@  1 Ian  staff     0 Oct 13 19:53 .last-check
+-rw-r--r--@  1 Ian  staff     0 Oct 13 19:53 .last-heartbeat
+-rw-r--r--@  1 Ian  staff     0 Oct 13 19:54 .last-watcher-beat
+-rw-r--r--@  1 Ian  staff     6 Oct 13 19:53 .lock
+-rw-r--r--@  1 Ian  staff    77 Oct 13 19:53 .pi-e2e.open-decisions-cursor
+-rw-r--r--@  1 Ian  staff    78 Oct 13 19:53 .pi-turnend-extension-loaded
+-rw-------@  1 Ian  staff   104 Oct 13 19:53 .pi-watch-extension-loaded
+-rw-r--r--@  1 Ian  staff     0 Oct 13 19:53 .secondmate-liveness-tick
+-rw-r--r--@  1 Ian  staff   231 Oct 13 19:53 .seen-pi-e2e_status
+-rw-------@  1 Ian  staff    78 Oct 13 19:53 .session-start-agents-baseline
+-rw-------@  1 Ian  staff     6 Oct 13 19:53 .session-start-complete
+-rw-------@  1 Ian  staff    10 Oct 13 19:53 .startup-network.delivered
+-rw-------@  1 Ian  staff     0 Oct 13 19:53 .startup-network.report
+-rw-------@  1 Ian  staff   162 Oct 13 19:53 .startup-network.status
+-rw-------@  1 Ian  staff   201 Oct 13 19:53 .startup-network.timings
+-rw-r--r--@  1 Ian  staff    59 Oct 13 19:53 .status-presentation-cursor
+-rw-------@  1 Ian  staff    10 Oct 13 19:53 .trace-context-effective
+-rw-------@  1 Ian  staff     0 Oct 13 19:54 .wake-queue
+-rw-r--r--@  1 Ian  staff     2 Oct 13 19:53 .wake-queue.seq
+-rw-------@  1 Ian  staff     0 Oct 13 19:53 .watch-arm-output.WYo9Xt
+-rw-r--r--@  1 Ian  staff  1131 Oct 13 19:53 .watch-cycle-exits.log
+-rw-r--r--@  1 Ian  staff   771 Oct 13 19:53 .watch-deliveries.log
+lrwxr-xr-x@  1 Ian  staff   116 Oct 13 19:53 .watch.lock -> /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-live.Jc6aY4/lab/fmhome/state/.watch.lock.owner.lDuICd
+drwx------@  6 Ian  staff   192 Oct 13 19:53 .watch.lock.owner.lDuICd
+-rw-------@  1 Ian  staff    39 Oct 13 19:54 .watcher-down
+-rw-------@  1 Ian  staff  1386 Oct 13 19:53 home-summary.json
+-rw-r--r--@  1 Ian  staff     0 Oct 13 19:53 pi-e2e.meta
+-rw-r--r--@  1 Ian  staff    90 Oct 13 19:53 pi-e2e.status
+drwxr-xr-x@  2 Ian  staff    64 Oct 13 19:53 terminal-outcomes

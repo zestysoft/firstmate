@@ -1,0 +1,3 @@
+ps: Invalid (zero-length) process id
+Warning: No models match pattern "openai-codex/gpt-5.4-mini"
+not ok - Pi Ahoy legacy-start case did not take Bearings: I can’t take the helm or produce `/ahoy`: no `SESSION START` digest is visible, and this session has no command-execution tool to run `bin/fm-session-start.sh` exactly once.

@@ -1,0 +1,400 @@
+
+ Warning: tmux extended-keys-format is xterm. Pi works best with csi-u. Add `set -g extended-keys-format csi-u` to ~/.tmux.conf and restart tmux.
+
+
+ Start supervision with fm_watch_arm_pi and never use bash to arm supervision. Three watcher notifications will name LIVE_WAKE_1 through LIVE_WAKE_3. After each one, run bin/fm-wake-drain.sh, handle and acknowledge it,
+ then reply exactly HANDLED_1, HANDLED_2, or HANDLED_3 to match that notification.
+
+
+ Thinking...
+
+
+ fm_watch_arm_pi
+ watcher: unchanged - Pi extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_pi again only after a later notification says the cycle is missing, failed, or unhealthy
+
+
+ Supervision started.
+
+
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-pi-live-fix.nocJuv/lab/fmhome/state/pi-e2e.status
+
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+
+
+ Thinking...
+
+
+ $ bin/fm-wake-drain.sh (timeout 120s)
+
+ ... (1 earlier lines, ctrl+o to expand)
+ WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 83431.1791945834.oSXv3O
+ wake annotation: latest wake-EVENT observed at drain, not current state: pi-e2e.status: done: pi live e2e LIVE_WAKE_1
+ STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+ pi-e2e done: pi live e2e LIVE_WAKE_1
+ WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+
+ Took 0.9s
+
+
+ Thinking...
+
+
+ $ bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 83431.1791945834.oSXv3O (timeout 120s)
+
+ (no output)
+
+ Took 0.2s
+
+
+ HANDLED_1
+
+
+ ⁣FIRSTMATE_OP: v1 turn-end-guard: TURN WOULD END BLIND - supervision is off. The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction below before ending the turn.
+
+ ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+ ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: 0s ago).
+ ●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e
+ /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-pi-live-fix.nocJuv/lab/project/.pi/extensions/fm-primary-turnend-guard.ts -e
+ /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-pi-live-fix.nocJuv/lab/project/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+ ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+ Thinking...
+
+
+ fm_watch_arm_pi
+ watcher: unchanged - Pi extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_pi again only after a later notification says the cycle is missing, failed, or unhealthy
+
+
+ Supervision cycle repaired.
+
+
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-pi-live-fix.nocJuv/lab/fmhome/state/pi-e2e.status
+
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+
+
+
+ $ bin/fm-wake-drain.sh (timeout 120s)
+
+ ... (1 earlier lines, ctrl+o to expand)
+ WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 4 --recovery-generation 88453.1791945850.rCOsjV
+ wake annotation: latest wake-EVENT observed at drain, not current state: pi-e2e.status: done: pi live e2e LIVE_WAKE_2
+ STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+ pi-e2e done: pi live e2e LIVE_WAKE_2
+ WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+
+ Took 0.9s
+
+
+
+ $ bin/fm-wake-drain.sh --ack-through 4 --recovery-generation 88453.1791945850.rCOsjV (timeout 120s)
+
+ (no output)
+
+ Took 0.2s
+
+
+ HANDLED_2
+
+
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-pi-live-fix.nocJuv/lab/fmhome/state/pi-e2e.status
+
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+
+
+
+ $ bin/fm-wake-drain.sh (timeout 120s)
+
+ ... (1 earlier lines, ctrl+o to expand)
+ WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 6 --recovery-generation 95147.1791945869.YLITjb
+ wake annotation: latest wake-EVENT observed at drain, not current state: pi-e2e.status: done: pi live e2e LIVE_WAKE_3
+ STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+ pi-e2e done: pi live e2e LIVE_WAKE_3
+ WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+
+ Took 1.5s
+
+
+
+ $ bin/fm-wake-drain.sh --ack-through 6 --recovery-generation 95147.1791945869.YLITjb (timeout 120s)
+
+ (no output)
+
+ Took 0.6s
+
+
+ HANDLED_3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+── ⠙ Working ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-live-fix.nocJuv/lab/project (fm/firstmate-watch-successor-gap)
+↑23k ↓389 R99k CH95.3% $0.141 (sub) 4.1%/272k (auto)                                                                                                                                              (openai) gpt-5.6-sol • low

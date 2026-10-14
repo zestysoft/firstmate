@@ -1,0 +1,400 @@
+
+ Warning: tmux extended-keys-format is xterm. Pi works best with csi-u. Add `set -g extended-keys-format csi-u` to ~/.tmux.conf and restart tmux.
+
+
+ Start supervision with fm_watch_arm_pi and never use bash to arm supervision. Three watcher notifications will name LIVE_WAKE_1 through LIVE_WAKE_3. After each one, run bin/fm-wake-drain.sh, handle and acknowledge it,
+ then reply exactly HANDLED_1, HANDLED_2, or HANDLED_3 to match that notification.
+
+
+ Thinking...
+
+
+ fm_watch_arm_pi
+ watcher: unchanged - Pi extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_pi again only after a later notification says the cycle is missing, failed, or unhealthy
+
+
+ Supervision started.
+
+
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-live.Jc6aY4/lab/fmhome/state/pi-e2e.status
+
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+
+
+ Thinking...
+
+
+ $ bin/fm-wake-drain.sh (timeout 30s)
+
+ ... (1 earlier lines, ctrl+o to expand)
+ WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 64510.1791946406.cZHrpp
+ wake annotation: latest wake-EVENT observed at drain, not current state: pi-e2e.status: done: pi live e2e LIVE_WAKE_1
+ STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+ pi-e2e done: pi live e2e LIVE_WAKE_1
+ WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+
+ Took 0.8s
+
+
+ Thinking...
+
+
+ $ bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 64510.1791946406.cZHrpp (timeout 30s)
+
+ (no output)
+
+ Took 0.2s
+
+
+ HANDLED_1
+
+
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-live.Jc6aY4/lab/fmhome/state/pi-e2e.status
+
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+
+
+
+ $ bin/fm-wake-drain.sh (timeout 30s)
+
+ ... (1 earlier lines, ctrl+o to expand)
+ WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 4 --recovery-generation 70024.1791946419.bvySq2
+ wake annotation: latest wake-EVENT observed at drain, not current state: pi-e2e.status: done: pi live e2e LIVE_WAKE_2
+ STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+ pi-e2e done: pi live e2e LIVE_WAKE_2
+ WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+
+ Took 0.7s
+
+
+
+ $ bin/fm-wake-drain.sh --ack-through 4 --recovery-generation 70024.1791946419.bvySq2 (timeout 30s)
+
+ (no output)
+
+ Took 0.2s
+
+
+ HANDLED_2
+
+
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-live.Jc6aY4/lab/fmhome/state/pi-e2e.status
+
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+
+
+
+ $ bin/fm-wake-drain.sh (timeout 30s)
+
+ ... (1 earlier lines, ctrl+o to expand)
+ WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 6 --recovery-generation 74984.1791946431.rFOIyE
+ wake annotation: latest wake-EVENT observed at drain, not current state: pi-e2e.status: done: pi live e2e LIVE_WAKE_3
+ STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+ pi-e2e done: pi live e2e LIVE_WAKE_3
+ WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+
+ Took 0.8s
+
+
+
+ $ bin/fm-wake-drain.sh --ack-through 6 --recovery-generation 74984.1791946431.rFOIyE (timeout 30s)
+
+ (no output)
+
+ Took 0.2s
+
+
+ HANDLED_3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-live.Jc6aY4/lab/project (fm/firstmate-watch-successor-gap)
+↑22k ↓378 R88k CH98.3% $0.132 (sub) 3.9%/272k (auto)                                                                                                                                              (openai) gpt-5.6-sol • low

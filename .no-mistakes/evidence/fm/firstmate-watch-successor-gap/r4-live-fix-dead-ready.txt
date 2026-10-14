@@ -1,0 +1,46 @@
+=== live lab: variant=fix rev=53cedb6 fault=dead-ready
+lab root=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/root
+lab home=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/home (marker: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/home/.fm-lab-home)
+pi pid=25290 lock=25290
+pi: 1.2.0 model=vultr/deepseek-v4.1-flash (CLI flag only) (watcher thresholds at product defaults)
+--- 19:51:42 watcher up before wake:
+    27719 26575 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/root/bin/fm-watch-arm-real.sh --restart
+    28031 27719 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/root/bin/fm-watch.sh
+--- 19:51:43 wrote real worker event: state/crew.status 'done: lab crew finished its task'
+--- 19:52:28 WAKE visible in Pi pane (#1). arm invocations so far:
+    19:51:39.674802000 arm=27719
+    19:52:27.564202000 arm=51064
+    19:52:27.869574000 arm=51647
+  live lab watcher/arm processes at that moment:
+    51108     1 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/root/bin/fm-watch-arm.sh --restart
+    51647 26575 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/root/bin/fm-watch-arm-real.sh --restart
+    51758 51647 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/root/bin/fm-watch.sh
+--- 19:52:59 after settle (~30s after first wake):
+    51108     1 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/root/bin/fm-watch-arm.sh --restart
+    51647 26575 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/root/bin/fm-watch-arm-real.sh --restart
+    51758 51647 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/root/bin/fm-watch.sh
+--- extension log:
+--- arm log:
+    19:51:39.674802000 arm=27719
+    19:52:27.564202000 arm=51064
+    19:52:27.869574000 arm=51647
+--- pi pane tail:
+    Warning: No models match pattern "openai-codex/gpt-5.4-mini"
+     This project is not trusted. Project .pi resources and packages are ignored. Use /trust to save a trust decision, then restart pi.
+     You are a lab test harness. Step 1: call the fm_watch_arm_pi tool exactly once now, then reply DONE. Later, whenever a watcher wake notification arrives, do NOT call any tool and do NOT run any
+     command; reply only with the single word ACK.
+     Warning: tmux extended-keys-format is xterm. Pi works best with csi-u. Add `set -g extended-keys-format csi-u` to ~/.tmux.conf and restart tmux.
+     Thinking...
+     fm_watch_arm_pi
+     watcher: unchanged - Pi extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_pi again only after a later notification says the cycle is missing, failed, or unhealthy
+     Thinking...
+     DONE
+     ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/home/state/crew.status
+     Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+     Thinking...
+     ACK
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.jJa2D7/root
+    ↑1.7k ↓332 R4.2k CH85.9% $0.000 0.2%/1.0M (auto)                                                                                                                   (vultr) deepseek-v4.1-flash • minimal
+--- teardown: leftover lab processes: none

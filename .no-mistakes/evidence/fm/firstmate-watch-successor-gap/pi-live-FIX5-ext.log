@@ -1,0 +1,9 @@
+2026-10-14T02:47:09.949Z pid=43585 DEBUG arm close pid=43754 code=0
+2026-10-14T02:47:09.951Z pid=43585 restore attempt=0 predecessor=43754 start=ok pid=49186
+2026-10-14T02:47:10.636Z pid=43585 confirm generation=43836.1791946029.Wt7RVd watcherPid=49203 result=confirmed
+2026-10-14T02:47:26.051Z pid=43585 DEBUG arm close pid=49186 code=0
+2026-10-14T02:47:26.053Z pid=43585 restore attempt=0 predecessor=49186 start=ok pid=57706
+2026-10-14T02:47:26.766Z pid=43585 confirm generation=49203.1791946045.cAg05m watcherPid=57723 result=confirmed
+2026-10-14T02:47:39.351Z pid=43585 DEBUG arm close pid=57706 code=0
+2026-10-14T02:47:39.353Z pid=43585 restore attempt=0 predecessor=57706 start=ok pid=63604
+2026-10-14T02:47:40.065Z pid=43585 confirm generation=57723.1791946058.qKHyuH watcherPid=63621 result=confirmed

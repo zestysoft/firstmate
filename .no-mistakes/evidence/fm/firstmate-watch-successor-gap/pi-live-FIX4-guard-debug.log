@@ -1,0 +1,3 @@
+2026-10-14T02:45:39.713Z settled start handoffs=1 hasHandoff=true lock=22710
+2026-10-14T02:45:39.921Z guard code=2 lock=22710 handoffs=1
+2026-10-14T02:45:40.923Z settle=false lock=22710 handoffs=1

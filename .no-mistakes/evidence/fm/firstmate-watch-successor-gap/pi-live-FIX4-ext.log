@@ -1,0 +1,9 @@
+2026-10-14T02:45:23.741Z pid=10227 DEBUG arm close pid=10404 code=0
+2026-10-14T02:45:23.744Z pid=10227 restore attempt=0 predecessor=10404 start=ok pid=22660
+2026-10-14T02:45:24.326Z pid=10227 confirm generation=10483.1791945923.kFIVym watcherPid=22710 result=confirmed
+2026-10-14T02:45:41.877Z pid=10227 DEBUG arm close pid=22660 code=0
+2026-10-14T02:45:41.879Z pid=10227 restore attempt=0 predecessor=22660 start=ok pid=30445
+2026-10-14T02:45:43.627Z pid=10227 confirm generation=22710.1791945940.vZAluS watcherPid=30462 result=confirmed
+2026-10-14T02:46:05.720Z pid=10227 DEBUG arm close pid=30445 code=0
+2026-10-14T02:46:05.729Z pid=10227 restore attempt=0 predecessor=30445 start=ok pid=36352
+2026-10-14T02:46:07.752Z pid=10227 confirm generation=30462.1791945963.Vte507 watcherPid=36372 result=confirmed
