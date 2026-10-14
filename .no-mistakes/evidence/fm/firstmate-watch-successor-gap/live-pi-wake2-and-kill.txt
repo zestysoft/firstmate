@@ -1,0 +1,87 @@
+[11:46:53] before wake 2
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:53] fm-inbox.sh note #2
+queued 1792003613-YH3Fra
+[11:46:54] t+1s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:55] t+2s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:57] t+3s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:58] t+4s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:59] t+5s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:47:00] t+6s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:47:01] t+7s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:47:02] t+8s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:47:03] t+9s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:47:05] t+10s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:47:06] t+11s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:47:07] t+12s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:47:07] ADVERSARIAL: kill -9 arm 92043 (its fm-watch.sh child keeps the inherited stderr pipe open, so Node never sees close)
+[11:47:08] k+1s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:09] k+2s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:10] k+3s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:12] k+4s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:13] k+5s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:14] k+6s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:15] k+7s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:16] k+8s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:17] k+9s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:19] k+10s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:20] k+11s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:21] k+12s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:22] k+13s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:23] k+14s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh
+[11:47:24] k+15s
+ 8642 82682 bash bin/fm-watch-arm.sh --restart
+ 8726  8642 bash bin/fm-watch.sh

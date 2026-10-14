@@ -1,0 +1,2 @@
+ watcher: started Pi extension arm child 1; future ordinary re-arms are automatic; call fm_watch_arm_pi again only after a later notification says the cycle is missing, failed, or unhealthy
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: check: rearm-resurface

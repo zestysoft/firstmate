@@ -1,0 +1,65 @@
+# BASE 0397cb2 real Pi primary, lab FM_HOME=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.c9vyST
+[11:48:23] before kill
+21845 16928 bash bin/fm-watch-arm.sh --restart
+21865 21845 bash bin/fm-watch.sh
+[11:48:23] ADVERSARIAL: kill -9 arm 21845
+[11:48:24] k+1s
+21865     1 bash bin/fm-watch.sh
+[11:48:25] k+2s
+21865     1 bash bin/fm-watch.sh
+[11:48:26] k+3s
+21865     1 bash bin/fm-watch.sh
+[11:48:28] k+4s
+21865     1 bash bin/fm-watch.sh
+[11:48:29] k+5s
+21865     1 bash bin/fm-watch.sh
+[11:48:30] k+6s
+21865     1 bash bin/fm-watch.sh
+[11:48:31] k+7s
+21865     1 bash bin/fm-watch.sh
+[11:48:32] k+8s
+21865     1 bash bin/fm-watch.sh
+[11:48:33] k+9s
+21865     1 bash bin/fm-watch.sh
+[11:48:35] k+10s
+21865     1 bash bin/fm-watch.sh
+[11:48:36] k+11s
+21865     1 bash bin/fm-watch.sh
+[11:48:37] k+12s
+21865     1 bash bin/fm-watch.sh
+[11:48:38] k+13s
+21865     1 bash bin/fm-watch.sh
+[11:48:39] k+14s
+21865     1 bash bin/fm-watch.sh
+[11:48:40] k+15s
+21865     1 bash bin/fm-watch.sh
+[11:48:41] k+16s
+21865     1 bash bin/fm-watch.sh
+[11:48:42] k+17s
+21865     1 bash bin/fm-watch.sh
+[11:48:44] k+18s
+21865     1 bash bin/fm-watch.sh
+[11:48:45] k+19s
+21865     1 bash bin/fm-watch.sh
+[11:48:46] k+20s
+21865     1 bash bin/fm-watch.sh
+[11:48:47] k+21s
+21865     1 bash bin/fm-watch.sh
+[11:48:48] k+22s
+21865     1 bash bin/fm-watch.sh
+[11:48:49] k+23s
+21865     1 bash bin/fm-watch.sh
+[11:48:50] k+24s
+21865     1 bash bin/fm-watch.sh
+[11:48:52] k+25s
+21865     1 bash bin/fm-watch.sh
+[11:48:53] k+26s
+21865     1 bash bin/fm-watch.sh
+[11:48:54] k+27s
+21865     1 bash bin/fm-watch.sh
+[11:48:55] k+28s
+21865     1 bash bin/fm-watch.sh
+[11:48:56] k+29s
+21865     1 bash bin/fm-watch.sh
+[11:48:57] k+30s
+21865     1 bash bin/fm-watch.sh

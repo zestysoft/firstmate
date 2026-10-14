@@ -1,0 +1,37 @@
+=== HEAD 9aee8e7 extension (one process per test) ===
+ok - Pi restoration retries a dead-but-ready successor before delivering the wake
+  [test_pi_dead_ready_successor_is_retried_before_delivery exit=0]
+ok - Pi successor exit with a held pipe schedules the bounded retry
+  [test_pi_successor_exit_with_held_pipe_schedules_retry exit=0]
+ok - Pi actionable output draining after exit stays actionable
+  [test_pi_actionable_line_draining_after_exit_stays_actionable exit=0]
+ok - Pi actionable close starts one successor before wake delivery settles
+  [test_pi_actionable_close_starts_single_successor_before_delivery exit=0]
+ok - Pi clean empty close triggers a bounded continuity retry
+  [test_pi_empty_close_retries_instead_of_disappearing exit=0]
+ok - Pi established clean closes stop at the configured retry limit
+  [test_pi_established_empty_close_honors_retry_limit exit=0]
+ok - Pi repair starts a fresh arm instead of no-opping on a dead child
+  [test_pi_repair_starts_fresh_arm_over_dead_child exit=0]
+ok - Pi scheduled retry starts a fresh arm instead of stalling on a dead child
+  [test_pi_scheduled_retry_starts_fresh_arm_over_dead_child exit=0]
+
+=== BASE 0397cb2 extension ===
+not ok - Pi restoration must retry a dead-but-ready successor before delivering the wake: file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4XVBTSS3ZZQR5NYWS67EF43/[eval1]:37
+if (failure) throw new Error(failure);
+                   ^
+
+Error: wake reached Pi with no live successor; arms at delivery=2: arm=27854 | arm=27866
+    at file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4XVBTSS3ZZQR5NYWS67EF43/[eval1]:37:20
+
+Node.js v26.11.1: expected exit 0, got 1
+  [test_pi_dead_ready_successor_is_retried_before_delivery exit=1]
+not ok - Pi successor exit with a held pipe must schedule the bounded retry: file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4XVBTSS3ZZQR5NYWS67EF43/[eval1]:36
+if (failure) throw new Error(failure);
+                   ^
+
+Error: successor exit with a held pipe left no retry: arm=27979 | arm=27992
+    at file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4XVBTSS3ZZQR5NYWS67EF43/[eval1]:36:20
+
+Node.js v26.11.1: expected exit 0, got 1
+  [test_pi_successor_exit_with_held_pipe_schedules_retry exit=1]

@@ -1,0 +1,88 @@
+# Real Pi primary (pi 1.2.0) in lab FM_HOME=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.0BWZBt, checkout=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-co.Gj6LOk (git archive of 9aee8e7)
+[11:46:09] before wake
+85363 82682 bash bin/fm-watch-arm.sh --restart
+85382 85363 bash bin/fm-watch.sh
+[11:46:09] fm-inbox.sh note (actionable check wake)
+queued 1792003570-qOvb28
+  lab ping for watcher continuity test
+  firstmate will pick this up at its next check.
+[11:46:11] t+1s
+85363 82682 bash bin/fm-watch-arm.sh --restart
+85382 85363 bash bin/fm-watch.sh
+[11:46:12] t+2s
+85363 82682 bash bin/fm-watch-arm.sh --restart
+85382 85363 bash bin/fm-watch.sh
+[11:46:13] t+3s
+85363 82682 bash bin/fm-watch-arm.sh --restart
+85382 85363 bash bin/fm-watch.sh
+[11:46:14] t+4s
+85363 82682 bash bin/fm-watch-arm.sh --restart
+85382 85363 bash bin/fm-watch.sh
+[11:46:15] t+5s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:17] t+6s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:18] t+7s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:19] t+8s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:20] t+9s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:21] t+10s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:22] t+11s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:24] t+12s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:25] t+13s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:26] t+14s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:27] t+15s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:28] t+16s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:29] t+17s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:30] t+18s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:32] t+19s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+[11:46:33] t+20s
+92043 82682 bash bin/fm-watch-arm.sh --restart
+92061 92043 bash bin/fm-watch.sh
+--- pane ---
+[Extension issues]
+  ~/.pi/agent/npm/node_modules/pi-web-access/package.json
+    Host-provided extension packages must be declared in peerDependencies with a "*" range, not dependencies: typebox. Installed copies can bypass the extension loader and create duplicate runtime
+modules.
+ Warning: Extension package "/Users/Ian/.pi/agent/npm/node_modules/pi-web-access/package.json": Host-provided extension packages must be declared in peerDependencies with a "*" range, not
+ dependencies: typebox. Installed copies can bypass the extension loader and create duplicate runtime modules.
+ Warning: tmux extended-keys-format is xterm. Pi works best with csi-u. Add `set -g extended-keys-format csi-u` to ~/.tmux.conf and restart tmux.
+ $ bin/fm-lock.sh
+ lock acquired: harness pid 82682
+ watcher: started Pi extension arm child 1; future ordinary re-arms are automatic; call fm_watch_arm_pi again only after a later notification says the cycle is missing, failed, or unhealthy
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: check: rearm-resurface
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)
+ Error: Retry failed after 3 attempts: OpenAI WebSocket error: Unknown error (code=unknown)
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-co.Gj6LOk
+$0.000 (sub) 5.6%/400k (auto)                                                                                                                                               (openai) gpt-5.4-mini • high
