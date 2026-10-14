@@ -1,0 +1,37 @@
+### FIX extension (HEAD)
+ok - Pi extension reports external healthy watcher output
+ok - Pi custom tool exposes repair-only metadata and returns automatic-continuation guidance
+ok - Pi restoration retries a dead-but-ready successor before delivering the wake
+test_pi_dead_ready_successor_is_retried_before_delivery exit=0
+ok - Pi successor exit with a held pipe schedules the bounded retry
+test_pi_successor_exit_with_held_pipe_schedules_retry exit=0
+ok - Pi actionable output draining after exit stays actionable
+test_pi_actionable_line_draining_after_exit_stays_actionable exit=0
+ok - Pi actionable close starts one successor before wake delivery settles
+test_pi_actionable_close_starts_single_successor_before_delivery exit=0
+
+### BASE extension (24f3a6b)
+ok - Pi extension reports external healthy watcher output
+ok - Pi custom tool exposes repair-only metadata and returns automatic-continuation guidance
+not ok - Pi restoration must retry a dead-but-ready successor before delivering the wake: file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4Y8GZ2YT50WNAZ12KX3BQJ9/tests/[eval1]:37
+if (failure) throw new Error(failure);
+                   ^
+
+Error: wake reached Pi with no live successor; arms at delivery=2: arm=91973 | arm=91986
+    at file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4Y8GZ2YT50WNAZ12KX3BQJ9/tests/[eval1]:37:20
+
+Node.js v26.11.1: expected exit 0, got 1
+test_pi_dead_ready_successor_is_retried_before_delivery exit=1
+not ok - Pi successor exit with a held pipe must schedule the bounded retry: file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4Y8GZ2YT50WNAZ12KX3BQJ9/tests/[eval1]:36
+if (failure) throw new Error(failure);
+                   ^
+
+Error: successor exit with a held pipe left no retry: arm=92077 | arm=92089
+    at file:///Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M4Y8GZ2YT50WNAZ12KX3BQJ9/tests/[eval1]:36:20
+
+Node.js v26.11.1: expected exit 0, got 1
+test_pi_successor_exit_with_held_pipe_schedules_retry exit=1
+ok - Pi actionable output draining after exit stays actionable
+test_pi_actionable_line_draining_after_exit_stays_actionable exit=0
+ok - Pi actionable close starts one successor before wake delivery settles
+test_pi_actionable_close_starts_single_successor_before_delivery exit=0

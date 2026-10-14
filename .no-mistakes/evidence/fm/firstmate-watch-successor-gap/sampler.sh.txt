@@ -1,0 +1,11 @@
+#!/bin/bash
+# usage: sample.sh tag seconds outfile
+tag=$1; secs=$2; out=$3; LAB=$(cat /tmp/fm-lab-current-path-$tag); base=$(basename $LAB)
+pipid=$(cat $LAB/state/.lock)
+for i in $(seq $secs); do
+  arms=$(ps -axo pid=,ppid=,command= | awk -v p=$pipid '$2==p && /fm-watch-arm/ {print $1}' | tr '\n' ' ')
+  w=$(ps -axo pid=,command= | grep "$base/root/bin/fm-watch.sh" | grep -v grep | awk '{print $1}' | tr '\n' ' ')
+  wake=$(S=$tag /tmp/fmlabtools/t capture-pane -p -S -200 -t primary 2>/dev/null | grep -c 'FIRSTMATE WATCHER WAKE: signal')
+  echo "$(date +%T) live-arm-children-of-pi=[${arms}] fm-watch.sh=[${w}] wakes-delivered-to-pi=$wake"
+  sleep 1
+done > $out

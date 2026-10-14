@@ -1,0 +1,18 @@
+### s5fix lab=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.0adbl9 ext=HEAD (fix) checked 15:43:24
+-- fault-injector arm ledger
+15:40:40 arm pid=58937 args=--restart
+15:40:48 wrote demo-task.status (done:)
+15:41:28 arm pid=77186 args=--restart
+15:41:44 arm pid=77186 EXITS now (descendant still holds pipe)
+15:41:44 arm pid=79073 args=--restart
+-- state/.watch-extension.log
+2026-10-14T22:41:28.961Z pid=56559 restore attempt=0 predecessor=58937 start=ok pid=77186
+-- state/.watch-cycle-exits.log
+arm_pid=58937	watcher_pid=59311	origin=started	started_at=1792017640	ended_at=1792017688	exit_code=0	signal=none	reason=actionable-signal	beacon_age=32	lock_before=pid:59311|identity:Wed Oct 14 15:40:40 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.0adbl9/root/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+-- live processes now
+77208     1       01:55 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.0adbl9/root/bin/fm-watch-arm.sh --restart
+79073 56559       01:40 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.0adbl9/root/bin/fm-watch-arm-real.sh --restart
+79103 79073       01:40 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.0adbl9/root/bin/fm-watch.sh
+-- Pi pane
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.0adbl9/state/demo-task.status
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.

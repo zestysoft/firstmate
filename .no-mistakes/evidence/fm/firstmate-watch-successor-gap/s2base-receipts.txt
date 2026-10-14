@@ -1,0 +1,31 @@
+### s2base lab=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.0FD3vd ext=24f3a6b (base)
+-- fault-injector arm ledger
+15:36:41 arm pid=77899 args=--restart
+15:36:52 wrote demo-task.status (done:)
+15:37:31 arm pid=93938 args=--restart
+15:37:31 arm pid=93938 EXITED; descendant pid= prints readiness and holds pipe 120s
+15:39:31 descendant released pipe
+15:39:32 arm pid=35598 args=--restart
+-- state/.watch-cycle-exits.log
+arm_pid=77899	watcher_pid=78022	origin=started	started_at=1792017402	ended_at=1792017451	exit_code=0	signal=none	reason=actionable-signal	beacon_age=32	lock_before=pid:78022|identity:Wed Oct 14 15:36:42 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.0FD3vd/root/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+-- state/.watch-deliveries.log
+78022	Wed Oct 14 15:36:42 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.0FD3vd/root/bin/fm-watch.sh	signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.0FD3vd/state/demo-task.status
+-- live processes now
+35598 76940       00:41 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.0FD3vd/root/bin/fm-watch-arm-real.sh --restart
+35625 35598       00:41 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.0FD3vd/root/bin/fm-watch.sh
+-- Pi pane
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.0FD3vd/state/demo-task.status
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+ Error: OAuth refresh failed for openai-codex: OpenAI Codex token refresh failed (401): {
+   "error": {
+     "message": "Could not validate your refresh token. Please try signing in again.",
+     "type": "invalid_request_error",
+     "param": null,
+     "code": "invalid_refresh_token"
+   }
+ }
+ If this looks like a pi bug, /bug sends a report to the developers.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.0FD3vd/root
+$0.000 (sub) 17.7%/128k (auto)                                                                                                                                 (openai-codex) gpt-5.3-codex-spark • high

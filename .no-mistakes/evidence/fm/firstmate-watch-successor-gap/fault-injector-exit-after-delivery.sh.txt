@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Lab fault injector. Arm #2 (successor after a wake) is genuinely alive and
+# ready, leaves a descendant holding its stdout for HOLD seconds, then dies
+# 15s later (after the wake was delivered). Other arms exec the real arm.
+dir=$(cd "$(dirname "$0")" && pwd)
+if [ "${1:-}" = --handling-delivered ] || [ "${1:-}" = --stop ]; then exec bash "$dir/fm-watch-arm-real.sh" "$@"; fi
+ledger="$FM_HOME/arm-ledger.log"
+printf '%s arm pid=%s args=%s\n' "$(date +%T)" "$$" "$*" >> "$ledger"
+n=$(grep -c ' arm pid=' "$ledger")
+if [ "$n" -eq 2 ]; then
+  printf 'watcher: started pid=%s (beacon fresh)\n' "$$"
+  ( exec 2>/dev/null; sleep "${FM_LAB_HOLD:-120}"; printf '%s descendant released pipe\n' "$(date +%T)" >> "$ledger" ) &
+  sleep 15
+  printf '%s arm pid=%s EXITS now (descendant still holds pipe)\n' "$(date +%T)" "$$" >> "$ledger"
+  exit 0
+fi
+exec bash "$dir/fm-watch-arm-real.sh" "$@"

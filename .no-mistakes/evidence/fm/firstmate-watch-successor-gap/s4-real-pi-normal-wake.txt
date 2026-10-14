@@ -1,0 +1,41 @@
+== S4/S3 real Pi primary, lab /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.u1HVvk, before wake 15:34:16
+23616 20335       00:58 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.u1HVvk/root/bin/fm-watch-arm.sh --restart
+23658 23616       00:58 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.u1HVvk/root/bin/fm-watch.sh
+== status file written; after wake 15:36:02
+-- extension log
+-- arm/watcher processes now
+46319 20335       01:11 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.u1HVvk/root/bin/fm-watch-arm.sh --restart
+46337 46319       01:11 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.u1HVvk/root/bin/fm-watch.sh
+-- pane
+    Host-provided extension packages must be declared in peerDependencies with a "*" range, not dependencies: typebox. Installed copies can bypass the extension loader and create duplicate runtime
+modules.
+ Warning: Extension package "/Users/Ian/.pi/agent/npm/node_modules/pi-web-access/package.json": Host-provided extension packages must be declared in peerDependencies with a "*" range, not
+ dependencies: typebox. Installed copies can bypass the extension loader and create duplicate runtime modules.
+ Warning: tmux extended-keys-format is xterm. Pi works best with csi-u. Add `set -g extended-keys-format csi-u` to ~/.tmux.conf and restart tmux.
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.u1HVvk/state/demo-task.status
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+ Error: OAuth refresh failed for openai-codex: OpenAI Codex token refresh failed (401): {
+   "error": {
+     "message": "Could not validate your refresh token. Please try signing in again.",
+     "type": "invalid_request_error",
+     "param": null,
+     "code": "invalid_refresh_token"
+   }
+ }
+ If this looks like a pi bug, /bug sends a report to the developers.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.u1HVvk/root
+$0.000 (sub) 17.7%/128k (auto)                                                                                                                                 (openai-codex) gpt-5.3-codex-spark • high
+== later check 15:36:19: still watched?
+46319 20335       01:28 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.u1HVvk/root/bin/fm-watch-arm.sh --restart
+46337 46319       01:28 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.u1HVvk/root/bin/fm-watch.sh
+beacon age: 11s
+-- state/.watch-cycle-exits.log
+arm_pid=23616	watcher_pid=23658	origin=started	started_at=1792017198	ended_at=1792017291	exit_code=0	signal=none	reason=actionable-signal	beacon_age=31	lock_before=pid:23658|identity:Wed Oct 14 15:33:18 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.u1HVvk/root/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:46337
+== final check 15:40:53 (~7 min after the wake): still watched?
+46319 20335       06:02 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.u1HVvk/root/bin/fm-watch-arm.sh --restart
+46337 46319       06:02 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.u1HVvk/root/bin/fm-watch.sh
+beacon age: 5s
+fm-watch.sh count:        1
+s4: no lab processes remain

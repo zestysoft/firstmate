@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Lab fault injector in front of the real arm. Arm #2 (the first successor
+# after a wake) prints readiness only from a descendant after the arm process
+# itself has exited, keeping the stdout pipe open for HOLD seconds. All other
+# arms exec the real fm-watch-arm.sh unchanged.
+dir=$(cd "$(dirname "$0")" && pwd)
+if [ "${1:-}" = --handling-delivered ] || [ "${1:-}" = --stop ]; then exec bash "$dir/fm-watch-arm-real.sh" "$@"; fi
+ledger="$FM_HOME/arm-ledger.log"
+printf '%s arm pid=%s args=%s\n' "$(date +%T)" "$$" "$*" >> "$ledger"
+n=$(grep -c ' arm pid=' "$ledger")
+if [ "$n" -eq 2 ]; then
+  parent=$$
+  ( exec 2>/dev/null
+    while kill -0 "$parent" 2>/dev/null; do sleep 0.05; done
+    printf '%s arm pid=%s EXITED; descendant pid=%s prints readiness and holds pipe %ss\n' "$(date +%T)" "$parent" "$BASHPID" "${FM_LAB_HOLD:-120}" >> "$ledger"
+    printf 'watcher: started pid=%s (beacon fresh)\n' "$parent"
+    sleep "${FM_LAB_HOLD:-120}"
+    printf '%s descendant released pipe\n' "$(date +%T)" >> "$ledger" ) &
+  exit 0
+fi
+exec bash "$dir/fm-watch-arm-real.sh" "$@"
