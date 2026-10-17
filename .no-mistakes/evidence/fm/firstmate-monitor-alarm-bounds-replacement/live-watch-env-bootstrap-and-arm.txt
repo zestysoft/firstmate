@@ -1,0 +1,25 @@
+== bin=~/.no-mistakes/worktrees/260e8caa837a/01M540F9G75606Q5QQJ4Z2SDHG/bin  non-Relay lab home (no .env token)
+before bootstrap: config/ = watch.env x-mode.env 
+bootstrap run 1 rc=0  FMX lines: 1
+after bootstrap run 1: config/ = startup-memory-budget watch.env   watch.env = 'export FM_PAUSE_RESURFACE_SECS=777'
+bootstrap run 2 rc=0  FMX lines: 0
+after bootstrap run 2: config/ = startup-memory-budget watch.env   watch.env = 'export FM_PAUSE_RESURFACE_SECS=777'
+== FIXED arm after bootstrap, non-Relay home: config/ = startup-memory-budget watch.env 
+   watch.env: export FM_PAUSE_RESURFACE_SECS=777
+   running watcher pid 84157 (~/.no-mistakes/worktrees/260e8caa837a/01M540F9G75606Q5QQJ4Z2SDHG/bin/fm-watch.sh) env: FM_PAUSE_RESURFACE_SECS=777 
+== FIXED arm, Relay-active home (x-mode.env present) + conflicting watch.env cadence: config/ = startup-memory-budget watch.env x-mode.env 
+   watch.env: export FM_PAUSE_RESURFACE_SECS=777
+export FM_CHECK_INTERVAL=999
+   x-mode.env: export FM_CHECK_INTERVAL=30
+   running watcher pid 87885 (~/.no-mistakes/worktrees/260e8caa837a/01M540F9G75606Q5QQJ4Z2SDHG/bin/fm-watch.sh) env: FM_CHECK_INTERVAL=30 FM_PAUSE_RESURFACE_SECS=777 
+
+######## BASELINE (base d20196a) for comparison
+== bin=/tmp/fm-lab-drv/base/bin  non-Relay lab home (no .env token)
+before bootstrap: config/ = watch.env x-mode.env 
+bootstrap run 1 rc=0  FMX lines: 1
+after bootstrap run 1: config/ = startup-memory-budget watch.env   watch.env = 'export FM_PAUSE_RESURFACE_SECS=777'
+bootstrap run 2 rc=0  FMX lines: 0
+after bootstrap run 2: config/ = startup-memory-budget watch.env   watch.env = 'export FM_PAUSE_RESURFACE_SECS=777'
+== BASELINE arm after bootstrap, non-Relay home: config/ = startup-memory-budget watch.env 
+   watch.env: export FM_PAUSE_RESURFACE_SECS=777
+   running watcher pid 2649 (/tmp/fm-lab-drv/base/bin/fm-watch.sh) env: <neither set: defaults 14400 / 300>

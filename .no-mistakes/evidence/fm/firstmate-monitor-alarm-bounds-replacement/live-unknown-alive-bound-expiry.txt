@@ -1,0 +1,23 @@
+[21:17:41] == FIXED watcher: bound expiry ==
+[21:17:41] FM_PAUSE_RESURFACE_SECS=60
+[21:17:42] -- first sight (progressing)
+[21:17:42] consume status signal:
+[21:17:48] watcher EXITED rc=0 after 6s; stdout='signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.hzB4CP/state/ruw.status'
+[21:17:51] acked wake seq=36
+[21:17:54] typed 'e1' into codex composer (new pane render)
+[21:18:04] watcher EXITED rc=0 after 10s; stdout='stale: fm-lab-uk:fm-ruw'
+[21:18:08] acked wake seq=37
+[21:18:08] -- inside window (progressing): expect quiet
+[21:18:08] consume status signal:
+[21:18:14] watcher EXITED rc=0 after 6s; stdout='signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.hzB4CP/state/ruw.status'
+[21:18:18] acked wake seq=39
+[21:18:20] typed 'e2' into codex composer (new pane render)
+[21:18:31] watcher STILL RUNNING after 10s (no alarm); stdout=''
+[21:18:34] acked wake seq=0
+[21:19:19] -- after window expired (still progressing): expect one alarm again
+[21:19:19] consume status signal:
+[21:19:26] watcher EXITED rc=0 after 6s; stdout='signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.hzB4CP/state/ruw.status'
+[21:19:29] acked wake seq=41
+[21:19:31] typed 'e3' into codex composer (new pane render)
+[21:19:42] watcher EXITED rc=0 after 10s; stdout='stale: fm-lab-uk:fm-ruw'
+[21:19:46] acked wake seq=42

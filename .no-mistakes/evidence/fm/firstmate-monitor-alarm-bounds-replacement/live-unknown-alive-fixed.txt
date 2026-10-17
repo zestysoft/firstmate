@@ -1,0 +1,33 @@
+[21:10:00] == FIXED watcher (target eadab8f), real codex pane in lab tmux ==
+[21:10:00] pane footer: › x2x3yz
+[21:10:00] -- cycle 1: first sight, worker progressing (fresh status line)
+[21:10:00] consume status signal (as primary would):
+[21:10:03] watcher EXITED rc=0 after 3s; stdout='signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.hzB4CP/state/ruw.status'
+[21:10:04] acked wake seq=11
+[21:10:06] typed 'a1' into codex composer (new pane render)
+[21:10:13] watcher EXITED rc=0 after 6s; stdout='stale: fm-lab-uk:fm-ruw'
+[21:10:14] acked wake seq=12
+[21:10:14] repeat bound recorded: .paused-resurfaced-fm-lab-uk_fm-ruw
+[21:10:14] -- cycle 2: new render, progress = fresh status line
+[21:10:14] consume status signal (as primary would):
+[21:10:17] watcher EXITED rc=0 after 3s; stdout='signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.hzB4CP/state/ruw.status'
+[21:10:18] acked wake seq=14
+[21:10:20] typed 'a2' into codex composer (new pane render)
+[21:10:52] watcher STILL RUNNING after 30s (no alarm); stdout=''
+[21:10:53] acked wake seq=0
+[21:10:53] -- cycle 3: new render, progress = worktree write only (status aged 20min)
+[21:10:53] consume status signal (as primary would):
+[21:11:09] watcher STILL RUNNING after 15s (no alarm); stdout=''
+[21:11:10] acked wake seq=0
+[21:11:12] typed 'a3' into codex composer (new pane render)
+[21:11:44] watcher STILL RUNNING after 30s (no alarm); stdout=''
+[21:11:45] acked wake seq=0
+[21:11:45] -- cycle 4 (adversarial): no progress (status+worktree aged 20min), new render, bound unexpired
+[21:11:47] typed 'b4' into codex composer (new pane render)
+[21:11:54] watcher EXITED rc=0 after 7s; stdout='stale: fm-lab-uk:fm-ruw'
+[21:11:56] acked wake seq=15
+[21:11:56] -- cycle 5 (adversarial): still no progress, another render
+[21:11:58] typed 'b5' into codex composer (new pane render)
+[21:12:04] watcher EXITED rc=0 after 6s; stdout='stale: fm-lab-uk:fm-ruw'
+[21:12:05] acked wake seq=16
+[21:12:05] codex still alive: alive
