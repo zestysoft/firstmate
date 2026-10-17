@@ -1,0 +1,45 @@
+
+  >_ OpenAI Codex (v0.163.0)
+     /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.zpcijy/wt
+
+  To get started, describe a task or try one of these commands:
+
+  /init - create an AGENTS.md file with instructions for Codex
+  /status - show current session configuration
+  /permissions - choose what Codex is allowed to do
+  /model - choose what model and reasoning effort to use
+  /review - review any changes and find issues
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+› decompiling chunk 1 decompiling chunk 2 decompiling chunk 3 decompiling chunk 4 WEDGED-BUT-ANIMATING MORE-ANIMATION STILL-ANIMATING worktree-progress
+  viewport-1 viewport-2 viewport-3 base-viewport base-viewport2 base-viewport3
+
+  GPT-6.1-Sol medium · /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.zpcijy/wt · Context 0% used
+

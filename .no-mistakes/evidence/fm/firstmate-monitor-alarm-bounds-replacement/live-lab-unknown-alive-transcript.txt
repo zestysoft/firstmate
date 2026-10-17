@@ -1,0 +1,70 @@
+# Live lab: real codex v0.163.0 pane (tmux, private socket), real fm-watch-arm.sh/fm-watch.sh, FM_HOME=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.zpcijy
+# crew-state for the pane: state: unknown · source: pane · harness state unavailable (unknown codex-unverified); agent alive=alive
+### [run1-first-sight] after 8s (limit 120s):
+watcher: started pid=75562 (beacon fresh)
+stale: lab:fm-pokemodz
+arm-exit=0
+
+### [run2-bounded-successor] after 50s (limit 50s):
+watcher: started pid=95460 (beacon fresh)
+### [run2-bounded-successor] arm still running at limit -> no actionable wake; stopping it
+
+### [run3-no-progress-wedge] after 4s (limit 60s):
+watcher: started pid=70161 (beacon fresh)
+stale: lab:fm-pokemodz
+arm-exit=0
+
+### [run4-worktree-progress-first-sight] after 4s (limit 60s):
+watcher: started pid=95267 (beacon fresh)
+stale: lab:fm-pokemodz
+arm-exit=0
+
+### [run5-worktree-progress-bounded] after 40s (limit 40s):
+watcher: started pid=98333 (beacon fresh)
+### [run5-worktree-progress-bounded] arm still running at limit -> no actionable wake; stopping it
+
+### [run6-BASE-same-setup] after 6s (limit 40s):
+watcher: started pid=54825 (beacon fresh)
+stale: lab:fm-pokemodz
+arm-exit=0
+
+### [run7-BASE-repeat] after 11s (limit 40s):
+watcher: started pid=59475 (beacon fresh)
+stale: lab:fm-pokemodz
+arm-exit=0
+
+### [run8-env-check] after 6s (limit 6s):
+watcher: started pid=70828 (beacon fresh)
+### [run8-env-check] arm still running at limit -> no actionable wake; stopping it
+
+# watcher triage log
+[2026-10-16T20:03:32-0700] absorbed non-terminal stale timer reset: lab:fm-pokemodz
+[2026-10-16T20:03:44-0700] absorbed non-terminal stale (declared wait or open captain call already re-surfaced this window): lab:fm-pokemodz
+[2026-10-16T20:03:46-0700] absorbed non-terminal stale timer reset: lab:fm-pokemodz
+[2026-10-16T20:03:54-0700] absorbed non-terminal stale (declared wait or open captain call already re-surfaced this window): lab:fm-pokemodz
+[2026-10-16T20:03:55-0700] absorbed non-terminal stale timer reset: lab:fm-pokemodz
+[2026-10-16T20:04:03-0700] absorbed non-terminal stale (declared wait or open captain call already re-surfaced this window): lab:fm-pokemodz
+[2026-10-16T20:04:05-0700] absorbed non-terminal stale timer reset: lab:fm-pokemodz
+[2026-10-16T20:04:13-0700] absorbed non-terminal stale (declared wait or open captain call already re-surfaced this window): lab:fm-pokemodz
+[2026-10-16T20:04:14-0700] absorbed non-terminal stale timer reset: lab:fm-pokemodz
+[2026-10-16T20:05:28-0700] absorbed non-terminal stale timer reset: lab:fm-pokemodz
+[2026-10-16T20:05:39-0700] absorbed non-terminal stale (declared wait or open captain call already re-surfaced this window): lab:fm-pokemodz
+[2026-10-16T20:05:41-0700] absorbed non-terminal stale timer reset: lab:fm-pokemodz
+[2026-10-16T20:05:49-0700] absorbed non-terminal stale (declared wait or open captain call already re-surfaced this window): lab:fm-pokemodz
+[2026-10-16T20:05:50-0700] absorbed non-terminal stale timer reset: lab:fm-pokemodz
+[2026-10-16T20:05:56-0700] absorbed non-terminal stale (declared wait or open captain call already re-surfaced this window): lab:fm-pokemodz
+[2026-10-16T20:05:58-0700] absorbed non-terminal stale timer reset: lab:fm-pokemodz
+[2026-10-16T20:07:13-0700] absorbed non-terminal stale timer reset: lab:fm-pokemodz
+# cycle ledger (reason column)
+watcher_pid=54025 origin=started reason=actionable-signal lock_after=pid:none|identity:none
+watcher_pid=75562 origin=started reason=actionable-stale lock_after=pid:none|identity:none
+watcher_pid=95460 origin=started reason=arm-interrupted lock_after=pid:95460|identity:Fri Oct 16 20:03:31 2026     bash /Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M53V7GG4CPJ4Q01ZECGAHJMC/bin/fm
+watcher_pid=42814 origin=started reason=actionable-check lock_after=pid:none|identity:none
+watcher_pid=44970 origin=started reason=actionable-signal lock_after=pid:none|identity:none
+watcher_pid=70161 origin=started reason=actionable-stale lock_after=pid:none|identity:none
+watcher_pid=95267 origin=started reason=actionable-stale lock_after=pid:none|identity:none
+watcher_pid=98333 origin=started reason=arm-interrupted lock_after=pid:98333|identity:Fri Oct 16 20:05:28 2026     bash /Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M53V7GG4CPJ4Q01ZECGAHJMC/bin/fm
+watcher_pid=43672 origin=started reason=actionable-check lock_after=pid:none|identity:none
+watcher_pid=54825 origin=started reason=actionable-stale lock_after=pid:none|identity:none
+watcher_pid=59475 origin=started reason=actionable-stale lock_after=pid:none|identity:none
+watcher_pid=70828 origin=started reason=arm-interrupted lock_after=pid:70828|identity:Fri Oct 16 20:07:12 2026     bash /Users/Ian/.no-mistakes/worktrees/260e8caa837a/01M53V7GG4CPJ4Q01ZECGAHJMC/bin/fm

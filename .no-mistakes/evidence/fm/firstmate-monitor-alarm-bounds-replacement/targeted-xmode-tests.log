@@ -1,0 +1,3 @@
+ok - bootstrap is inert without a non-empty .env token (non-X users unaffected)
+ok - bootstrap preserves home-local watcher tuning and the arm hands it to the watcher
+rc=0

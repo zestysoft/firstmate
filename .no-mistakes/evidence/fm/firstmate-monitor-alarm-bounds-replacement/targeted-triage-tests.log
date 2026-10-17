@@ -1,0 +1,4 @@
+ok - an unknown-but-alive pane with progress evidence alarms once per bounded pause-resurface window
+ok - an unknown-but-alive pane without progress evidence keeps surfacing every new hash
+ok - work under an open captain call surfaces once, absorbs pane churn, then re-surfaces when the window elapses
+rc=0

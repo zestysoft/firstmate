@@ -1,0 +1,18 @@
+## before bootstrap (no Relay token in /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.zpcijy/.env)
+total 16
+drwxr-xr-x@ 4 Ian  staff  128 Oct 16 20:02 .
+drwx------@ 9 Ian  staff  288 Oct 16 20:01 ..
+-rw-r--r--@ 1 Ian  staff   35 Oct 16 20:02 watch.env
+-rw-r--r--@ 1 Ian  staff   18 Oct 16 20:02 x-mode.env
+ls: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.zpcijy/.env: No such file or directory
+## bootstrap run
+FMX: X mode off - removed relay poll shim and 30s cadence; default cadence applies on the next supervision cycle; watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+bootstrap rc=
+## after bootstrap
+total 16
+drwxr-xr-x@ 4 Ian  staff  128 Oct 16 20:02 .
+drwx------@ 9 Ian  staff  288 Oct 16 20:01 ..
+-rw-------@ 1 Ian  staff    5 Oct 16 20:02 startup-memory-budget
+-rw-r--r--@ 1 Ian  staff   35 Oct 16 20:02 watch.env
+watch.env:
+export FM_PAUSE_RESURFACE_SECS=900
