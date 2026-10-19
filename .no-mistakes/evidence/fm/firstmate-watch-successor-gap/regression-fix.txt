@@ -1,0 +1,15 @@
+== FIX (target 64a1d70) ==
+ok - Pi restoration retries a dead-but-ready successor before delivering the wake
+RESULT test_pi_dead_ready_successor_is_retried_before_delivery exit=0
+ok - Pi successor exit with a held pipe schedules the bounded retry
+RESULT test_pi_successor_exit_with_held_pipe_schedules_retry exit=0
+ok - Pi actionable output draining after exit stays actionable
+RESULT test_pi_actionable_line_draining_after_exit_stays_actionable exit=0
+ok - Pi actionable close starts one successor before wake delivery settles
+RESULT test_pi_actionable_close_starts_single_successor_before_delivery exit=0
+ok - Pi actionable output waits for predecessor close before successor restoration
+RESULT test_pi_actionable_output_waits_for_predecessor_close exit=0
+ok - Pi repair starts a fresh arm instead of no-opping on a dead child
+RESULT test_pi_repair_starts_fresh_arm_over_dead_child exit=0
+ok - Pi scheduled retry starts a fresh arm instead of stalling on a dead child
+RESULT test_pi_scheduled_retry_starts_fresh_arm_over_dead_child exit=0

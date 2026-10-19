@@ -1,0 +1,27 @@
+[Extension issues]                                     
+  ~/.pi/agent/npm/node_modules/pi-web-access/package.json                                                     
+    Host-provided extension packages must be declared in peerDependencies with a "*" range, not dependencies: typebox. Installed copies can bypass the extension loader and create duplicate runtime modules.               
+ Warning: Extension package "~/.pi/agent/npm/node_modules/pi-web-access/package.json": Host-provided extension packages must be declared in peerDependencies with a "*" range, not dependencies: typebox.          
+ Installed copies can bypass the extension loader and create duplicate runtime modules.                       
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys on` to ~/.tmux.conf and restart tmux.                                                                                      
+ Lab readiness probe from bin/fm-live-lab.sh. Run no tool or command for this message. Reply with only the word LABREADY, a hyphen, and then 32f416b091c3, with no spaces.                                                  
+ Error: 402 {"type":"error","error":{"type":"billing_error","message":"This request requires more credits, or fewer max_tokens. You requested up to 64000 tokens, but can only afford 13802. To increase, visit             
+ https://openrouter.ai/settings/credits and add more credits","error_type":"payment_required"},"request_id":"gen-1792382361-Bv0kMK2ReWnHm9DJG6Vy","metadata":{"limit_source":"openrouter_credits","remedy_hint":"Add        
+ credits at https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining balance.","provider_name":null,"previous_errors":[{"code":402,"message":"This request requires more credits, or 
+ fewer max_tokens. You requested up to 64000 tokens, but can only afford 13802. To increase, visit https://openrouter.ai/settings/credits and add more credits"}]}}                                                         
+ If this looks like a pi bug, /bug sends a report to the developers.                                          
+ ⁣FIRSTMATE_OP: v1 turn-end-guard: TURN WOULD END BLIND - supervision is off. The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction below before ending the turn.                      
+ ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                                                                                                                                                   
+ ●  TURN WOULD END BLIND - SUPERVISION IS OFF                                                                                                                                                                               
+ ●  1 task(s) in flight, but no live watcher holds this home lock (last beat: never).                                                                                                                                       
+ ●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.4mKzd4/home/.pi/extensions/fm-primary-turnend-guard.ts  
+ -e /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.4mKzd4/home/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.                                                                      
+ ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                                                                                                                                                   
+ Error: 402 {"type":"error","error":{"type":"billing_error","message":"This request requires more credits, or fewer max_tokens. You requested up to 64000 tokens, but can only afford 13802. To increase, visit             
+ https://openrouter.ai/settings/credits and add more credits","error_type":"payment_required"},"request_id":"gen-1792382361-sNQpVAk5m3S1saaizSnK","metadata":{"limit_source":"openrouter_credits","remedy_hint":"Add        
+ credits at https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining balance.","provider_name":null,"previous_errors":[{"code":402,"message":"This request requires more credits, or 
+ fewer max_tokens. You requested up to 64000 tokens, but can only afford 13802. To increase, visit https://openrouter.ai/settings/credits and add more credits"}]}}                                                         
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.4mKzd4/home (main)
+2.7%/1.0M (auto)                                                                                                                                                           (openrouter) anthropic/claude-sonnet-4.5 • medium

@@ -1,0 +1,29 @@
+ watcher: started Pi extension arm child 1; future ordinary re-arms are automatic; call fm_watch_arm_pi again only after a later notification says the cycle is missing, failed, or unhealthy                               
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.ISmhuR/home/state/lab676c336ccd77-worker.status                                                   
+ /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.ISmhuR/home/state/lab676c336ccd77-worker.turn-ended                                                                                                         
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.                                                                                                                          
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: Retry failed after 3 attempts: OpenAI WebSocket error: Unknown error (code=unknown)                   
+ ⛵ Supervision branch paused after repeated provider errors; main will handle wakes while it cools down.     
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.ISmhuR/home/state/lab676c336ccd77-worker.status                                                   
+ /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.ISmhuR/home/state/lab676c336ccd77-worker.turn-ended                                                                                                         
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.                                                                                                                          
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: Retry failed after 3 attempts: OpenAI WebSocket error: Unknown error (code=unknown)                   
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: stale: firstmate:fm-lab676c336ccd77-worker                                                                                                                               
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.                                                                                                                          
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: OpenAI WebSocket error: Unknown error (code=unknown)                                                  
+ Error: Retry failed after 3 attempts: OpenAI WebSocket error: Unknown error (code=unknown)                   
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fmlab.ISmhuR/home (main)
+$0.000 (sub) 6.7%/400k (auto)                                                                                                                                                                    (openai) gpt-5.4-mini • low

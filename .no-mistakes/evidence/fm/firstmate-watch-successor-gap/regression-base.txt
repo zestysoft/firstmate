@@ -1,0 +1,23 @@
+== BASE (45dd50a) extension ==
+not ok - Pi restoration must retry a dead-but-ready successor before delivering the wake: file://~/.no-mistakes/worktrees/260e8caa837a/01M594BPWMSKS9T8WEVRWK8SD3/[eval1]:37
+if (failure) throw new Error(failure);
+                   ^
+
+Error: wake reached Pi with no live successor; arms at delivery=2: arm=21928 | arm=22000
+    at file://~/.no-mistakes/worktrees/260e8caa837a/01M594BPWMSKS9T8WEVRWK8SD3/[eval1]:37:20
+
+Node.js v26.12.0: expected exit 0, got 1
+RESULT test_pi_dead_ready_successor_is_retried_before_delivery exit=1
+not ok - Pi successor exit with a held pipe must schedule the bounded retry: file://~/.no-mistakes/worktrees/260e8caa837a/01M594BPWMSKS9T8WEVRWK8SD3/[eval1]:36
+if (failure) throw new Error(failure);
+                   ^
+
+Error: successor exit with a held pipe left no retry: arm=22639 | arm=22695
+    at file://~/.no-mistakes/worktrees/260e8caa837a/01M594BPWMSKS9T8WEVRWK8SD3/[eval1]:36:20
+
+Node.js v26.12.0: expected exit 0, got 1
+RESULT test_pi_successor_exit_with_held_pipe_schedules_retry exit=1
+ok - Pi actionable output draining after exit stays actionable
+RESULT test_pi_actionable_line_draining_after_exit_stays_actionable exit=0
+ok - Pi actionable close starts one successor before wake delivery settles
+RESULT test_pi_actionable_close_starts_single_successor_before_delivery exit=0

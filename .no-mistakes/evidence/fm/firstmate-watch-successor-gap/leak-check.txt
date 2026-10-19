@@ -1,0 +1,13 @@
+fix: ok - Pi scheduled retry starts a fresh arm instead of stalling on a dead child;ok - Pi repair starts a fresh arm instead of no-opping on a dead child;ok - Pi restoration retries a dead-but-ready successor before delivering the wak;ok - Pi successor exit with a held pipe schedules the bounded retry;
+  leaks: 27669 Wed Oct 14 11:40:55 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.3RGeSq/pi-stale-child-holder.sh /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.3RGeSq/pi-stale-child.stop
+29736 Wed Oct 14 03:35:42 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.emnM0Z/pi-stale-child-holder.sh /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.emnM0Z/pi-stale-child.stop
+base: ok - Pi scheduled retry starts a fresh arm instead of stalling on a dead child;ok - Pi repair starts a fresh arm instead of no-opping on a dead child;not ok - Pi restoration must retry a dead-but-ready successor before delivering ;not ok - Pi successor exit with a held pipe must schedule the bounded retry: fil;
+  leaks: none
+fix: ok - Pi scheduled retry starts a fresh arm instead of stalling on a dead child;ok - Pi repair starts a fresh arm instead of no-opping on a dead child;ok - Pi restoration retries a dead-but-ready successor before delivering the wak;ok - Pi successor exit with a held pipe schedules the bounded retry;
+  leaks: none
+base: ok - Pi scheduled retry starts a fresh arm instead of stalling on a dead child;ok - Pi repair starts a fresh arm instead of no-opping on a dead child;not ok - Pi restoration must retry a dead-but-ready successor before delivering ;not ok - Pi successor exit with a held pipe must schedule the bounded retry: fil;
+  leaks: none
+fix: ok - Pi scheduled retry starts a fresh arm instead of stalling on a dead child;ok - Pi repair starts a fresh arm instead of no-opping on a dead child;ok - Pi restoration retries a dead-but-ready successor before delivering the wak;ok - Pi successor exit with a held pipe schedules the bounded retry;
+  leaks: none
+base: ok - Pi scheduled retry starts a fresh arm instead of stalling on a dead child;ok - Pi repair starts a fresh arm instead of no-opping on a dead child;not ok - Pi restoration must retry a dead-but-ready successor before delivering ;not ok - Pi successor exit with a held pipe must schedule the bounded retry: fil;
+  leaks: none
