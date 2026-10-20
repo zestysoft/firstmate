@@ -1,0 +1,70 @@
+
+=== codex real apply, unavailable worker ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.l/codex
+saved config/codex-approval-mode=approve-for-me; approvals use a model reviewer
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.l/codex
+REFUSED: task task has a missing, empty, or ambiguous window endpoint; preserving task state.
+error: fallback saved, but worker recovery failed; preserve work and reconcile through fm-control
+persisted setting: approve-for-me
+published file links: 1
+=== repeat preserves explicit setting ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.l/codex
+error: config/codex-approval-mode already exists; nothing overwritten
+preserved setting: bypass
+=== other actor refuses before publication ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.l/codex
+error: managed approval failover refused - task 'task' is leased to the branch supervision actor (state/.lease-task), which is handling that task right now; leave the lease alone (never remove or clear it) and retry after that actor releases it, which it does when its handling ends
+=== primary authoritative local and remote inheritance ===
+removed: config/codex-approval-mode
+primary absent: local and remote mode removed
+pushed: config/codex-approval-mode
+primary explicit: local=bypass
+remote=bypass
+
+=== claude real apply, unavailable worker ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.l/claude
+saved config/claude-permission-mode=auto; approvals use a model reviewer
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.l/claude
+REFUSED: task task has a missing, empty, or ambiguous window endpoint; preserving task state.
+error: fallback saved, but worker recovery failed; preserve work and reconcile through fm-control
+persisted setting: auto
+published file links: 1
+=== repeat preserves explicit setting ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.l/claude
+error: config/claude-permission-mode already exists; nothing overwritten
+preserved setting: bypass
+=== other actor refuses before publication ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.l/claude
+error: managed approval failover refused - task 'task' is leased to the branch supervision actor (state/.lease-task), which is handling that task right now; leave the lease alone (never remove or clear it) and retry after that actor releases it, which it does when its handling ends
+=== primary authoritative local and remote inheritance ===
+removed: config/claude-permission-mode
+primary absent: local and remote mode removed
+pushed: config/claude-permission-mode
+primary explicit: local=bypass
+remote=bypass
+
+=== gate refuses nonlab home before any mutation ===
+error: no-mistakes gate agent must not drive the fleet (NO_MISTAKES_GATE set)
+nonlab home unchanged
+
+=== codex simultaneous apply requests ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.race-lab/codex
+saved config/codex-approval-mode=approve-for-me; approvals use a model reviewer
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.race-lab/codex
+REFUSED: task task has a missing, empty, or ambiguous window endpoint; preserving task state.
+error: fallback saved, but worker recovery failed; preserve work and reconcile through fm-control
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.race-lab/codex
+File exists
+error: could not publish config/codex-approval-mode; nothing overwritten
+exactly one request published the fallback
+
+=== claude simultaneous apply requests ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.race-lab/claude
+saved config/claude-permission-mode=auto; approvals use a model reviewer
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.race-lab/claude
+REFUSED: task task has a missing, empty, or ambiguous window endpoint; preserving task state.
+error: fallback saved, but worker recovery failed; preserve work and reconcile through fm-control
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.race-lab/claude
+File exists
+error: could not publish config/claude-permission-mode; nothing overwritten
+exactly one request published the fallback
