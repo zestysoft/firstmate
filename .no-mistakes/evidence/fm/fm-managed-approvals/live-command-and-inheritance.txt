@@ -1,0 +1,46 @@
+
+### codex: save fallback with missing worker
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C4MRN0QJ3TBNPNXJ7Q6MTZ/.l
+saved config/codex-approval-mode=approve-for-me; approvals use a model reviewer
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C4MRN0QJ3TBNPNXJ7Q6MTZ/.l
+REFUSED: task task has a missing, empty, or ambiguous window endpoint; preserving task state.
+error: fallback saved, but worker recovery failed; preserve work and reconcile through fm-control
+saved setting has one link
+persisted: codex-approval-mode=approve-for-me; recovery correctly reported failure
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C4MRN0QJ3TBNPNXJ7Q6MTZ/.l
+error: config/codex-approval-mode already exists; nothing overwritten
+repeat call preserved setting
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C4MRN0QJ3TBNPNXJ7Q6MTZ/.l
+error: managed approval failover refused - task 'task' is leased to the branch supervision actor (state/.lease-task), which is handling that task right now; leave the lease alone (never remove or clear it) and retry after that actor releases it, which it does when its handling ends
+foreign live lease refused before setting creation
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C4MRN0QJ3TBNPNXJ7Q6MTZ/.l
+error: config/codex-approval-mode already exists; nothing overwritten
+explicit bypass preserved
+unchanged: config/codex-approval-mode
+primary absence preserved local and remote fallback
+pushed: config/codex-approval-mode
+explicit primary replaced local and remote settings
+
+### claude: save fallback with missing worker
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C4MRN0QJ3TBNPNXJ7Q6MTZ/.l
+saved config/claude-permission-mode=auto; approvals use a model reviewer
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C4MRN0QJ3TBNPNXJ7Q6MTZ/.l
+REFUSED: task task has a missing, empty, or ambiguous window endpoint; preserving task state.
+error: fallback saved, but worker recovery failed; preserve work and reconcile through fm-control
+saved setting has one link
+persisted: claude-permission-mode=auto; recovery correctly reported failure
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C4MRN0QJ3TBNPNXJ7Q6MTZ/.l
+error: config/claude-permission-mode already exists; nothing overwritten
+repeat call preserved setting
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C4MRN0QJ3TBNPNXJ7Q6MTZ/.l
+error: managed approval failover refused - task 'task' is leased to the branch supervision actor (state/.lease-task), which is handling that task right now; leave the lease alone (never remove or clear it) and retry after that actor releases it, which it does when its handling ends
+foreign live lease refused before setting creation
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C4MRN0QJ3TBNPNXJ7Q6MTZ/.l
+error: config/claude-permission-mode already exists; nothing overwritten
+explicit bypass preserved
+unchanged: config/claude-permission-mode
+primary absence preserved local and remote fallback
+pushed: config/claude-permission-mode
+explicit primary replaced local and remote settings
+error: no-mistakes gate agent must not drive the fleet (NO_MISTAKES_GATE set)
+unmarked home refused before lease or config mutation
