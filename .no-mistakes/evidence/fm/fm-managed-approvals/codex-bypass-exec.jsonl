@@ -1,0 +1,11 @@
+Reading additional input from stdin...
+{"type":"thread.started","thread_id":"01a1583d-09d1-7693-91be-8731c2f4cf8b"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"Configured value for `approval_policy` is disallowed by requirements; falling back to required value UnlessTrusted. Details: invalid value for `approval_policy`: `Never` is not in the allowed set [UnlessTrusted, OnRequest] (set by MDM com.openai.codex:requirements_toml_base64)"}}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"Captain, I’ll run `pwd -P` once and report the result."}}
+{"type":"item.started","item":{"id":"item_2","type":"command_execution","command":"/bin/zsh -lc 'pwd -P'","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+2026-10-20T07:36:05.285754Z ERROR codex_app_server::bespoke_event_handling: request failed with client error: JSONRPCErrorError { code: -32000, data: None, message: "command execution approval is not supported in exec mode for thread `01a1583d-09d1-7693-91be-8731c2f4cf8b`" }
+{"type":"item.completed","item":{"id":"item_2","type":"command_execution","command":"/bin/zsh -lc 'pwd -P'","aggregated_output":"","exit_code":null,"status":"failed"}}
+2026-10-20T07:36:05.285971Z ERROR codex_core::tools::router: error=exec_command failed: CreateProcess { message: "Rejected(\"approval request failed\")" }
+{"type":"item.completed","item":{"id":"item_3","type":"agent_message","text":"Captain, the single attempt failed with this exact tool error:\n\n```text\nexec_command failed: CreateProcess { message: \"Rejected(\\\"approval request failed\\\")\" }\n```"}}
+{"type":"turn.completed","usage":{"input_tokens":53691,"cached_input_tokens":34688,"cache_write_input_tokens":0,"output_tokens":95,"reasoning_output_tokens":0}}

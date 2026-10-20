@@ -1,0 +1,38 @@
+/Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C3EN3MHN8VAKBRM8KNB1RP/.fm-lab.PIkbyW
+=== codex: another actor's live lease ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C3EN3MHN8VAKBRM8KNB1RP/.fm-lab.PIkbyW
+error: managed approval failover refused - task 'probe' is leased to the branch supervision actor (state/.lease-probe), which is handling that task right now; leave the lease alone (never remove or clear it) and retry after that actor releases it, which it does when its handling ends
+=== codex: missing endpoint reports saved fallback and incomplete recovery ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C3EN3MHN8VAKBRM8KNB1RP/.fm-lab.PIkbyW
+saved config/codex-approval-mode=approve-for-me; approvals use a model reviewer
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C3EN3MHN8VAKBRM8KNB1RP/.fm-lab.PIkbyW
+REFUSED: task probe has a missing, empty, or ambiguous window endpoint; preserving task state.
+error: fallback saved, but worker recovery failed; preserve work and reconcile through fm-control
+saved=/Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C3EN3MHN8VAKBRM8KNB1RP/.fm-lab.PIkbyW/config/codex-approval-mode links=1
+=== codex: explicit setting protected ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C3EN3MHN8VAKBRM8KNB1RP/.fm-lab.PIkbyW
+error: config/codex-approval-mode already exists; nothing overwritten
+=== claude: another actor's live lease ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C3EN3MHN8VAKBRM8KNB1RP/.fm-lab.PIkbyW
+error: managed approval failover refused - task 'probe' is leased to the branch supervision actor (state/.lease-probe), which is handling that task right now; leave the lease alone (never remove or clear it) and retry after that actor releases it, which it does when its handling ends
+=== claude: missing endpoint reports saved fallback and incomplete recovery ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C3EN3MHN8VAKBRM8KNB1RP/.fm-lab.PIkbyW
+saved config/claude-permission-mode=auto; approvals use a model reviewer
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C3EN3MHN8VAKBRM8KNB1RP/.fm-lab.PIkbyW
+REFUSED: task probe has a missing, empty, or ambiguous window endpoint; preserving task state.
+error: fallback saved, but worker recovery failed; preserve work and reconcile through fm-control
+saved=/Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C3EN3MHN8VAKBRM8KNB1RP/.fm-lab.PIkbyW/config/claude-permission-mode links=1
+=== claude: explicit setting protected ===
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5C3EN3MHN8VAKBRM8KNB1RP/.fm-lab.PIkbyW
+error: config/claude-permission-mode already exists; nothing overwritten
+local absent primary: codex-approval-mode=approve-for-me
+unchanged: config/codex-approval-mode
+explicit primary: codex-approval-mode=bypass
+pushed: config/codex-approval-mode
+local absent primary: claude-permission-mode=auto
+unchanged: config/claude-permission-mode
+explicit primary: claude-permission-mode=bypass
+pushed: config/claude-permission-mode
+=== gate refusal before lease cleanup in an unmarked disposable home ===
+error: no-mistakes gate agent must not drive the fleet (NO_MISTAKES_GATE set)
+All public-interface boundary assertions satisfied

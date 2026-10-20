@@ -1,0 +1,10 @@
+Reading additional input from stdin...
+{"type":"thread.started","thread_id":"01a1583a-7c1e-74c1-9bc9-33f371b1cf7c"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"Captain, I’ll run the exact command, read the file, and stop."}}
+{"type":"item.started","item":{"id":"item_1","type":"command_execution","command":"/bin/zsh -lc 'printf codex-managed-ok > .approval-cli-probe/codex.txt'","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_1","type":"command_execution","command":"/bin/zsh -lc 'printf codex-managed-ok > .approval-cli-probe/codex.txt'","aggregated_output":"","exit_code":0,"status":"completed"}}
+{"type":"item.started","item":{"id":"item_2","type":"command_execution","command":"/bin/zsh -lc 'cat .approval-cli-probe/codex.txt'","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_2","type":"command_execution","command":"/bin/zsh -lc 'cat .approval-cli-probe/codex.txt'","aggregated_output":"codex-managed-ok","exit_code":0,"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_3","type":"agent_message","text":"Captain, the file contains: `codex-managed-ok`"}}
+{"type":"turn.completed","usage":{"input_tokens":85952,"cached_input_tokens":56960,"cache_write_input_tokens":0,"output_tokens":116,"reasoning_output_tokens":0}}
