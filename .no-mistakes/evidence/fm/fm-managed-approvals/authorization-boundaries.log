@@ -1,0 +1,10 @@
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5FZWDRH0GVV50DFXZZ5X38S/.phase-lease.QgQHdG
+error: managed approval failover refused - task 'task' is leased to the branch supervision actor (state/.lease-task), which is handling that task right now; leave the lease alone (never remove or clear it) and retry after that actor releases it, which it does when its handling ends
+codex: another actor's live lease refuses apply (exit=6), preserves configuration and task status
+error: no-mistakes gate agent must not drive the fleet (NO_MISTAKES_GATE set)
+codex: gate caller refused (exit=3) before configuration or lease-lock mutation
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5FZWDRH0GVV50DFXZZ5X38S/.phase-lease.QgQHdG
+error: managed approval failover refused - task 'task' is leased to the branch supervision actor (state/.lease-task), which is handling that task right now; leave the lease alone (never remove or clear it) and retry after that actor releases it, which it does when its handling ends
+claude: another actor's live lease refuses apply (exit=6), preserves configuration and task status
+error: no-mistakes gate agent must not drive the fleet (NO_MISTAKES_GATE set)
+claude: gate caller refused (exit=3) before configuration or lease-lock mutation

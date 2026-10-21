@@ -1,6 +1,6 @@
 ok - codex refuses gate callers before configuration, lease or lifecycle mutation
 ok - codex permits disposable lab recovery only through its stock layout
-ok - codex publishes a single-linked setting usable by remote inheritance during recovery
+ok - codex publishes a single-linked setting before interrupt and relaunch
 error: config/codex-approval-mode already exists; nothing overwritten
 ok - codex writes once and relaunches through the lifecycle owner
 error: config/codex-approval-mode already exists; nothing overwritten
@@ -24,7 +24,7 @@ ok - codex needs no detector state and refuses contradictory or remote records
 ok - codex keeps the setting while reporting incomplete recovery
 ok - claude refuses gate callers before configuration, lease or lifecycle mutation
 ok - claude permits disposable lab recovery only through its stock layout
-ok - claude publishes a single-linked setting usable by remote inheritance during recovery
+ok - claude publishes a single-linked setting before interrupt and relaunch
 error: config/claude-permission-mode already exists; nothing overwritten
 ok - claude writes once and relaunches through the lifecycle owner
 error: config/claude-permission-mode already exists; nothing overwritten
@@ -46,6 +46,6 @@ error: the recorded launch did not use bypass; nothing changed
 error: invoke failover in the remote worker owning home
 ok - claude needs no detector state and refuses contradictory or remote records
 ok - claude keeps the setting while reporting incomplete recovery
-ok - codex-approval-mode preserves home-local values on primary absence and honors explicit primary precedence locally and remotely
-ok - claude-permission-mode preserves home-local values on primary absence and honors explicit primary precedence locally and remotely
+ok - codex-approval-mode follows primary values and absence locally and remotely
+ok - claude-permission-mode follows primary values and absence locally and remotely
 # all fm-approval-failover tests passed
