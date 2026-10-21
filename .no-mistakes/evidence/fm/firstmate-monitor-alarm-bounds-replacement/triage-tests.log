@@ -1,0 +1,4 @@
+ok - an unknown-but-alive pane with progress evidence alarms once per bounded pause-resurface window
+rc=0
+ok - an unknown-but-alive pane without progress evidence keeps surfacing every new hash
+rc=0
