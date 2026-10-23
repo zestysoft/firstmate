@@ -1,0 +1,8 @@
+== base bin/fm-wake-lib.sh (5d718d5d) ==
+t=1s: waiter still waiting while lock dir exists (correct)
+3s after removing the dir: waiter STILL POLLING (would spin forever)
+
+== this change bin/fm-wake-lib.sh ==
+t=1s: waiter still waiting while lock dir exists (correct)
+waiter returned rc=1
+waiter exited .42s after removing the dir
