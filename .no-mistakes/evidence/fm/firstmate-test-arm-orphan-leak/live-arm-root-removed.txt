@@ -1,0 +1,61 @@
+== new rev=e02b4ad4 mode=owned root=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.o3sXhT/root
+watcher: started pid=26929 (beacon fresh)
+removing root
+arm under test exited=yes rc=1 after 4.75s (10s cap)
+-- owner arm output:
+watcher: started pid=26929 (beacon fresh)
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.o3sXhT/root/bin/fm-push-transition-lib.sh: line 83: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.o3sXhT/root/state/.watch-triage.log: No such file or directory
+touch: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.o3sXhT/root/state/.last-check: No such file or directory
+touch: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.o3sXhT/root/state/.last-heartbeat: No such file or directory
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.o3sXhT/root/bin/fm-watch.sh: line 4054: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.o3sXhT/root/state/.heartbeat-streak: No such file or directory
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.o3sXhT/root/bin/fm-push-transition-lib.sh: line 82: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.o3sXhT/root/state/.watch-triage.log: No such file or directory
+watcher: exiting - home no longer exists: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.o3sXhT/root
+watcher: FAILED - watcher cycle exited 1 without an actionable reason
+-- processes still naming /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.o3sXhT:
+NONE
+
+== old rev=f3252b21 mode=owned root=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.etaGWm/root
+watcher: started pid=38083 (beacon fresh)
+removing root
+arm under test exited=yes rc=1 after 4.71s (10s cap)
+-- owner arm output:
+watcher: started pid=38083 (beacon fresh)
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.etaGWm/root/bin/fm-push-transition-lib.sh: line 82: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.etaGWm/root/state/.watch-triage.log: No such file or directory
+touch: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.etaGWm/root/state/.last-check: No such file or directory
+touch: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.etaGWm/root/state/.last-heartbeat: No such file or directory
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.etaGWm/root/bin/fm-watch.sh: line 4054: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.etaGWm/root/state/.heartbeat-streak: No such file or directory
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.etaGWm/root/bin/fm-push-transition-lib.sh: line 82: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.etaGWm/root/state/.watch-triage.log: No such file or directory
+watcher: exiting - home no longer exists: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.etaGWm/root
+watcher: FAILED - watcher cycle exited 1 without an actionable reason
+-- processes still naming /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.etaGWm:
+NONE
+
+== new rev=e02b4ad4 mode=attached root=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.0sGkaJ/root
+watcher: started pid=51575 (beacon fresh)
+watcher: attached pid=51575 (beacon 0s)
+removing root
+arm under test exited=yes rc=1 after 3.53s (10s cap)
+-- owner arm output:
+watcher: started pid=51575 (beacon fresh)
+watcher: exiting - home no longer exists: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.0sGkaJ/root
+-- attached arm output:
+watcher: attached pid=51575 (beacon 0s)
+watcher: FAILED - arm ground removed: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.0sGkaJ/root/bin/fm-watch-arm.sh no longer exists
+-- processes still naming /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.0sGkaJ:
+51498 51493 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.0sGkaJ/root/bin/fm-watch-arm.sh --restart
+
+== old rev=f3252b21 mode=attached root=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.MxAEzV/root
+watcher: started pid=59764 (beacon fresh)
+watcher: attached pid=59764 (beacon 0s)
+removing root
+arm under test exited=no rc=1 after 23.10s (10s cap)
+-- owner arm output:
+watcher: started pid=59764 (beacon fresh)
+watcher: exiting - home no longer exists: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.MxAEzV/root
+watcher: FAILED - watcher cycle exited 1 without an actionable reason
+-- attached arm output:
+watcher: attached pid=59764 (beacon 0s)
+watcher: FAILED - cycle ended without an actionable reason
+-- processes still naming /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.MxAEzV:
+NONE
+

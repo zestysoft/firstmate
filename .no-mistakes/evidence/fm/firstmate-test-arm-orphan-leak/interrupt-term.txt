@@ -1,0 +1,13 @@
+saw pi-retry-dead-root processes after 2950ms:
+21204 21202 21197 bash tests/fm-pi-watch-extension.test.sh
+31167 21204 21197 bash tests/fm-pi-watch-extension.test.sh
+31170 31167 31170 perl -e \012    setpgrp(0, 0) or exit 125;\012    shift;\012    my $pid = fork() // exit 125;\012    if (!$pid) { exec { $ARGV[0] } @ARGV or exit 127; }\012    waitpid($pid, 0);\012    exit(($? & 127) ? 128 + ($? & 127) : $? >> 8);\012   /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.OQCzF1/ node --input-type=module
+31384     1 31170 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.OQCzF1/pi-retry-dead-root/bin/fm-watch-arm.sh --restart
+31444     1 31170 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.OQCzF1/pi-retry-dead-root/bin/fm-watch-arm.sh --restart
+TMP_ROOT=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.OQCzF1
+sending SIGTERM to runner 21204
+runner rc=143
+processes naming TMP_ROOT at end:
+NONE
+parent-pid-1 processes from fm-pi-watch-extension temp paths:
+NONE

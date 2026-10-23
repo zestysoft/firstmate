@@ -1,0 +1,15 @@
+saw pi-retry-dead-root processes after 2800ms:
+45943 45934 45919 bash tests/fm-pi-watch-extension.test.sh
+61140 45943 45919 bash tests/fm-pi-watch-extension.test.sh
+61141 61140 61141 perl -e \012    setpgrp(0, 0) or exit 125;\012    shift;\012    my $pid = fork() // exit 125;\012    if (!$pid) { exec { $ARGV[0] } @ARGV or exit 127; }\012    waitpid($pid, 0);\012    exit(($? & 127) ? 128 + ($? & 127) : $? >> 8);\012   /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.caUG0d/ node --input-type=module
+61153     1 61141 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.caUG0d/pi-retry-dead-root/bin/fm-watch-arm.sh --restart
+61165     1 61141 bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.caUG0d/pi-retry-dead-root/bin/fm-watch-arm.sh --restart
+TMP_ROOT=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.caUG0d
+sending SIGKILL to runner 45943
+runner rc=137
+processes naming TMP_ROOT after SIGKILL (before root removal):
+removing root /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-pi-watch-extension.caUG0d (as fm_test_reap_orphans would)
+processes naming TMP_ROOT at end:
+NONE
+parent-pid-1 processes from fm-pi-watch-extension temp paths:
+NONE

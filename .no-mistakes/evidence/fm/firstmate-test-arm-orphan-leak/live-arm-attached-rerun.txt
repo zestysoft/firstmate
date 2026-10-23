@@ -1,0 +1,15 @@
+== new rev=e02b4ad4 mode=attached root=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.1QgWC1/root
+watcher: started pid=92251 (beacon fresh)
+watcher: attached pid=92251 (beacon 0s)
+removing root
+rm took 0.02s
+arm under test exited=yes rc=1 after 3.89s (10s cap)
+-- owner arm output:
+watcher: started pid=92251 (beacon fresh)
+watcher: exiting - home no longer exists: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.1QgWC1/root
+-- attached arm output:
+watcher: attached pid=92251 (beacon 0s)
+watcher: FAILED - arm ground removed: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.1QgWC1/root/bin/fm-watch-arm.sh no longer exists
+owner arm alive after extra wait: no
+-- processes still naming /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-live-arm.1QgWC1:
+NONE

@@ -1,0 +1,1 @@
+bash tests/fm-watch-arm.test.sh > $E/watch-arm-suite.log 2>&1  28.24s user 52.44s system 50% cpu 2:38.89 total
