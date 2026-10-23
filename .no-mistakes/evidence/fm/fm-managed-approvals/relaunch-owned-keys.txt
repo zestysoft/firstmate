@@ -1,0 +1,54 @@
+=== opencode: fresh spawn
+spawn exit=0
+harness=opencode
+opencode_version=2.0.21
+spawn_gen=s1792743723.93398.4097
+=== opencode: relaunch
+warning: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-spawn-dispatch-profile.uvREbg/scn-opencode/home/data/relaunch-opencode-k9/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+spawned relaunch-opencode-k9 harness=opencode kind=ship mode=no-mistakes yolo=off window=firstmate:fm-relaunch-opencode-k9 worktree=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-spawn-dispatch-profile.uvREbg/scn-opencode/wt
+relaunch exit=0
+harness=opencode
+opencode_version=2.0.21
+spawn_gen=s1792743726.95495.16925
+captain_note=keep-me
+count opencode_version=1
+count approval_mode=0
+count spawn_gen=1
+count captain_note=1
+relaunch launch flags: --standalone 
+=== codex: fresh spawn
+spawn exit=0
+harness=codex
+approval_mode=approve-for-me
+spawn_gen=s1792743730.97549.6823
+=== codex: relaunch
+warning: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-spawn-dispatch-profile.uvREbg/scn-codex/home/data/relaunch-codex-k9/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+spawned relaunch-codex-k9 harness=codex kind=ship mode=no-mistakes yolo=off window=firstmate:fm-relaunch-codex-k9 worktree=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-spawn-dispatch-profile.uvREbg/scn-codex/wt
+relaunch exit=0
+harness=codex
+approval_mode=approve-for-me
+spawn_gen=s1792743733.99363.6465
+captain_note=keep-me
+count opencode_version=0
+count approval_mode=1
+count spawn_gen=1
+count captain_note=1
+relaunch launch flags: 
+=== claude: fresh spawn
+spawn exit=0
+harness=claude
+approval_mode=auto
+spawn_gen=s1792743741.1217.21684
+=== claude: relaunch
+warning: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-spawn-dispatch-profile.uvREbg/scn-claude/home/data/relaunch-claude-k9/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+spawned relaunch-claude-k9 harness=claude kind=ship mode=no-mistakes yolo=off window=firstmate:fm-relaunch-claude-k9 worktree=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-spawn-dispatch-profile.uvREbg/scn-claude/wt
+relaunch exit=0
+harness=claude
+approval_mode=auto
+spawn_gen=s1792743749.7636.28320
+captain_note=keep-me
+count opencode_version=0
+count approval_mode=1
+count spawn_gen=1
+count captain_note=1
+relaunch launch flags: --permission-mode auto 
