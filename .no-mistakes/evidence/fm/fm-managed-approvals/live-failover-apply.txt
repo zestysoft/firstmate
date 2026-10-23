@@ -1,0 +1,20 @@
+bash-5.3$ bin/fm-approval-failover.sh apply s1; echo FAILOVER_S1_EXIT=$?
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.qMuqRo
+error: the recorded launch did not use bypass; nothing changed
+FAILOVER_S1_EXIT=1
+bash-5.3$ bin/fm-approval-failover.sh apply s2; echo FAILOVER_S2_EXIT=$?
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.qMuqRo
+saved config/codex-approval-mode=approve-for-me; approvals use a model reviewer
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.qMuqRo
+interrupt-delivered s2 harness=codex backend=tmux verified=agent-alive cancel=unconfirmed
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.qMuqRo
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.qMuqRo
+relaunched s2 harness=codex from=codex model=default effort=default backend=tmux endpoint=primary:fm-s2 worktree=~/.treehouse/demo-a15046/2/demo
+managed approval failover: s2 relaunched with config/codex-approval-mode=approve-for-me
+FAILOVER_S2_EXIT=0
+bash-5.3$ 
+== after failover: config/codex-approval-mode = approve-for-me
+harness=codex
+approval_mode=approve-for-me
+== relaunched worker pane process args:
+codex --approve-for-me --disable hooks -c notify=["bash","-c","touch '/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd000

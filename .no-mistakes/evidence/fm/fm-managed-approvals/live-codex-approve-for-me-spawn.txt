@@ -1,0 +1,20 @@
+== config/codex-approval-mode: approve-for-me
+== state/s1.meta approval_mode:
+harness=codex
+approval_mode=approve-for-me
+kind=scout
+== codex process args in worker pane:
+codex --approve-for-me --disable hooks -c notify=[
+== worker pane:
+ 
+  Folder access             
+  ~/.treehouse/demo-a15046/1/demo                                                                                                                                                            
+  Note: You’re in a subdirectory of a Git project. Trusting will apply to the repository root:
+  /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.qMuqRo/projects/demo                                                                                                                
+  Trust this folder? Codex can read, edit, and run files here, subject to your permission settings. Folder settings can run code automatically, even without a model request. Continue only if you
+  trust these files. Your trust decision will be saved.
+› 1. Trust and continue                                                                                                                                                                                 
+  2. Quit
+  enter continue · esc quit
+                          
+                 

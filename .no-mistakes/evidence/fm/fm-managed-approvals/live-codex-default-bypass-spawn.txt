@@ -1,0 +1,6 @@
+== config/codex-approval-mode present? ls: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.qMuqRo/config/codex-approval-mode: No such file or directory
+harness=codex
+approval_mode=bypass
+kind=scout
+== worker pane process tree args:
+codex --dangerously-bypass-approvals-and-sandbox --disable hooks

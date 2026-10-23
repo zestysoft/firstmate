@@ -1,4 +1,111 @@
-FM_TEST_BEGIN 2026-10-20T15:46:34Z tests/fm-approval-failover.test.sh family=unclassified expected_gate_skip=none
+FM_TEST_BEGIN 2026-10-22T23:47:08Z tests/fm-task-delivery.test.sh family=pure-contract-unit expected_gate_skip=none
+ok - fm-spawn/fm-promote: authorized intent preserves exact words and refuses operator-address lines
+ok - fm-spawn: every legacy worker receives scoped role instructions without changing project or primary instructions
+ok - fm-spawn: a ship spawn requires a valid explicit mode and yolo before anything is created
+ok - fm-spawn: scout and secondmate spawns refuse ship delivery flags
+ok - fm-spawn: the brief's recorded mode and the spawn's explicit mode must agree
+ok - fm-spawn: a rigor downgrade against the registered posture is announced, never blocked
+ok - fm-spawn: a scout spawn resolves no delivery posture from the registry
+ok - fm-promote: promotion requires the delivery contract and records it exactly once
+ok - fm-promote: a symlinked task record is refused and its target is left untouched
+ok - fm-promote: a promoted worker receives the same mode-specific delivery contract a briefed one does
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ok - fm-promote: a selected branch prefix reaches both worker instructions and durable task state
+Switched to a new branch '$(touch${IFS}/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-test-run.e9k5iO/w1/tmp/fm-task-delivery.E8hrZM/promote-branch-shell-safe-marker)/promote-branch-safe-e3'
+ok - fm-promote: ref-format-valid shell metacharacters stay literal in promotion branch commands
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ok - fm-merge-local: a registry change cannot redirect an in-flight local-only task
+ok - fm-project-mode: the registry lookup matches a whole multi-word name, not just its first token
+ok - fm-project-mode: the conditional policy is accepted, mapped for mechanical callers, and readable raw
+ok - fm-project-mode: the forge binds from its own token and is reported only through --forge
+ok - fm-project-mode: only a malformed forge binding refuses; every other token keeps its old tolerance
+ok - forge=gerrit: yolo is refused with its reason, never silently dropped
+ok - forge=external: promoting a scout is refused because only a ship spawn installs the push guard
+ok - forge=gerrit: no-mistakes runs with its forge steps skipped, recovers its fixes, then publishes one change
+ok - forge=gerrit: direct-PR publishes one squashed change and a stack is refused with its reason
+ok - fm-spawn: a registered forge must reach the worker's brief
+ok - fm-spawn: the brief must carry the spawn's selected ship branch, and the selection is validated before anything is created
+ok - fm-spawn: a ship branch that deviates from the registered prefix is announced, never blocked
+ok - fm-spawn: a registry forge token the parser refuses stops the launch, reason included
+ok - fm-promote: a promoted worker receives the project's registered forge contract with no flag to remember
+ok - forge=forgejo: spawn agreement and promotion carry the binding, name tea, and keep yolo
+ok - fm-spawn/fm-promote: leftover Task placeholders are refused until both subsections are filled
+ok - fm-project-mode: --branch-prefix resolves order-independently and defaults to the legacy fm/ prefix
+# all fm-task-delivery tests passed
+FM_TEST_END 2026-10-22T23:49:52Z tests/fm-task-delivery.test.sh exit=0 duration_ms=164164 gate_skip=false
+FM_TEST_BEGIN 2026-10-22T23:49:52Z tests/fm-secondmate-harness.test.sh family=secondmate expected_gate_skip=none
+ok - A1 fm-harness.sh secondmate resolves the fallback chain; crew mode unchanged
+ok - fm-harness detects only Cursor Agent CLI's exact invocation marker
+ok - C1 fm-harness.sh secondmate-model/secondmate-effort resolve the optional tokens; bare harness stays empty (backward-compat)
+ok - D1 fm-harness.sh honors a mate override line for its id and changes nothing else
+ok - D2 malformed config/secondmate-harness refuses with its line number on every read verb
+ok - D3 a config/secondmate-harness that declares no mate line is never refused
+ok - pi-signed identity: authoritative launch selection distinguishes shared wrapper ancestry
+ok - harness identity: dash-leading ps command names are basename operands, not options
+ok - B1 propagate_inheritable_config: copy, idempotence, convergence, absence-mirror, exclusion, no-op, skip diagnostics
+ok - B2 spawn: secondmate runs the secondmate harness; its home inherits declared config
+ok - B3 spawn: an absent secondmate-harness falls back to the crew harness (backward-compat)
+ok - B4 spawn: no config at all -> own harness and no propagation side effects
+ok - B5 spawn: an explicit per-spawn harness arg overrides config/secondmate-harness
+ok - B6 spawn: an unverified resolved secondmate harness is refused (guard intact)
+skip: cursor executable not resolvable in this environment, so the launch could not be built
+ok - B5b spawn: FM_BACKEND wins over inherited config/backend
+ok - B5c spawn: explicit --backend wins over FM_BACKEND and inherited config/backend
+ok - C2 spawn: a bare harness-only secondmate-harness file launches with no model/effort flag (backward-compat)
+ok - C3 spawn: config/secondmate-harness's model token threads --model into the launch and meta
+ok - C4 spawn: config/secondmate-harness's model+effort tokens thread into the launch and meta
+ok - C10 spawn: a legacy secondmate-harness file still launches on its first line (opt-in scope)
+ok - C11 spawn: a declared pin file that is malformed refuses the spawn with its line number
+ok - C5 spawn: an explicit --model overrides config/secondmate-harness's model token; the file's effort token still applies
+ok - C6 spawn: an explicit --effort overrides config/secondmate-harness's effort token; the file's model token still applies
+ok - C7 spawn: an explicit --harness starts with clean model/effort defaults
+ok - C8 spawn: an explicit --harness still honors explicit model/effort flags
+ok - C9 spawn: secondmate launch pins supervision to its own harness
+ok - C9 spawn: the harness fallback chain still resolves with no tokens; crew/scout launches are unaffected by this feature
+ok - B7 bootstrap sweep pushes, re-converges, and mirrors absence; never inherits secondmate-harness
+ok - B8 bootstrap sweep propagates config even when the home's tracked files are already current
+ok - B9 bootstrap sweep defers new inherited config until the home ignores it
+ok - B10 bootstrap sweep materializes and inherits the startup-memory default while fast-forwarding
+ok - B12b backend inheritance: present values and primary absence converge exactly
+ok - C2b spawn: config/claude-permission-mode=auto reaches a Claude secondmate launch
+ok - claude secondmate launches cover the parent-home steering inbox in auto and bypass modes
+ok - B12c approval modes follow primary values and primary absence
+ok - B12c presentation inheritance: the primary default converges on, and only an explicit opt-out propagates off
+ok - B11 bootstrap sweep surfaces config propagation failures
+ok - B11 bootstrap rereads completed config writes after partial propagation
+ok - B12 config-push propagates via shared live discovery, reports items, rereads on change only, and does not fast-forward
+ok - B13 config-push reports dirty, non-allowing, and invalid homes without failing warnings-only runs
+ok - B14 config-push exits nonzero on real propagation errors
+ok - B14 config-push rereads completed config writes after partial propagation
+ok - B15 config reread is per-home, exact-byte, ordered, and pointer-only
+ok - B16 config reread isolation, ABSENT, generation safety, send failure, and retry
+ok - B20 config reread publication failures retain exact generations for retry
+ok - B21 config reread instruction-write failures retain exact retry generations
+ok - B21 config reread preserves exact bytes when temporary adoption also fails
+ok - B21 config reread serializes concurrent propagation and delivery
+ok - B22 full config reread retry queues drain before new publication
+ok - B23 mixed config reread delivery failures still bound sent history
+ok - B26 config reread delivery stops after the oldest failed generation
+ok - B17 config reread skips unchanged homes and reads destination post-write bytes
+ok - B18 bootstrap config reread path works; spawn flexibility remains defaults-only
+ok - B19 bootstrap respawns before inherited-config reread
+ok - B25 spawn quarantines stale rereads without blocking relaunch
+ok - B24 bootstrap detect-only mode remains filesystem read-only
+# all fm-secondmate-harness tests passed
+FM_TEST_END 2026-10-22T23:56:51Z tests/fm-secondmate-harness.test.sh exit=0 duration_ms=418921 gate_skip=false
+FM_TEST_BEGIN 2026-10-22T23:56:51Z tests/fm-approval-failover.test.sh family=unclassified expected_gate_skip=none
 ok - codex refuses gate callers before configuration, lease or lifecycle mutation
 ok - codex permits disposable lab recovery only through its stock layout
 ok - codex publishes a single-linked setting before interrupt and relaunch
@@ -50,8 +157,8 @@ ok - claude keeps the setting while reporting incomplete recovery
 ok - codex-approval-mode follows primary values and absence locally and remotely
 ok - claude-permission-mode follows primary values and absence locally and remotely
 # all fm-approval-failover tests passed
-FM_TEST_END 2026-10-20T15:47:06Z tests/fm-approval-failover.test.sh exit=0 duration_ms=31834 gate_skip=false
-FM_TEST_BEGIN 2026-10-20T15:47:06Z tests/fm-spawn-dispatch-profile.test.sh family=backend-dispatch expected_gate_skip=none
+FM_TEST_END 2026-10-22T23:57:01Z tests/fm-approval-failover.test.sh exit=0 duration_ms=9945 gate_skip=false
+FM_TEST_BEGIN 2026-10-22T23:57:01Z tests/fm-spawn-dispatch-profile.test.sh family=backend-dispatch expected_gate_skip=none
 ok - allowlist=absent preserves the operational floor and filters only when opted in
 ok - allowlist=missing-config preserves the operational floor and filters only when opted in
 ok - allowlist=enabled preserves the operational floor and filters only when opted in
@@ -61,28 +168,82 @@ ok - inaccessible config with present allowlist refuses before launch or task pu
 ok - inaccessible config with absent allowlist refuses before launch or task publication
 ok - inaccessible ancestor with present allowlist refuses before launch or task publication
 ok - inaccessible ancestor with absent allowlist refuses before launch or task publication
-not ok - secondmate with an allowlist should spawn: error: secondmate home cannot be inside the firstmate repo: /Users/ian.brown/.no-mistakes/worktrees/dead8800c2e5/01M5CZN1MWDD6KZ07DX5NP932F/.test-tmp/fm-spawn-dispatch-profile.J05c2a/env-secondmate/secondmate-home: expected exit 0, got 1
-FM_TEST_END 2026-10-20T15:47:44Z tests/fm-spawn-dispatch-profile.test.sh exit=1 duration_ms=37309 gate_skip=false
-FM_TEST_BEGIN 2026-10-20T15:47:44Z tests/fm-secondmate-harness.test.sh family=secondmate expected_gate_skip=none
-ok - A1 fm-harness.sh secondmate resolves the fallback chain; crew mode unchanged
-ok - fm-harness detects only Cursor Agent CLI's exact invocation marker
-ok - C1 fm-harness.sh secondmate-model/secondmate-effort resolve the optional tokens; bare harness stays empty (backward-compat)
-ok - pi-signed identity: authoritative launch selection distinguishes shared wrapper ancestry
-ok - harness identity: dash-leading ps command names are basename operands, not options
-ok - B1 propagate_inheritable_config: copy, idempotence, convergence, absence-mirror, exclusion, no-op, skip diagnostics
-not ok - split: no meta written
-FM_TEST_END 2026-10-20T15:48:07Z tests/fm-secondmate-harness.test.sh exit=1 duration_ms=22909 gate_skip=false
-FM_TEST_BEGIN 2026-10-20T15:48:07Z tests/fm-codex-hook-layer-live-e2e.test.sh family=live-harness-optin expected_gate_skip=live-capability
-ok - codex codex-cli 0.163.0 still publishes the hook feature flag firstmate disables
-ok - codex codex-cli 0.163.0 accepts the requested hook disablement for a firstmate crewmate launch
-# all fm-codex-hook-layer-live-e2e tests passed
-FM_TEST_END 2026-10-20T15:48:15Z tests/fm-codex-hook-layer-live-e2e.test.sh exit=0 duration_ms=7254 gate_skip=false
-FM_TEST_SUMMARY total=4 failed=2 skipped_gate=0 duration_ms=101731
-FM_TEST_SUMMARY_FAMILY family=backend-dispatch count=1 duration_ms=37309 failed=1
-FM_TEST_SUMMARY_FAMILY family=live-harness-optin count=1 duration_ms=7254 failed=0
-FM_TEST_SUMMARY_FAMILY family=secondmate count=1 duration_ms=22909 failed=1
-FM_TEST_SUMMARY_FAMILY family=unclassified count=1 duration_ms=31834 failed=0
-FM_TEST_SLOWEST rank=1 script=tests/fm-spawn-dispatch-profile.test.sh duration_ms=37309
-FM_TEST_SLOWEST rank=2 script=tests/fm-approval-failover.test.sh duration_ms=31834
-FM_TEST_SLOWEST rank=3 script=tests/fm-secondmate-harness.test.sh duration_ms=22909
-FM_TEST_SLOWEST rank=4 script=tests/fm-codex-hook-layer-live-e2e.test.sh duration_ms=7254
+ok - secondmate launch inherits the allowlist for subsequent worker launches
+ok - local inheritance preserves the allowlist on source errors and mirrors proven absence
+ok - remote inheritance preserves the allowlist on source errors and mirrors proven absence
+WORKER-RAN
+WORKER-RAN
+WORKER-RAN
+WORKER-RAN
+WORKER-RAN
+WORKER-RAN
+skip: fish not found (fish pane launch); only a static syntax check ran
+ok - launch appends the hooks config while preserving inherited Git credentials in sh, bash and zsh
+ok - fm-spawn: actual ship/scout launch commands deliver the worker role contract
+ok - no --model/--effort records defaults and types the claude launch instructions
+ok - a claude launch publishes the brief as an operational-inbox record and passes only the doorbell
+ok - a secondmate claude launch publishes its brief record into the secondmate's own home
+ok - a claude spawn whose launch-brief record cannot publish stops with a clear error and sends no launch
+ok - non-cursor launches clear inherited Cursor identity markers
+ok - relative home overrides ignore CDPATH and become absolute before spawn launch construction
+ok - FM_HOME defaults resolve relative paths and preserve absolute spellings
+ok - absolute override spellings are preserved in spawn launch paths
+ok - unresolvable relative spawn overrides fail with named diagnostics
+ok - active crew-dispatch profile requires an explicit harness for ship spawns
+ok - active crew-dispatch profile requires an explicit harness for scout spawns
+ok - active crew-dispatch profile allows an explicit resolved harness
+ok - active crew-dispatch profile allows the legacy positional harness form
+ok - active crew-dispatch profile allows the raw launch-command escape hatch
+ok - a chained raw launch commits through the AI-trailer strip in every step
+ok - claude receives --model and --effort profile flags
+ok - codex receives --model and model_reasoning_effort profile flags
+ok - codex Luna receives --model and model_reasoning_effort max profile flags
+ok - codex omits max for models without the catalog capability
+ok - a codex crewmate requests no hook layer and keeps its turn-end signal
+ok - a codex secondmate keeps its project hooks and uses automatic approval review
+ok - Codex defaults remain bypass; persistent fallback is direct and invalid values refuse
+ok - grok receives --model and --reasoning-effort profile flags
+ok - grok omits unsupported max reasoning effort
+ok - grok omits unsupported xhigh reasoning effort
+ok - cursor receives its model-qualified reasoning class and exact task workspace
+ok - cursor refuses model ids absent from its resolved binary's live catalog
+ok - cursor preserves the requested model when its live catalog is unreachable
+ok - opencode receives --model and the effort as its config's agent variant
+ok - opencode without an effort keeps its launch config unchanged
+ok - opencode emits the variant for an effort the openai family exposes
+ok - opencode omits the variant for an effort outside the model family's list
+ok - native effort validator checks harness and model as separate axes
+ok - Ultra is explicit for native Pi and Pi-signed, including direct-PR, and refuses unsupported profiles before provisioning
+ok - batch dispatch preserves native Ultra in metadata and launch flags
+ok - Pi scout spawn enters the recorded worktree before launch
+ok - pi receives --model and --thinking max profile flags
+ok - Pi launch probing omits --tui-mode on older Pi and preserves it on supporting Pi
+ok - pi-signed shares Pi launch semantics while preserving its configured and recorded identity
+ok - pi-signed refuses safely and actionably when the selected executable is unavailable
+ok - pi-signed is a distinct persistent secondmate runtime with shared Pi supervision semantics
+ok - seeded Pi/pi-signed secondmate launches carry session --approve when advertised
+ok - ordinary Pi worker launches omit --approve
+ok - Pi approve probing omits --approve when help does not advertise it
+ok - Pi and pi-signed ship and scout launches carry the configured tool exclusions
+ok - Pi worker registries report unmatched and unverified exclusions without reporting exact matches
+ok - an absent or empty exclusion list leaves every runtime unaffected
+ok - a runtime that cannot hide tools, or a raw launch, refuses a non-empty exclusion list
+ok - a malformed exclusion entry refuses the spawn before any launch or record
+ok - Pi and pi-signed ship and scout launches refuse when the exclusion file disappears after its checks
+ok - exclusions stay in the home that configured them and skip secondmate agents
+ok - batch dispatch forwards shared --harness, --model, and --effort to every pair
+ok - claude forwards firstmate's CLAUDE_CONFIG_DIR so the crewmate uses the same credential store
+ok - the primary-owned Lavish server address reaches every worker launch
+cat: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-spawn-dispatch-profile.oH9vBk/profile-lavish-ambient/pane.log: No such file or directory
+ok - absent Lavish configuration preserves the destination environment
+ok - claude omits the config-dir prefix when firstmate runs with the single-store default
+ok - absent config/claude-permission-mode defaults to --dangerously-skip-permissions
+ok - config/claude-permission-mode=auto opts into the model-reviewed launch
+ok - explicit config/claude-permission-mode=bypass uses --dangerously-skip-permissions
+ok - config/claude-permission-mode=auto reaches scout launches too
+ok - claude worker launches cover the task-channel directories in bypass and auto modes
+ok - an unrecognized config/claude-permission-mode token refuses before any endpoint or metadata
+ok - config/claude-permission-mode changes claude launches only
+ok - non-claude harnesses do not receive the claude CLAUDE_CONFIG_DIR prefix
+ok - a claude task launch establishes only Firstmate's task control channels through the system prompt
+ok - a persistent claude secondmate keeps its supervisor contract without a task-worker authority overlay

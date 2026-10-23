@@ -1,0 +1,22 @@
+== config/claude-permission-mode: auto
+harness=claude
+approval_mode=auto
+kind=scout
+== claude process args in worker pane:
+claude --permission-mode auto
+== worker pane:
+ ▐▛███▛█   Claude Code v2.1.309
+▝▜██████▀  Opus 5.5 · Claude API
+ ▝▝   ▝▝   ~/.treehouse/demo-a15046/3/demo
+❯ : Firstmate operational input waiting: read '/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.qMuqRo/state/operational-inbox/1792713773-d47c274fcc80d323.msg' and handle its contents  
+  as Firstmate operational input.                                                                                                                                                                       
+  Read 1 file                                                    
+⏺ Hello! 👋
+  The task said: say hello and stop. Don't run any commands.
+  So I didn't do anything else. I only read the message I was told to read. I wrote no report and no status line, because writing them would mean running commands.
+  You don't need to do anything.
+✻ Brewed for 7s · done 5:03 PM
+                                                                                                                                                                                                      
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
