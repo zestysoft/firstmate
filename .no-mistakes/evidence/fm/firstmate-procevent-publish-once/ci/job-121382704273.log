@@ -1,0 +1,409 @@
+Behavior portable serial 1	UNKNOWN STEP	﻿2026-10-26T03:27:13.0082467Z Current runner version: '2.338.0'
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0102940Z ##[group]Runner Image Provisioner
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0103577Z Hosted Compute Agent
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0104040Z Version: 20261021.618
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0104442Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0104895Z Build Date: 2026-10-21T00:45:21Z
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0105442Z Worker ID: {0e87f9cd-6446-4c07-be1a-41aa40607be0}
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0105900Z Region: westus3
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0106287Z Cloud: Azure
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0106673Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0107760Z ##[group]Operating System
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0108263Z Ubuntu
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0108606Z 26.04.1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0108965Z LTS
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0109311Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0109691Z ##[group]Runner Image
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0110160Z Image: ubuntu-26.04
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0110529Z Version: 20261012.163.1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0111409Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261012.163/images/ubuntu/Ubuntu2604-Readme.md
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0112502Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261012.163
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0113138Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0113859Z ##[group]GITHUB_TOKEN Permissions
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0115531Z Contents: read
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0116024Z Metadata: read
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0116546Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0118384Z Secret source: None
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0118978Z Cache mode: write
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0119518Z Prepare workflow directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0400232Z Prepare all required actions
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.0438731Z Getting action download info
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.3444693Z Download action repository 'actions/checkout@v6' (SHA:d23441a48e516b6c34aea4fa41551a30e30af803)
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:13.7601358Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.2492243Z Complete job name: Behavior portable serial 1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3105105Z ##[group]Run actions/checkout@v6
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3105650Z with:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3105916Z   fetch-depth: 0
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3106203Z   repository: kunchenguid/firstmate
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3108833Z   token: ***
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3109092Z   ssh-strict: true
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3109363Z   ssh-user: git
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3109645Z   persist-credentials: true
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3109940Z   clean: true
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3110220Z   sparse-checkout-cone-mode: true
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3110534Z   fetch-tags: false
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3110804Z   show-progress: true
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3111093Z   lfs: false
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3111364Z   submodules: false
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3111638Z   set-safe-directory: true
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3112090Z   allow-unsafe-pr-checkout: false
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3112495Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3884888Z Syncing repository: kunchenguid/firstmate
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3886391Z ##[group]Getting Git version info
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3886953Z Working directory is '~/work/firstmate/firstmate'
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3887684Z [command]/usr/bin/git version
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3888009Z git version 2.55.0
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3901666Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3935364Z Temporarily overriding HOME='~/work/_temp/d97bb028-c7af-42f3-9097-08dbaf7fe09d' before making global git config changes
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3936797Z Adding repository directory to the temporary git global config as a safe directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.3939721Z [command]/usr/bin/git config --global --add safe.directory ~/work/firstmate/firstmate
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.4133348Z Deleting the contents of '~/work/firstmate/firstmate'
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.4138848Z ##[group]Determining repository object format
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.4140402Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.4141160Z ##[group]Initializing the repository
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.4147427Z [command]/usr/bin/git init ~/work/firstmate/firstmate
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5146512Z hint: Using 'master' as the name for the initial branch. This default branch name
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5147688Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5148546Z hint: to use in all of your new repositories, which will suppress this warning,
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5149438Z hint: call:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5149881Z hint:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5150366Z hint: 	git config --global init.defaultBranch <name>
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5150782Z hint:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5151361Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5152419Z hint: 'development'. The just-created branch can be renamed via this command:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5153048Z hint:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5153340Z hint: 	git branch -m <name>
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5153764Z hint:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5154192Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5154971Z Initialized empty Git repository in ~/work/firstmate/firstmate/.git/
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5158042Z [command]/usr/bin/git remote add origin https://github.com/kunchenguid/firstmate
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5243853Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5244637Z ##[group]Disabling automatic garbage collection
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5247222Z [command]/usr/bin/git config --local gc.auto 0
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5843064Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5843828Z ##[group]Setting up auth
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5844403Z Removing SSH command configuration
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5849003Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.5884108Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.6252748Z Removing HTTP extra header
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.6257436Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.6290967Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.6528721Z Removing includeIf entries pointing to credentials config files
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.6533948Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.6565889Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.6811854Z [command]/usr/bin/git config --file ~/work/_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.7028356Z [command]/usr/bin/git config --local includeIf.gitdir:~/work/firstmate/firstmate/.git.path ~/work/_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.7069937Z [command]/usr/bin/git config --local includeIf.gitdir:~/work/firstmate/firstmate/.git/worktrees/*.path ~/work/_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.7632204Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.7670426Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.7739408Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.7740792Z ##[group]Fetching the repository
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:14.7747310Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +6521fce010a6dbadcd61a4e499ad33eaa63fb7e9:refs/remotes/pull/7762/merge
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7052552Z From https://github.com/kunchenguid/firstmate
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7053498Z  * [new branch]        cursor/ci-fm-ci-churn-macos-herdr-dry-e1d1 -> origin/cursor/ci-fm-ci-churn-macos-herdr-dry-e1d1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7054748Z  * [new branch]        devin/1790040975-secondmate-fm-root-pin -> origin/devin/1790040975-secondmate-fm-root-pin
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7055513Z  * [new branch]        devin/issue-1506-away-escalation -> origin/devin/issue-1506-away-escalation
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7056158Z  * [new branch]        devin/issue-1641-harness-detect -> origin/devin/issue-1641-harness-detect
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7056720Z  * [new branch]        devin/issue-2002-fm-home -> origin/devin/issue-2002-fm-home
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7057289Z  * [new branch]        devin/issue-947-spawn-seize -> origin/devin/issue-947-spawn-seize
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7057900Z  * [new branch]        fm/afk-pi-wake-bypass-r1 -> origin/fm/afk-pi-wake-bypass-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7058432Z  * [new branch]        fm/fm-3c4-quiet-r1   -> origin/fm/fm-3c4-quiet-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7059280Z  * [new branch]        fm/fm-actionable-update-escalation-misclassification-r1 -> origin/fm/fm-actionable-update-escalation-misclassification-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7060420Z  * [new branch]        fm/fm-actionable-update-escalation-misclassification-r3 -> origin/fm/fm-actionable-update-escalation-misclassification-r3
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7061344Z  * [new branch]        fm/fm-afk-pi-branch-both-postures-r1 -> origin/fm/fm-afk-pi-branch-both-postures-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7062331Z  * [new branch]        fm/fm-branch-note-sailboat-r2 -> origin/fm/fm-branch-note-sailboat-r2
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7063115Z  * [new branch]        fm/fm-composer-thin-adapter-refactor-r1 -> origin/fm/fm-composer-thin-adapter-refactor-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7064097Z  * [new branch]        fm/fm-documentation-audience-cleanup-r1 -> origin/fm/fm-documentation-audience-cleanup-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7064840Z  * [new branch]        fm/fm-fleet-activity-ledger-r1 -> origin/fm/fm-fleet-activity-ledger-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7065866Z  * [new branch]        fm/fm-fleet-activity-ledger-r1-reviewed -> origin/fm/fm-fleet-activity-ledger-r1-reviewed
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7066721Z  * [new branch]        fm/fm-gate-lab-live-validation-r1 -> origin/fm/fm-gate-lab-live-validation-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7067400Z  * [new branch]        fm/fm-herdr-contiguity-resume -> origin/fm/fm-herdr-contiguity-resume
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7068181Z  * [new branch]        fm/fm-herdr-recovery-classifier-stale-agent-r1 -> origin/fm/fm-herdr-recovery-classifier-stale-agent-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7068964Z  * [new branch]        fm/fm-merge-closing-keyword-guard-r1 -> origin/fm/fm-merge-closing-keyword-guard-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7069700Z  * [new branch]        fm/fm-needs-decision-main-only-r1 -> origin/fm/fm-needs-decision-main-only-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7070392Z  * [new branch]        fm/fm-needs-decision-whole-batch-r1 -> origin/fm/fm-needs-decision-whole-batch-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7071112Z  * [new branch]        fm/fm-nm-evidence-store-firstmate-r1 -> origin/fm/fm-nm-evidence-store-firstmate-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7071848Z  * [new branch]        fm/fm-per-task-delivery-override-r1 -> origin/fm/fm-per-task-delivery-override-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7072829Z  * [new branch]        fm/fm-public-stow-readbeforewrite-port-r1 -> origin/fm/fm-public-stow-readbeforewrite-port-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7073569Z  * [new branch]        fm/fm-safe-auto-reboot-simple-r1 -> origin/fm/fm-safe-auto-reboot-simple-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7074342Z  * [new branch]        fm/fm-secondmate-creation-record-intake-r1 -> origin/fm/fm-secondmate-creation-record-intake-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7075257Z  * [new branch]        fm/fm-secondmate-parent-channel-structural-r1 -> origin/fm/fm-secondmate-parent-channel-structural-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7076371Z  * [new branch]        fm/fm-secondmate-record-atomic-transitions-r1 -> origin/fm/fm-secondmate-record-atomic-transitions-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7076987Z  * [new branch]        fm/fm-sessionstart-network-free-r1 -> origin/fm/fm-sessionstart-network-free-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7077458Z  * [new branch]        fm/fm-shared-test-fixtures-r1 -> origin/fm/fm-shared-test-fixtures-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7078214Z  * [new branch]        fm/fm-signal-span-scope-r1 -> origin/fm/fm-signal-span-scope-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7078643Z  * [new branch]        fm/fm-skill-frontmatter-desc-r1 -> origin/fm/fm-skill-frontmatter-desc-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7079116Z  * [new branch]        fm/fm-supervision-host-attended-r1 -> origin/fm/fm-supervision-host-attended-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7079616Z  * [new branch]        fm/fm-supervision-pr-url-hallucination-r1 -> origin/fm/fm-supervision-pr-url-hallucination-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7080120Z  * [new branch]        fm/fm-supervision-rearm-resurface-r1 -> origin/fm/fm-supervision-rearm-resurface-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7080601Z  * [new branch]        fm/fm-supervision-refused-ack-loop-r1 -> origin/fm/fm-supervision-refused-ack-loop-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7081125Z  * [new branch]        fm/fm-teardown-closes-captain-held-scout-r1 -> origin/fm/fm-teardown-closes-captain-held-scout-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7081678Z  * [new branch]        fm/fm-teardown-slot-collision-fix-r1 -> origin/fm/fm-teardown-slot-collision-fix-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7082373Z  * [new branch]        fm/fm-turnend-foreign-owner-arm-fix-r1 -> origin/fm/fm-turnend-foreign-owner-arm-fix-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7082847Z  * [new branch]        fm/fm-watcher-flap-autoarm-fix-r2 -> origin/fm/fm-watcher-flap-autoarm-fix-r2
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7083255Z  * [new branch]        fm/fm-watcher-hardening-r1 -> origin/fm/fm-watcher-hardening-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7083733Z  * [new branch]        fm/fm-watcher-hardening-r2 -> origin/fm/fm-watcher-hardening-r2
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7084321Z  * [new branch]        fm/fm-watcher-hardening-r3 -> origin/fm/fm-watcher-hardening-r3
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7085030Z  * [new branch]        fm/herdr-workspace-contiguity-maintenance -> origin/fm/herdr-workspace-contiguity-maintenance
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7086030Z  * [new branch]        fm/nm-required-exempt-release-please-r1 -> origin/fm/nm-required-exempt-release-please-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7086594Z  * [new branch]        fm/reconcile-inactive-crew-investigate-s1 -> origin/fm/reconcile-inactive-crew-investigate-s1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7087138Z  * [new branch]        fm/remote-send-confirm-readback-fix-r1 -> origin/fm/remote-send-confirm-readback-fix-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7087624Z  * [new branch]        fm/remote-send-delivery-delta-r1 -> origin/fm/remote-send-delivery-delta-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7088123Z  * [new branch]        fm/secondmate-autonomous-supervision-s7 -> origin/fm/secondmate-autonomous-supervision-s7
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7088632Z  * [new branch]        fm/serial1-01-split-supervision-host -> origin/fm/serial1-01-split-supervision-host
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7089015Z  * [new branch]        main                 -> origin/main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7089331Z  * [new branch]        no-mistakes/evidence -> origin/no-mistakes/evidence
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7089753Z  * [new branch]        proto/herdr-child-workspaces -> origin/proto/herdr-child-workspaces
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7090205Z  * [new branch]        shelf/fm-no-fork-poll-sleep-r1 -> origin/shelf/fm-no-fork-poll-sleep-r1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7090615Z  * [new ref]           6521fce010a6dbadcd61a4e499ad33eaa63fb7e9 -> pull/7762/merge
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7091861Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7092340Z ##[group]Determining the checkout info
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7092655Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7092859Z [command]/usr/bin/git sparse-checkout disable
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7119600Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7149063Z ##[group]Checking out the ref
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.7152443Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/7762/merge
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8218386Z Note: switching to 'refs/remotes/pull/7762/merge'.
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8218702Z 
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8218907Z You are in 'detached HEAD' state. You can look around, make experimental
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8219388Z changes and commit them, and you can discard any commits you make in this
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8220010Z state without impacting any branches by switching back to a branch.
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8220216Z 
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8220373Z If you want to create a new branch to retain commits you create, you may
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8221094Z do so (now or later) by using -c with the switch command. Example:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8221305Z 
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8221451Z   git switch -c <new-branch-name>
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8304401Z 
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8304806Z Or undo this operation with:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8305083Z 
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8305179Z   git switch -
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8305288Z 
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8305479Z Turn off this advice by setting config variable advice.detachedHead to false
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8305704Z 
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8305969Z HEAD is now at 6521fce0 Merge b89306cf0a964bf0b04bd37e230301ce4720616a into 2b46ed1fb214c8a467654035d2a5370077f66922
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8307178Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8307785Z [command]/usr/bin/git log -1 --format=%H
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8316050Z 6521fce010a6dbadcd61a4e499ad33eaa63fb7e9
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8507518Z ##[group]Run set -eu
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8507806Z ^[[36;1mset -eu^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8508047Z ^[[36;1mbin/fm-install-shellcheck.sh "$RUNNER_TEMP/bin"^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8508319Z ^[[36;1mecho "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8641405Z shell: /usr/bin/bash -e {0}
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:17.8641704Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.2815784Z ShellCheck - shell script analysis tool
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.2816107Z version: 0.11.0
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.2816265Z license: GNU General Public License, version 3
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.2816500Z website: https://www.shellcheck.net
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.2903454Z ##[group]Run set -eu
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.2903654Z ^[[36;1mset -eu^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.2903824Z ^[[36;1mbin/fm-install-actionlint.sh "$RUNNER_TEMP/bin"^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.2904040Z ^[[36;1mecho "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.2963262Z shell: /usr/bin/bash -e {0}
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.2963463Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6086526Z 1.7.12
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6086864Z installed by downloading from release page
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6087219Z built with go1.26.1 compiler for linux/amd64
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6153949Z ##[group]Run set -eu
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6154161Z ^[[36;1mset -eu^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6154305Z ^[[36;1mcommand -v tmux >/dev/null || {^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6154545Z ^[[36;1m  echo "::error::tmux is required for real afk injection e2e coverage"^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6154769Z ^[[36;1m  exit 1^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6154891Z ^[[36;1m}^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6155013Z ^[[36;1mtmux -V^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6208904Z shell: /usr/bin/bash -e {0}
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6209075Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6754749Z tmux 3.6
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6788717Z ##[group]Run set -eu
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6788915Z ^[[36;1mset -eu^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6789056Z ^[[36;1mnpm install -g tasks-axi^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6789227Z ^[[36;1mtasks-axi --version^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6842432Z shell: /usr/bin/bash -e {0}
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:18.6842616Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:19.5812885Z 
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:19.6243216Z added 3 packages in 699ms
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:19.6243582Z 0.2.6
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:19.6333648Z ##[group]Run set -eu
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:19.6333881Z ^[[36;1mset -eu^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:19.6334050Z ^[[36;1mnpm install -g @earendil-works/pi-coding-agent^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:19.6334308Z ^[[36;1mnpm ls -g --depth 0 @earendil-works/pi-coding-agent^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:19.6386976Z shell: /usr/bin/bash -e {0}
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:19.6387148Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:23.4045339Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.1458054Z 
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.1458676Z added 119 packages in 5s
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.1458898Z 
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.1459323Z 9 packages are looking for funding
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.1459893Z   run `npm fund` for details
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.1472954Z npm warn install-scripts 2 packages have install scripts not yet covered by allowScripts:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.1474326Z npm warn install-scripts   @google/genai@2.21.0 (preinstall: echo 'preinstall: no-op')
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.1475294Z npm warn install-scripts   protobufjs@7.6.6 (postinstall: node scripts/postinstall)
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.1475723Z npm warn install-scripts
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.1476601Z npm warn install-scripts Run `npm install -g --allow-scripts=@google/genai,protobufjs` to allow these scripts once, or `npm config set allow-scripts=@google/genai,protobufjs --location=user` to allow them for all global installs.
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4364601Z /usr/local/lib
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4365333Z └── @earendil-works/pi-coding-agent@1.4.0
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4365892Z 
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4506119Z ##[group]Run set -eu
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4506326Z ^[[36;1mset -eu^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4506473Z ^[[36;1mmkdir -p "$RUNNER_TEMP/fm-test"^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4506684Z ^[[36;1mbin/fm-test-run.sh --lane "$FM_SERIAL_LANE" \^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4506970Z ^[[36;1m  --fail-on-gate-skip 'Pi extension typecheck prerequisite not found' \^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4507345Z ^[[36;1m  --json "$RUNNER_TEMP/fm-test/fm-test-timing-portable-serial-${FM_SERIAL_SHARD}.json"^[[0m
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4561176Z shell: /usr/bin/bash -e {0}
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4561368Z env:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4561531Z   FM_SERIAL_LANE: portable-serial-1of9
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4561700Z   FM_SERIAL_SHARD: 1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:25.4561840Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:27.1279869Z FM_TEST_BEGIN 2026-10-26T03:27:27Z tests/fm-supervision-host.test.sh family=afk expected_gate_skip=none
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:36.2093518Z ok - host+hook: a main-only close after a handled turn restores inherited handling and rewakes main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:27:45.7195184Z ok - host+hook: a refused inherited handling restore delivers a failure instead of silent success
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:02.1182505Z ok - host+hook: a driver returning to an idle worker is stale-handled while attended
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:17.5429639Z ok - host+hook: a driver returning to an idle worker is stale-handled while away
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:27.2820500Z ok - host+hook: boundary survives a lost continuation, retries, and transfers one watcher after acknowledgement
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:38.7654407Z ok - host+hook: pass-through survives a lost continuation, retries, and transfers one watcher after acknowledgement
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:44.3262446Z ok - host+hook: an acknowledged hand-back at the turn keeps its pass-through row
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:48.5111221Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:48.6153970Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:48.7195791Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:48.8236443Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:48.9281186Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:49.0328212Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:49.1371082Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:49.2410703Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:49.3472875Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:49.4534239Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:49.5576560Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:49.6621742Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:49.7669717Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:49.8716791Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:49.9759839Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:50.0801660Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:28:50.1844013Z grep: /tmp/fm-supervision-host.IZcNg4/handoff-doorbell/state/.supervision-handoff.log: No such file or directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:00.1899626Z ok - host+hook: hand-back retry submits only to the idle owning pane without replacing human input
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:06.1136399Z ok - host+hook: a successor closed before exit_to_main does not suppress the branch-outcome rewake
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:12.7332495Z ok - host+hook: a successor that closes during a held engine turn does not suppress the branch-outcome rewake
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:19.5569883Z ok - host+hook: a refused hand-back becomes a delivered failure notice
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:26.9197065Z ok - host+hook: a refused hand-back on an announced handling marker becomes a delivered failure notice
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:28.7332466Z ok - host: parked child-exit sampling uses ordinary half-second sleeps
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:29.2994570Z ok - report surface: only the branch actor's current turn may report, and only on the tasks its wake names
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:30.6499309Z ok - report surface: visible late outcomes queue a relay, while silent outcomes remain stored without a wake or note
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:31.5826571Z ok - dispatch entry: the host reads branch eligibility, the offer rule, and the wake prompt from the Pi branch's own owner
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:33.7751399Z ok - drain: BRANCH OUTCOMES runs on a Claude home by default and on another primary with the file, never with off, and never on Pi
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:35.7802180Z ok - drain: captain outcomes come first, and routine overflow collapses into a count one drain clears
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:39.0584298Z ok - drain: repeated captain outcomes collapse per task, and the byte cap presents only the run its acknowledgement covers
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:44.1492995Z ok - drain: a long away window costs one short drain, captain outcomes collapsed per task and routine overflow counted, and nothing from it is shown again
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:46.2496901Z ok - drain: the BRANCH OUTCOMES budgets count bytes, cutting multibyte summaries by whole characters in any locale
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:47.3611415Z ok - drain: branch outcomes stay unread when a projection of the store fails
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:58.1867858Z ok - drain: branch outcomes stay unread and the drain fails when jq is missing
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:29:59.7061738Z ok - drain: branch outcomes stay unread when the drain cannot print them
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:00.2894911Z ok - drain: a legacy backlog is presented with each outcome's age and a check-first instruction, never adopted
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:02.2062160Z ok - drain: a keyed decision survives acknowledgement through a newer outcome for its task
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:03.1850134Z ok - drain: an outcome carried across a switch off Pi comes back with its age, never adopted
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:04.8489959Z ok - drain: an outcome nothing has shown is presented until acknowledged, and a repeated acknowledgement changes nothing
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:06.0348591Z ok - drain: an outcome the host drain presented but main never acknowledged stays unprocessed across a switch to Pi
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:08.0539237Z ok - drain: an outcome the host drain presented but main never acknowledged survives an outcome index repair
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:14.7337337Z ok - host: an attended wake the branch may take is handled on the engine, and its routine outcome never wakes main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:22.5979151Z ok - host: a host stopped right after a handled wake exits and leaves the wake queue usable
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:28.2999844Z ok - host: an engine in another time zone than the host drains, reports, and acknowledges its granted rows
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:37.3274103Z ok - host: an attended captain outcome wakes main once and stays in its drain until main acknowledges it
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:45.2217163Z ok - host: a captain outcome recorded after the captain left waits for the return, then reaches main's drain
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:30:56.8453767Z ok - host: a quiet record without its daemon is a present captain, so outcomes and decisions reach main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:31:00.5524192Z ok - host: an attended decision close stays main's exactly as the plain arm delivers it
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:31:03.9101591Z ok - host: an off written while the host is parked sends the next attended close to main, naming the opt-out
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:31:10.2094341Z ok - host: a main-only pass-through leaves the successor watcher running and the close undelivered for main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:31:13.4386725Z ok - host: an attended close whose main session cannot be identified reaches main and runs no engine turn
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:31:18.9373529Z ok - host: a decision close accepted away whose turn starts attended still reaches main unchanged
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:31:24.5046624Z ok - host: an attended close whose task turns main-only before its turn still reaches main unchanged
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:31:30.4453720Z ok - host+hook: an attended main-only pass-through rewakes main and keeps its successor watcher
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:31:48.8207605Z ok - host+hook: an inbox note queued while the host is parked on a handled wake's successor rewakes main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:32:05.2266987Z ok - host+hook: a captain outcome beside a quiet record rewakes the present captain with no away note
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:32:29.4895575Z ok - host+hook: a Claude home without config/supervision-host runs the host at the default engine, and an off file restores the plain arm
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:32:39.1964432Z ok - host+hook: a close that turns main-only at its turn rewakes main and keeps its successor watcher
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:32:50.2819883Z ok - host+hook: the successor a close that turns main-only at its turn leaves for main survives the hook's process group teardown
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:33:00.3034643Z ok - host+hook: failed at-turn downtime write notifies main despite a healthy successor
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:33:23.8783438Z ok - host+hook: a successor close that lands during main's turn is delivered at the next turn end
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:33:36.1698372Z ok - host+hook: the successor a pass-through leaves for main survives the hook's process group teardown
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:34:02.4199457Z ok - host+hook: the next park takes over the cycle a main-only pass-through left, so one arm owns it
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:34:24.4980677Z ok - host+hook: a park stopped mid take-over leaves the take-over to the next park
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:34:43.3470378Z ok - host+hook: a successor that cannot be recorded is stopped, and main's next turn end arms a fresh cycle
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:35:38.1853586Z ok - host: a primary with no verified dialog mirror keeps every attended close on main, and its away posture still runs
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:36:16.1126307Z ok - host: each wake carries the captain's dialog since the last wake, without operational input
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:36:38.9908345Z ok - host: the dialog mirror, its feed, and the wake file are owner-only
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:41:13.8200224Z ok - host: dialog a turn never completed with its report (a park boundary, a stopped turn, no report) reaches the next turn
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:43:28.3926289Z ok - host: an attended wake whose mirror is missing, cannot be read (at the feed or at the prompt), or holds a malformed entry reaches main before any engine turn, and the cursor stays put
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:44:20.2295128Z ok - host: an away wake is handled on the engine through the branch contract and never reaches main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:44:45.6263802Z ok - host: an engine turn that records no outcome hands its durable wake to main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:45:13.3176695Z ok - host: a captain return during an engine turn hands that turn's outcomes to main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:46:11.7477631Z ok - host: silent outcomes are excluded from both captain-return handoff paths
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:46:42.5589079Z ok - host: an early visible outcome survives more than 1,000 same-turn receipts
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:47:11.5864021Z ok - host: an outcome lookup failure forces a visible main handoff
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:47:55.2725011Z ok - host: an outcome recorded after the return reaches main even when its host dies at the turn's end
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:48:33.5173114Z ok - host: a killed predecessor's engine is reaped and the next host removes its turn files
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:49:06.0299145Z ok - host: a turn that reports but leaves its granted rows queued hands the wake to main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:49:39.6010196Z ok - host: a captain return during a failed engine turn still hands that turn's outcomes to main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:50:13.0346834Z ok - host: an engine turn whose result is incomplete hands its wake to main
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:53:47.7821066Z ok - host: two engine errors latch the session, main keeps every away wake in the cooldown, a failed probe doubles it up to its cap, and a report recovers it silently
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:55:51.8779656Z ok - host: an attended close in a latched session reaches main as the arm printed it and leaves the latch as it was, and a home that opted out with off never reads it
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:28.3552047Z not ok - latch: the first engine error did not hand the wake back
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.1550204Z FM_TEST_END 2026-10-26T03:56:45Z tests/fm-supervision-host.test.sh exit=1 duration_ms=1758020 gate_skip=false
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.1689746Z FM_TEST_SUMMARY total=1 failed=1 skipped_gate=0 duration_ms=1759685
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.1716349Z FM_TEST_SUMMARY_FAMILY family=afk count=1 duration_ms=1758020 failed=1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.1752192Z FM_TEST_SLOWEST rank=1 script=tests/fm-supervision-host.test.sh duration_ms=1758020
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.1980283Z fm-test-run: wrote timing artifact: ~/work/_temp/fm-test/fm-test-timing-portable-serial-1.json
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.2007918Z ##[error]Process completed with exit code 1.
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.2067050Z ##[group]Run actions/upload-artifact@v4
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.2067248Z with:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.2067390Z   name: fm-test-timing-portable-serial-1
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.2067631Z   path: ~/work/_temp/fm-test/fm-test-timing-portable-serial-1.json
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.2067865Z   if-no-files-found: warn
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.2068011Z   compression-level: 6
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.2068143Z   overwrite: false
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.2068273Z   include-hidden-files: false
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.2068418Z ##[endgroup]
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.3174548Z (node:2751589) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.3175039Z (Use `node --trace-deprecation ...` to show where the warning was created)
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.3207382Z With the provided path, there will be 1 file uploaded
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.3210422Z Artifact name is valid!
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.3210864Z Root directory input is valid!
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.6646937Z Beginning upload of artifact content to blob storage
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.6756721Z (node:2751589) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.8811785Z Uploaded bytes 546
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.9370653Z Finished uploading artifact content to blob storage!
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.9371240Z SHA256 digest of uploaded artifact zip is 505f59915a890d2d7f00ea335da4ea2ab39e8cbe23fced807fcda75e29b9c955
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:45.9373041Z Finalizing artifact upload
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.3792982Z Artifact fm-test-timing-portable-serial-1.zip successfully finalized. Artifact ID 12626627545
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.3793869Z Artifact fm-test-timing-portable-serial-1 has been successfully uploaded! Final size is 546 bytes. Artifact ID is 12626627545
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.3797237Z Artifact download URL: https://github.com/kunchenguid/firstmate/actions/runs/40264141694/artifacts/12626627545
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.3989364Z Post job cleanup.
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.4559752Z [command]/usr/bin/git version
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.4590817Z git version 2.55.0
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.4614954Z Temporarily overriding HOME='~/work/_temp/fe69eaeb-509d-4c82-8962-de32c0cba850' before making global git config changes
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.4615790Z Adding repository directory to the temporary git global config as a safe directory
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.4618802Z [command]/usr/bin/git config --global --add safe.directory ~/work/firstmate/firstmate
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.4644548Z Removing SSH command configuration
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.4648527Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.4676109Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.4898211Z Removing HTTP extra header
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.4901019Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.4927227Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5139663Z Removing includeIf entries pointing to credentials config files
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5144563Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5164155Z includeif.gitdir:~/work/firstmate/firstmate/.git.path
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5164675Z includeif.gitdir:~/work/firstmate/firstmate/.git/worktrees/*.path
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5165129Z includeif.gitdir:/github/workspace/.git.path
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5165466Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5171033Z [command]/usr/bin/git config --local --get-all includeif.gitdir:~/work/firstmate/firstmate/.git.path
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5189985Z ~/work/_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5197719Z [command]/usr/bin/git config --local --unset includeif.gitdir:~/work/firstmate/firstmate/.git.path ~/work/_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5226641Z [command]/usr/bin/git config --local --get-all includeif.gitdir:~/work/firstmate/firstmate/.git/worktrees/*.path
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5245448Z ~/work/_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5251712Z [command]/usr/bin/git config --local --unset includeif.gitdir:~/work/firstmate/firstmate/.git/worktrees/*.path ~/work/_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5278734Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5296894Z /github/runner_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5302699Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5329045Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5347295Z /github/runner_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5352876Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5379689Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5601410Z Removing credentials config '~/work/_temp/git-credentials-fb150dce-98a5-4622-a6e7-e2549fa16f27.config'
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5736366Z Cleaning up orphan processes
+Behavior portable serial 1	UNKNOWN STEP	2026-10-26T03:56:46.5987204Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

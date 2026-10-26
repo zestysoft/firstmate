@@ -1,0 +1,39 @@
+### [BASE 127f0f30 (before fix)] code=<base-archive>  lab=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.VNSD0p
+$ fm-procevent.sh register lavish review -- blocker.sh trigger
+registered: review (lavish)
+start runner: reconciled: published=0 started=1 stopped=0 uncertain=0 failed=0
+captured: review.1.adapter review.1.result 
+after capture: queue_rows=1 marker=pending:downtime:23302.1792997366.WkO0Uq
+1792997366	1	check	procevent:review:1	check: procevent lavish review 1
+reconcile pass 1: [reconciled: published=1 started=1 stopped=0 uncertain=0 failed=0] queue_rows=2 marker=pending:downtime:23302.1792997366.WkO0Uq
+reconcile pass 2: [reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0] queue_rows=3 marker=pending:downtime:23302.1792997366.WkO0Uq
+reconcile pass 3: [reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0] queue_rows=4 marker=pending:downtime:23302.1792997366.WkO0Uq
+reconcile pass 4: [reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0] queue_rows=5 marker=pending:downtime:23302.1792997366.WkO0Uq
+reconcile pass 5: [reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0] queue_rows=6 marker=pending:downtime:23302.1792997366.WkO0Uq
+reconcile pass 6: [reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0] queue_rows=7 marker=pending:downtime:23302.1792997366.WkO0Uq
+reconcile pass 7: [reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0] queue_rows=8 marker=pending:downtime:23302.1792997366.WkO0Uq
+reconcile pass 8: [reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0] queue_rows=9 marker=pending:downtime:23302.1792997366.WkO0Uq
+reconcile pass 9: [reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0] queue_rows=10 marker=pending:downtime:23302.1792997366.WkO0Uq
+2 concurrent reconciles: exits=0,0 queue_rows=12 marker=pending:downtime:23302.1792997366.WkO0Uq
+--- queue now:
+1792997366	1	check	procevent:review:1	check: procevent lavish review 1
+1792997368	2	check	procevent:review:1	check: procevent lavish review 1
+1792997369	3	check	procevent:review:1	check: procevent lavish review 1
+1792997370	4	check	procevent:review:1	check: procevent lavish review 1
+1792997371	5	check	procevent:review:1	check: procevent lavish review 1
+1792997371	6	check	procevent:review:1	check: procevent lavish review 1
+1792997372	7	check	procevent:review:1	check: procevent lavish review 1
+1792997372	8	check	procevent:review:1	check: procevent lavish review 1
+1792997373	9	check	procevent:review:1	check: procevent lavish review 1
+1792997374	10	check	procevent:review:1	check: procevent lavish review 1
+1792997374	11	check	procevent:review:1	check: procevent lavish review 1
+1792997375	12	check	procevent:review:1	check: procevent lavish review 1
+--- drain (present) + ack
+drain offered: --ack-through 12 --recovery-generation 23302.1792997366.WkO0Uq
+after ack: queue_rows=0 marker=acked:handling:23302.1792997366.WkO0Uq
+reconcile after row acked but result NOT handled: [reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0] queue_rows=1 marker=pending:downtime:40140.1792997378.ihCZS3
+handled: review 1
+$ fm-procevent.sh handled review 1 -> exit 0
+after handled + ack: queue_rows=0 marker=acked:handling:40140.1792997378.ihCZS3
+reconcile after handled: [reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0] queue_rows=0
+lab removed: yes

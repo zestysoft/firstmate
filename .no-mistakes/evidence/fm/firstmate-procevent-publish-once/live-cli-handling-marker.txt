@@ -1,0 +1,12 @@
+### [FIX 973cbdc2]
+reconcile: reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0 rows=1 marker=pending:downtime:62906.1792997401.jjGa5W
+drain presented wake (primary now handling): marker=pending:handling:62906.1792997401.jjGa5W
+watcher pass 1 reconcile: rows=1 marker=pending:handling:62906.1792997401.jjGa5W
+watcher pass 2 reconcile: rows=1 marker=pending:handling:62906.1792997401.jjGa5W
+watcher pass 3 reconcile: rows=1 marker=pending:handling:62906.1792997401.jjGa5W
+### [BASE 127f0f30]
+reconcile: reconciled: published=1 started=0 stopped=0 uncertain=0 failed=0 rows=1 marker=pending:downtime:68408.1792997406.gO4sBo
+drain presented wake (primary now handling): marker=pending:handling:68408.1792997406.gO4sBo
+watcher pass 1 reconcile: rows=2 marker=pending:downtime:68408.1792997406.gO4sBo
+watcher pass 2 reconcile: rows=3 marker=pending:downtime:68408.1792997406.gO4sBo
+watcher pass 3 reconcile: rows=4 marker=pending:downtime:68408.1792997406.gO4sBo
