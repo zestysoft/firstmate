@@ -1,0 +1,97 @@
+
+===== A default: no config -> audible Basso banner (unchanged) =====
+--- config/wedge-alarm: (absent)
+durable marker: written
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)
+script: end run
+argv:   <away-mode escalations WEDGED 30600s undelivered - see /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.l5oPt7/state/.subsuper-inject-wedged>
+argv:   <Basso>
+osacompile: OK
+
+===== B documented one-liner on a fresh home: printf sound:off >> config -> banner still fires, silent =====
+--- config/wedge-alarm:
+$
+sound:off$
+durable marker: written
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)
+script: end run
+argv:   <away-mode escalations WEDGED 30600s undelivered - see /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.l5oPt7/state/.subsuper-inject-wedged>
+argv:   <>
+osacompile: OK
+
+===== C sound:off + osascript + command: -> banner silent, command still gets summary =====
+--- config/wedge-alarm:
+osascript$
+  sound:off $
+command:printf "%s\n" "$1" >> "$CMD_LOG"$
+durable marker: written
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)
+script: end run
+argv:   <away-mode escalations WEDGED 30600s undelivered - see /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.l5oPt7/state/.subsuper-inject-wedged>
+argv:   <>
+osacompile: OK
+--- command: channel got:
+away-mode escalations WEDGED 30600s undelivered - see /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.l5oPt7/state/.subsuper-inject-wedged
+
+===== D adversarial: off + sound:off -> nothing fires =====
+--- config/wedge-alarm:
+sound:off$
+off$
+durable marker: written
+--- osascript call:
+(osascript not called)
+
+===== E adversarial: commented # sound:off -> still Basso =====
+--- config/wedge-alarm:
+# sound:off$
+osascript$
+durable marker: written
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)
+script: end run
+argv:   <away-mode escalations WEDGED 30600s undelivered - see /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.l5oPt7/state/.subsuper-inject-wedged>
+argv:   <Basso>
+osacompile: OK
+
+===== F adversarial: removed sound:on next to osascript -> Basso, sound:on ignored =====
+--- config/wedge-alarm:
+osascript$
+sound:on$
+durable marker: written
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)
+script: end run
+argv:   <away-mode escalations WEDGED 30600s undelivered - see /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.l5oPt7/state/.subsuper-inject-wedged>
+argv:   <Basso>
+osacompile: OK
+
+===== G undo: delete the sound:off line -> Basso returns =====
+--- config/wedge-alarm:
+osascript$
+durable marker: written
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)
+script: end run
+argv:   <away-mode escalations WEDGED 30600s undelivered - see /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.l5oPt7/state/.subsuper-inject-wedged>
+argv:   <Basso>
+osacompile: OK
+
+===== H edge: env FM_WEDGE_ALARM_CHANNEL=sound:off (single-directive override) =====
+--- config/wedge-alarm: (absent)
+--- env: FM_WEDGE_ALARM_CHANNEL=sound:off
+durable marker: written
+--- osascript call:
+(osascript not called)
+
+--- daemon log lines mentioning wedge alarm:
+   1   [2026-10-26T19:58:10-0700] wedge alarm: unrecognized active-alert channel directive (redacted); marker still written
+lab removed: yes

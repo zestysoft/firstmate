@@ -1,0 +1,110 @@
+
+===== 1 default: no sound:off (sound behaviour must be unchanged) =====
+--- config/usage-warner:
+five_hour:80$
+--- $ fm-usage-warner.sh check
+usage-warner: five_hour at 85% (>=80%)
+exit=0
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "Firstmate: Claude usage"
+script: end run
+argv:   <five_hour at 85% (>=80%)>
+osacompile: OK
+
+===== 2 silent: sound:off added =====
+--- config/usage-warner:
+five_hour:80$
+sound:off$
+--- $ fm-usage-warner.sh check
+usage-warner: five_hour at 85% (>=80%)
+exit=0
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "Firstmate: Claude usage" sound name ""
+script: end run
+argv:   <five_hour at 85% (>=80%)>
+osacompile: OK
+
+===== 3 silent: indented sound:off with tabs/spaces, CRLF-free =====
+--- config/usage-warner:
+five_hour:80$
+	  sound:off  $
+--- $ fm-usage-warner.sh check
+usage-warner: five_hour at 85% (>=80%)
+exit=0
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "Firstmate: Claude usage" sound name ""
+script: end run
+argv:   <five_hour at 85% (>=80%)>
+osacompile: OK
+
+===== 4 adversarial: commented-out # sound:off must NOT silence =====
+--- config/usage-warner:
+five_hour:80$
+# sound:off$
+--- $ fm-usage-warner.sh check
+usage-warner: five_hour at 85% (>=80%)
+exit=0
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "Firstmate: Claude usage"
+script: end run
+argv:   <five_hour at 85% (>=80%)>
+osacompile: OK
+
+===== 5 adversarial: removed sound:on directive is not a switch (sound unchanged) =====
+--- config/usage-warner:
+five_hour:80$
+sound:on$
+--- $ fm-usage-warner.sh check
+usage-warner: five_hour at 85% (>=80%)
+exit=0
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "Firstmate: Claude usage"
+script: end run
+argv:   <five_hour at 85% (>=80%)>
+osacompile: OK
+
+===== 6 adversarial: lookalike sound:offx / xsound:off must NOT silence =====
+--- config/usage-warner:
+five_hour:80$
+sound:offx$
+xsound:off$
+--- $ fm-usage-warner.sh check
+usage-warner: five_hour at 85% (>=80%)
+exit=0
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "Firstmate: Claude usage"
+script: end run
+argv:   <five_hour at 85% (>=80%)>
+osacompile: OK
+
+===== 7 adversarial: sound:off alone (no threshold) must stay opted-out, no banner =====
+--- config/usage-warner:
+sound:off$
+--- $ fm-usage-warner.sh check
+exit=0
+--- osascript call:
+(osascript not called)
+
+===== 8 summary with quotes still delivered as argv item when silent =====
+--- config/usage-warner:
+five_hour:80$
+sound:off$
+--- $ fm-usage-warner.sh check
+usage-warner: five_hour at 85% (>=80%)
+exit=0
+--- osascript call:
+script: on run argv
+script: display notification (item 1 of argv) with title "Firstmate: Claude usage" sound name ""
+script: end run
+argv:   <five_hour at 85% (>=80%)>
+osacompile: OK
+
+--- help text:
+12:Add sound:off to that file for silent banners.
+lab removed: yes
