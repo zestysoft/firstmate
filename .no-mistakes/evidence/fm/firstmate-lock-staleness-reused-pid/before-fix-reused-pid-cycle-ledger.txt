@@ -1,0 +1,13 @@
+[base] planted lock: pid=55731 (live: sleep, started Wed Oct 28 06:45:31 2026    ) recorded pid-start='Mon Oct 26 19:42:32 2026'
+[base] arm output so far:
+    watcher: started pid=55758 (beacon fresh)
+[base] ending the watcher cycle: kill -TERM 55758
+[base] arm exited: yes
+[base] arm final output:
+    watcher: started pid=55758 (beacon fresh)
+    watcher: FAILED - watcher cycle exited 143 without an actionable reason
+[base] cycle ledger (.watch-cycle-exits.log):
+    <no rows>
+[base] cycle-ledger lock now: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.dYHSj4/state/.watch-cycle-exits.lock.owner.stale pid=55731
+[base] unrelated pid 55731 still alive (not signalled): yes
+[base] RESULT: ledger NOT written (lock stuck)

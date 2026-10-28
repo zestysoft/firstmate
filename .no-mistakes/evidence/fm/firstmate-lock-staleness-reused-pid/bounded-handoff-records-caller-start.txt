@@ -1,0 +1,3 @@
+rc=0 caller=33512 record-pid=33512 record-start="Wed Oct 28 06:50:25 2026" caller-lstart="Wed Oct 28 06:50:25 2026"
+MATCH: handoff recorded the caller start time
+after release: <lock and owner dir gone>

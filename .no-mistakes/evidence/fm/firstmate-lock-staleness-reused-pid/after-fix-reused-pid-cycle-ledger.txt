@@ -1,0 +1,13 @@
+[fix] planted lock: pid=53013 (live: sleep, started Wed Oct 28 06:45:22 2026    ) recorded pid-start='Mon Oct 26 19:42:32 2026'
+[fix] arm output so far:
+    watcher: started pid=53050 (beacon fresh)
+[fix] ending the watcher cycle: kill -TERM 53050
+[fix] arm exited: yes
+[fix] arm final output:
+    watcher: started pid=53050 (beacon fresh)
+    watcher: FAILED - watcher cycle exited 143 without an actionable reason
+[fix] cycle ledger (.watch-cycle-exits.log):
+    arm_pid=53021	watcher_pid=53050	origin=started	started_at=1793169922	ended_at=1793169923	exit_code=143	signal=TERM	reason=signal-exit	beacon_age=1	lock_before=pid:53050|identity:Wed Oct 28 06:45:22 2026     bash ~/.no-mistakes/worktrees/260e8caa837a/01M60KPTW4AV25CTAGJZQA2C1H/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+[fix] cycle-ledger lock now: <released> pid=none
+[fix] unrelated pid 53013 still alive (not signalled): yes
+[fix] RESULT: ledger row written
