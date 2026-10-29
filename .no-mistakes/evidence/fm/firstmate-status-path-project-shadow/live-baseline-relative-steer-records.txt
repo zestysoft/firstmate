@@ -1,0 +1,18 @@
+===== baseline relative-path steer to oldscout1 (worktree ~/.treehouse/widget-18fb40/3/widget)
+--- home status log:
+done [at=1793258653]: README.md has 4 lines
+note [at=1793258745]: follow-up acknowledged
+--- home report tail:
+No recommendations. No captain decisions.
+Follow-up: acknowledged
+--- worktree git status --porcelain:
+--- task files inside worktree:
+===== baseline relative-path steer to oldship1 (worktree ~/.treehouse/widget-18fb40/4/widget)
+--- home status log:
+done [at=1793258672]: ready in branch fm/oldship1
+note [at=1793258749]: follow-up acknowledged
+--- home report tail:
+Committed on branch fm/oldship1; no tests, nothing else changed.
+Follow-up: acknowledged
+--- worktree git status --porcelain:
+--- task files inside worktree:

@@ -1,0 +1,68 @@
+===== task newscout1 (worktree ~/.treehouse/widget-18fb40/1/widget)
+--- home status log: /tmp/fmv.NMGUtD/home/state/newscout1.status
+done [at=1793258570]: README.md has 4 lines; report written
+--- home report dir: /tmp/fmv.NMGUtD/home/data/newscout1/
+brief.md
+launch-brief.md
+report.md
+--- report.md:
+# newscout1 report
+
+Command: `wc -l ~/.treehouse/widget-18fb40/1/widget/README.md`
+
+Result: README.md has **4 lines**.
+
+No captain calls. Nothing to recommend.
+--- worktree state/ and data/ contents:
+~/.treehouse/widget-18fb40/1/widget/data:
+total 8
+drwxr-xr-x@ 3 Ian  staff   96 Oct 29 00:22 .
+drwxr-xr-x@ 8 Ian  staff  256 Oct 29 00:22 ..
+-rw-r--r--@ 1 Ian  staff   38 Oct 29 00:22 README.md
+
+~/.treehouse/widget-18fb40/1/widget/state:
+total 8
+drwxr-xr-x@ 3 Ian  staff   96 Oct 29 00:22 .
+drwxr-xr-x@ 8 Ian  staff  256 Oct 29 00:22 ..
+-rw-r--r--@ 1 Ian  staff   42 Oct 29 00:22 README.md
+--- worktree git status --porcelain (untracked/modified):
+--- worktree branch log:
+5f57b3e seed
+ README.md       | 4 ++++
+ data/README.md  | 1 +
+ state/README.md | 1 +
+ widget.py       | 2 ++
+ 4 files changed, 8 insertions(+)
+--- any newscout1 files anywhere in worktree:
+===== task newship1 (worktree ~/.treehouse/widget-18fb40/2/widget)
+--- home status log: /tmp/fmv.NMGUtD/home/state/newship1.status
+done [at=1793258587]: ready in branch fm/newship1
+--- home report dir: /tmp/fmv.NMGUtD/home/data/newship1/
+brief.md
+launch-brief.md
+report.md
+--- report.md:
+Added sub(a, b) returning a - b to widget.py.
+Committed on branch fm/newship1; no tests (not requested).
+--- worktree state/ and data/ contents:
+~/.treehouse/widget-18fb40/2/widget/data:
+total 8
+drwxr-xr-x@ 3 Ian  staff   96 Oct 29 00:22 .
+drwxr-xr-x@ 8 Ian  staff  256 Oct 29 00:22 ..
+-rw-r--r--@ 1 Ian  staff   38 Oct 29 00:22 README.md
+
+~/.treehouse/widget-18fb40/2/widget/state:
+total 8
+drwxr-xr-x@ 3 Ian  staff   96 Oct 29 00:22 .
+drwxr-xr-x@ 8 Ian  staff  256 Oct 29 00:22 ..
+-rw-r--r--@ 1 Ian  staff   42 Oct 29 00:22 README.md
+--- worktree git status --porcelain (untracked/modified):
+--- worktree branch log:
+f04892c Add sub(a, b) to widget.py
+5f57b3e seed
+
+    Add sub(a, b) to widget.py
+
+ widget.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+--- any newship1 files anywhere in worktree:

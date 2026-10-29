@@ -1,0 +1,31 @@
+===== baseline (old code) task oldscout1, worktree ~/.treehouse/widget-18fb40/3/widget
+--- home status log:
+done [at=1793258653]: README.md has 4 lines
+--- home data dir:
+brief.md
+launch-brief.md
+report.md
+--- worktree git status --porcelain:
+--- worktree log:
+5f57b3e seed
+ data/README.md  | 1 +
+ state/README.md | 1 +
+ widget.py       | 2 ++
+ 4 files changed, 8 insertions(+)
+--- task files inside worktree:
+===== baseline (old code) task oldship1, worktree ~/.treehouse/widget-18fb40/4/widget
+--- home status log:
+done [at=1793258672]: ready in branch fm/oldship1
+--- home data dir:
+brief.md
+launch-brief.md
+report.md
+--- worktree git status --porcelain:
+--- worktree log:
+94e4074 Add sub(a, b) to widget.py
+5f57b3e seed
+    Add sub(a, b) to widget.py
+
+ widget.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+--- task files inside worktree:

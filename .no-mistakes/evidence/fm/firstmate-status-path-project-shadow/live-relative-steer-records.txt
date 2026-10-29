@@ -1,0 +1,32 @@
+===== relative-path steer to newscout1 (worktree ~/.treehouse/widget-18fb40/1/widget)
+--- home status log:
+done [at=1793258570]: README.md has 4 lines; report written
+note [at=1793258700]: follow-up acknowledged
+--- home report tail:
+
+No captain calls. Nothing to recommend.
+Follow-up: acknowledged
+--- inbox handled:
+/tmp/fmv.NMGUtD/home/state/newscout1.inbox:
+handled
+
+/tmp/fmv.NMGUtD/home/state/newscout1.inbox/handled:
+001.msg
+--- worktree git status --porcelain:
+--- task files inside worktree:
+===== relative-path steer to newship1 (worktree ~/.treehouse/widget-18fb40/2/widget)
+--- home status log:
+done [at=1793258587]: ready in branch fm/newship1
+note [at=1793258702]: follow-up acknowledged
+--- home report tail:
+Added sub(a, b) returning a - b to widget.py.
+Committed on branch fm/newship1; no tests (not requested).
+Follow-up: acknowledged
+--- inbox handled:
+/tmp/fmv.NMGUtD/home/state/newship1.inbox:
+handled
+
+/tmp/fmv.NMGUtD/home/state/newship1.inbox/handled:
+001.msg
+--- worktree git status --porcelain:
+--- task files inside worktree:
