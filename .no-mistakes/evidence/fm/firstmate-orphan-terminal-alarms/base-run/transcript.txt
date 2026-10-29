@@ -1,0 +1,9 @@
+[08:34:41] lab: FM_HOME=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.QPp1bg session=fm-lab-leftover-old-38991-6044 live window=fm-lab-leftover-old-38991-6044:w1:p2 retired window=fm-lab-leftover-old-38991-6044:w1:p3 bin=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-base.GXUPXe/bin
+[08:34:41] started real watcher pid=39263 (/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-base.GXUPXe/bin/fm-watch.sh)
+[08:34:45] round 1: watcher's live Herdr wait covers retired pane w1:p3; retiring its task record (rm retired.meta) mid-wait
+[08:34:45] round 1: drove real Herdr edge: retired pane -> blocked
+[08:34:49] round 1: watcher EXITED rc=0 stdout: stale: fm-lab-leftover-old-38991-6044:w1:p3 (herdr: agent blocked - waiting on human, escalated immediately, not via wedge timer)
+[08:34:49] stale rows for retired window: 1
+[08:34:49] triage-log leftover lines: 0
+[08:34:49] done
+[08:34:51] teardown: lab session fm-lab-leftover-old-38991-6044 removed, fleet tripwire unchanged

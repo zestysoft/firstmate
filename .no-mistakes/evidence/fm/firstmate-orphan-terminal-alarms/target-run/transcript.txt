@@ -1,0 +1,18 @@
+[08:33:56] lab: FM_HOME=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.AwANwq session=fm-lab-leftover-new-26213-28587 live window=fm-lab-leftover-new-26213-28587:w1:p2 retired window=fm-lab-leftover-new-26213-28587:w1:p3 bin=~/.no-mistakes/worktrees/260e8caa837a/01M643ZT4JDP8FCZJWPCFVVQ0P/bin
+[08:33:56] started real watcher pid=26437 (~/.no-mistakes/worktrees/260e8caa837a/01M643ZT4JDP8FCZJWPCFVVQ0P/bin/fm-watch.sh)
+[08:33:57] round 1: watcher's live Herdr wait covers retired pane w1:p3; retiring its task record (rm retired.meta) mid-wait
+[08:33:57] round 1: drove real Herdr edge: retired pane -> blocked
+[08:34:01] round 1: watcher still running (no wake)
+[08:34:14] round 2: watcher's live Herdr wait covers retired pane w1:p3; retiring its task record (rm retired.meta) mid-wait
+[08:34:14] round 2: drove real Herdr edge: retired pane -> blocked
+[08:34:18] round 2: watcher still running (no wake)
+[08:34:31] round 3: watcher's live Herdr wait covers retired pane w1:p3; retiring its task record (rm retired.meta) mid-wait
+[08:34:31] round 3: drove real Herdr edge: retired pane -> blocked
+[08:34:35] round 3: watcher still running (no wake)
+[08:34:35] stale rows for retired window: 0
+[08:34:35] triage-log leftover lines: 3
+[08:34:35] live: drove real Herdr edge: live task pane -> blocked
+[08:34:35] live: watcher exited rc=0 with wake line: stale: fm-lab-leftover-new-26213-28587:w1:p2 (herdr: agent blocked - waiting on human, escalated immediately, not via wedge timer)
+[08:34:35] stale rows for live window: 1
+[08:34:35] done
+[08:34:36] teardown: lab session fm-lab-leftover-new-26213-28587 removed, fleet tripwire unchanged
