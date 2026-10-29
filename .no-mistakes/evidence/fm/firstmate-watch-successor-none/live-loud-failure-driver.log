@@ -1,0 +1,4 @@
+20:07:25.910117000 append WAKE_5 users=4 rows=4 failures_on_main=0
+20:07:36.010048000 branch began WAKE_5 turn -> break arming (hide lab config) and append WAKE_6
+20:07:51.526220000 typed restoration failure visible on main
+20:07:51.541930000 lab config restored

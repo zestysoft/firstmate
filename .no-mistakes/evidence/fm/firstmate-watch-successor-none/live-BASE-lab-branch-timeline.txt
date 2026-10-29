@@ -1,0 +1,42 @@
+== 2026-10-29T20-11-13-637Z_01a18949-bd65-706e-a004-68ad3f680f68.jsonl
+2026-10-29T20:11:13.637Z None  
+2026-10-29T20:11:13.651Z None  
+2026-10-29T20:11:13.651Z None  
+2026-10-29T20:11:13.902Z system  
+2026-10-29T20:11:13.902Z user  ['FIRSTMATE SUPERVISION WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.oZ0yBh/sta']
+2026-10-29T20:11:16.155Z assistant ['bash'] []
+2026-10-29T20:11:18.530Z toolResult  
+2026-10-29T20:11:20.687Z assistant ['bash'] []
+2026-10-29T20:11:20.981Z toolResult  
+2026-10-29T20:11:23.447Z assistant ['read'] []
+2026-10-29T20:11:23.448Z toolResult  
+2026-10-29T20:11:26.972Z assistant ['fm_branch_report'] []
+2026-10-29T20:11:27.369Z toolResult  
+2026-10-29T20:11:30.192Z assistant ['bash'] []
+2026-10-29T20:11:30.501Z toolResult  
+2026-10-29T20:11:32.489Z assistant  ['Handled and reported the `demo` signal, acknowledged the wake, and released the task lease.']
+2026-10-29T20:11:36.184Z user  ['FIRSTMATE SUPERVISION WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.oZ0yBh/sta']
+2026-10-29T20:11:38.747Z assistant ['bash'] []
+2026-10-29T20:11:39.857Z toolResult  
+2026-10-29T20:11:42.083Z assistant ['bash'] []
+2026-10-29T20:11:42.417Z toolResult  
+2026-10-29T20:11:45.348Z assistant ['read'] []
+2026-10-29T20:11:45.349Z toolResult  
+2026-10-29T20:11:49.272Z assistant ['fm_branch_report'] []
+2026-10-29T20:11:49.679Z toolResult  
+2026-10-29T20:11:52.591Z assistant ['fm_branch_report'] []
+2026-10-29T20:11:53.016Z toolResult  
+2026-10-29T20:11:55.583Z assistant ['bash'] []
+2026-10-29T20:11:55.917Z toolResult  
+2026-10-29T20:11:58.249Z assistant  ['Handled both completion events, reported each to MAIN, acknowledged the wake, and released the `demo` lease.']
+2026-10-29T20:11:58.394Z None  
+2026-10-29T20:11:59.279Z user  ['FIRSTMATE SUPERVISION WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.oZ0yBh/sta']
+2026-10-29T20:12:01.847Z assistant ['bash'] []
+2026-10-29T20:12:03.002Z toolResult  
+2026-10-29T20:12:04.928Z assistant ['bash'] []
+2026-10-29T20:12:05.146Z toolResult  
+2026-10-29T20:12:08.232Z assistant ['fm_branch_report'] []
+2026-10-29T20:12:08.620Z toolResult  
+2026-10-29T20:12:13.417Z assistant ['bash'] []
+2026-10-29T20:12:13.749Z toolResult  
+2026-10-29T20:12:15.937Z assistant  ['Handled the no-change signal, reported it silently, acknowledged the wake, and released the `demo` lease.']

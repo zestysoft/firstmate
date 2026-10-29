@@ -1,0 +1,23 @@
+2026-10-29T20:05:01.653Z pid=64317 restore attempt=0 predecessor=64805 start=ok pid=69795
+2026-10-29T20:05:04.521Z pid=64317 confirm generation=64913.1793304299.YkJgxU watcherPid=69828 result=confirmed
+2026-10-29T20:05:41.272Z pid=64317 restore attempt=0 predecessor=69795 start=ok pid=83177
+2026-10-29T20:05:44.307Z pid=64317 confirm generation=69828.1793304338.wgDiVy watcherPid=83255 result=confirmed
+2026-10-29T20:06:30.347Z pid=64317 restore attempt=0 predecessor=83177 start=ok pid=97835
+2026-10-29T20:06:32.925Z pid=64317 confirm generation=83255.1793304387.gu1uzU watcherPid=97865 result=confirmed
+2026-10-29T20:06:41.565Z pid=64317 restore attempt=0 predecessor=97835 start=ok pid=4503
+2026-10-29T20:06:44.662Z pid=64317 confirm generation=83255.1793304387.gu1uzU watcherPid=4538 result=confirmed
+2026-10-29T20:07:31.808Z pid=64317 restore attempt=0 predecessor=4503 start=ok pid=17200
+2026-10-29T20:07:34.589Z pid=64317 confirm generation=4538.1793304449.2jGdp8 watcherPid=17230 result=confirmed
+2026-10-29T20:07:42.149Z pid=64317 restore attempt=0 predecessor=17200 start=ok pid=20822
+2026-10-29T20:07:42.274Z pid=64317 restore attempt=0 readiness=timeout pid=20822
+2026-10-29T20:07:42.538Z pid=64317 restore attempt=1 predecessor=17200 start=ok pid=20891
+2026-10-29T20:07:42.647Z pid=64317 restore attempt=1 readiness=timeout pid=20891
+2026-10-29T20:07:43.158Z pid=64317 restore attempt=2 predecessor=17200 start=ok pid=20944
+2026-10-29T20:07:43.265Z pid=64317 restore attempt=2 readiness=timeout pid=20944
+2026-10-29T20:07:44.275Z pid=64317 restore attempt=3 predecessor=17200 start=ok pid=20984
+2026-10-29T20:07:44.360Z pid=64317 restore attempt=3 readiness=timeout pid=20984
+2026-10-29T20:07:46.368Z pid=64317 restore attempt=4 predecessor=17200 start=ok pid=21093
+2026-10-29T20:07:46.450Z pid=64317 restore attempt=4 readiness=timeout pid=21093
+2026-10-29T20:07:50.459Z pid=64317 restore attempt=5 predecessor=17200 start=ok pid=21320
+2026-10-29T20:07:50.541Z pid=64317 restore attempt=5 readiness=timeout pid=21320
+2026-10-29T20:07:50.541Z pid=64317 restore exhausted attempts=6 outcome=hand-to-main

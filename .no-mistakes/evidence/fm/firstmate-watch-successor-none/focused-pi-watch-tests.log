@@ -1,0 +1,11 @@
+ok - Pi session replacement auto-arms and carries its in-flight actionable close
+ok - Pi streaming-time wake delivery keeps the successor chain and replays only unconsumed wakes
+ok - Pi actionable successor close restores continuity or reports failure during held branch delivery (replacement=no)
+ok - Pi actionable successor close restores continuity or reports failure during held main delivery (replacement=no)
+ok - Pi failure successor close restores continuity or reports failure during held branch delivery (replacement=no)
+ok - Pi refused successor close restores continuity or reports failure during held branch delivery (replacement=no)
+ok - Pi refused successor close restores continuity or reports failure during held branch delivery (replacement=yes)
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi actionable close starts one successor before wake delivery settles
+ok - Pi hung successor falls back to one typed actionable wake
+ok - Pi suite leaves no orphaned process from its temporary root

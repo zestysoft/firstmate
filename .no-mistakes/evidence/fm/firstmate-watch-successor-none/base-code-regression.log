@@ -1,0 +1,9 @@
+not ok - Pi actionable successor close must restore continuity during held branch delivery (replacement=no): file://~/.no-mistakes/worktrees/260e8caa837a/01M64KT5YCHR4V3FMXP2M0CAF7/[eval1]:44
+  throw new Error(`timeout waiting for ${label}: arms=${rows().join(" | ")} prompts=${prompts.join(" | ")}`);
+        ^
+
+Error: timeout waiting for live replacement while delivery is held: arms=arm=7151 predecessor= | arm=7164 predecessor=7151 prompts=
+    at waitFor (file://~/.no-mistakes/worktrees/260e8caa837a/01M64KT5YCHR4V3FMXP2M0CAF7/[eval1]:44:9)
+    at async file://~/.no-mistakes/worktrees/260e8caa837a/01M64KT5YCHR4V3FMXP2M0CAF7/[eval1]:70:3
+
+Node.js v26.13.0: expected exit 0, got 1

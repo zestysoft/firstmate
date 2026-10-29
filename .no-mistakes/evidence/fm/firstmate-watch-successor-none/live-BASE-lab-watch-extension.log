@@ -1,0 +1,6 @@
+2026-10-29T20:11:09.926Z pid=61012 restore attempt=0 predecessor=61385 start=ok pid=67148
+2026-10-29T20:11:13.111Z pid=61012 confirm generation=61637.1793304667.Su7tCA watcherPid=67217 result=confirmed
+2026-10-29T20:11:35.340Z pid=61012 restore attempt=0 predecessor=67148 start=ok pid=81911
+2026-10-29T20:11:35.940Z pid=61012 confirm generation=67217.1793304694.81P2iC watcherPid=81966 result=confirmed
+2026-10-29T20:11:58.393Z pid=61012 restore attempt=0 predecessor=81911 start=ok pid=92903
+2026-10-29T20:11:59.039Z pid=61012 confirm generation=67217.1793304694.81P2iC watcherPid=92933 result=confirmed

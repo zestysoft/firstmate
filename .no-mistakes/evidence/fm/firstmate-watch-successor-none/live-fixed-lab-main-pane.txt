@@ -1,0 +1,60 @@
+
+
+ Thinking...
+
+
+ $ bin/fm-wake-drain.sh (timeout 120s)
+
+ 1793304460   12   signal   demo.status   signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.wQuWdv/state/demo.status
+ WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 12 --recovery-generation 4538.1793304449.2jGdp8
+ WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+
+ Took 3.9s
+
+
+ ⚓ [seq 7] demo: Demo work also reported completion: LIVE_LOUD_WAKE_6 finished. The task remains already cleaned up, so no further action was needed.
+
+ Thinking...
+
+
+ $ bin/fm-wake-drain.sh (timeout 120s)
+
+ 1793304460   12   signal   demo.status   signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.wQuWdv/state/demo.status
+ WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 12 --recovery-generation 4538.1793304449.2jGdp8
+ WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+
+ Took 3.8s
+
+
+ Thinking...
+
+
+ $ bin/fm-wake-drain.sh --ack-through 12 --recovery-generation 4538.1793304449.2jGdp8 (timeout 120s)
+
+ (no output)
+
+ Took 0.8s
+
+
+
+ fm_watch_arm_pi
+ watcher: started Pi extension arm child 13; future ordinary re-arms are automatic; call fm_watch_arm_pi again only after a later notification says the cycle is missing, failed, or unhealthy
+
+
+ Watcher wake handled and acknowledged. Watcher continuity repair was restarted successfully.
+
+
+ fm_branch_processed through=6
+ processed through seq 6; 1 newer captain outcome(s) remain unprocessed (seq 7) and will be presented again
+
+
+
+ fm_branch_processed through=7
+ processed through seq 7; no captain outcome remains unprocessed
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/.no-mistakes/worktrees/260e8caa837a/01M64KT5YCHR4V3FMXP2M0CAF7 (detached)
+↑18k ↓399 R91k CH98.7% $0.116 (sub) 3.1%/272k (auto)                                                                                                                          (openai) gpt-5.6-sol • low

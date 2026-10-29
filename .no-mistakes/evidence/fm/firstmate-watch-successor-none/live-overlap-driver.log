@@ -1,0 +1,7 @@
+20:06:24.685237000 append WAKE_3 users=2 rows=2
+20:06:34.325659000 branch began turn for WAKE_3 -> append WAKE_4 now
+20:06:41.620708000 cycle log has WAKE_4 close
+arm_pid=64805 watcher_pid=64913 ended_at=1793304301 exit_code=0 successor=started:69828
+arm_pid=69795 watcher_pid=69828 ended_at=1793304340 exit_code=0 successor=started:83255
+arm_pid=83177 watcher_pid=83255 ended_at=1793304389 exit_code=0 successor=started:97865
+arm_pid=97835 watcher_pid=97865 ended_at=1793304400 exit_code=0 successor=started:4538
