@@ -1,0 +1,63 @@
+=== ship-nm (--mode no-mistakes)
+exit=0
+--- line 2:
+Once the Setup isolation check passes, your first action is to append a `working:` status line with the rule 4 command under Rules, then run the numbered Setup steps and begin the first unit of work in the same turn; ending this opening turn with no work product is a stall, not a finish.
+--- 'first action' count (case-insensitive): 1
+--- rule 4:
+32:4. Report status by appending one line:
+--- setup step 1:
+23:1. Create your branch: `git checkout -b fm/t-ship-nm --`
+=== ship-dpr (--mode direct-PR)
+exit=0
+--- line 2:
+Once the Setup isolation check passes, your first action is to append a `working:` status line with the rule 4 command under Rules, then run the numbered Setup steps and begin the first unit of work in the same turn; ending this opening turn with no work product is a stall, not a finish.
+--- 'first action' count (case-insensitive): 1
+--- rule 4:
+31:4. Report status by appending one line:
+--- setup step 1:
+23:1. Create your branch: `git checkout -b fm/t-ship-dpr --`
+=== ship-lo (--mode local-only)
+exit=0
+--- line 2:
+Once the Setup isolation check passes, your first action is to append a `working:` status line with the rule 4 command under Rules, then run the numbered Setup steps and begin the first unit of work in the same turn; ending this opening turn with no work product is a stall, not a finish.
+--- 'first action' count (case-insensitive): 1
+--- rule 4:
+31:4. Report status by appending one line:
+--- setup step 1:
+23:1. Create your branch: `git checkout -b fm/t-ship-lo --`
+=== ship-gerrit (--mode direct-PR --forge gerrit)
+exit=0
+--- line 2:
+Once the Setup isolation check passes, your first action is to append a `working:` status line with the rule 4 command under Rules, then run the numbered Setup steps and begin the first unit of work in the same turn; ending this opening turn with no work product is a stall, not a finish.
+--- 'first action' count (case-insensitive): 1
+--- rule 4:
+31:4. Report status by appending one line:
+--- setup step 1:
+23:1. Create your branch: `git checkout -b fm/t-ship-gerrit --`
+=== ship-lab (--mode no-mistakes --herdr-lab)
+exit=0
+--- line 2:
+Once the Setup isolation check passes, your first action is to append a `working:` status line with the rule 4 command under Rules, then run the numbered Setup steps and begin the first unit of work in the same turn; ending this opening turn with no work product is a stall, not a finish.
+--- 'first action' count (case-insensitive): 1
+--- rule 4:
+50:4. Report status by appending one line:
+--- setup step 1:
+20:1. Set `HERDR_LAB_HELPER='~/.no-mistakes/worktrees/260e8caa837a/01M62HNYHD8D5E0R17XVVESENQ/bin/fm-herdr-lab.sh'` and generate the session name with `HERDR_LAB_SESSION=$("$HERDR_LAB_HELPER" name t-ship-lab)`.
+=== scout (--scout)
+exit=0
+--- line 2:
+Your first action is to append a `working:` status line with the rule 4 command under Rules, then begin the first unit of work in the same turn; ending this opening turn with no work product is a stall, not a finish.
+--- 'first action' count (case-insensitive): 1
+--- rule 4:
+26:4. Report status by appending one line:
+--- setup step 1:
+23:1. Never push to any remote and never open a PR.
+=== scout-lab (--scout --herdr-lab)
+exit=0
+--- line 2:
+Your first action is to append a `working:` status line with the rule 4 command under Rules, then begin the first unit of work in the same turn; ending this opening turn with no work product is a stall, not a finish.
+--- 'first action' count (case-insensitive): 1
+--- rule 4:
+44:4. Report status by appending one line:
+--- setup step 1:
+20:1. Set `HERDR_LAB_HELPER='~/.no-mistakes/worktrees/260e8caa837a/01M62HNYHD8D5E0R17XVVESENQ/bin/fm-herdr-lab.sh'` and generate the session name with `HERDR_LAB_SESSION=$("$HERDR_LAB_HELPER" name t-scout-lab)`.
