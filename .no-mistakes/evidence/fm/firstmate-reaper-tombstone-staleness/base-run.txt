@@ -1,0 +1,27 @@
+[base] unrelated live pid=93775 start='Thu Oct 29 08:31:49 2026    '
+
+[base] S1: a reaper is mid-cleanup and alive; a second cleaner runs
+[base] live reaper pid=93808 tombstone: .reaped.93808
+[base] second cleaner rc=1; link still present: yes; tombstone: .reaped.93808
+[base] live reaper finished rc=0; link present: no; tombstones left: 0
+
+[base] S2: reaper died mid-cleanup and its pid was recycled by an unrelated live program
+[base] tombstone now names live pid: .reaped.93775
+[base] cleaner rc=1; link present: yes; tombstones left: 1; unrelated alive: yes
+
+[base] S3: same recycled-pid wedge on the steal mutex; a real caller tries to take the dead-held lock
+[base] primary created by an exited holder pid=93907
+[base] steal tombstone: .reaped.93775
+[base] fm_lock_try_acquire rc=1 held_pid=93907 recovered= mypid=93963 new_owner_pid=93907
+
+[base] S4 (guard): legacy pid-only tombstone naming a live pid is still respected
+[base] cleaner rc=1; link present: yes; tombstone: .reaped.93775
+
+[base] S5 (guard): start-time probe unavailable for the live pid -> still respected
+[base] cleaner rc=0; link present: no; tombstone: 
+
+[base] S6 (guard): malformed empty '.start-' suffix on a live pid -> still respected
+[base] cleaner rc=0; link present: no; tombstone: 
+
+[base] S7: tombstone of a dead reaper (pid gone, no reuse) is still cleaned
+[base] cleaner rc=0; link present: no; tombstones left: 0
