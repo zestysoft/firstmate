@@ -533,11 +533,24 @@ window_is_busy() {  # <window> <tail40>
   esac
 }
 
+# Every value of <key>= in <meta>, newline-separated, read with builtins: the
+# same result as grep '^<key>=' <meta> | cut -d= -f2-, without its two forks on
+# each of the per-window lookups below.
+window_meta_values() {  # <meta> <key>
+  local line out='' sep=''
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      "$2="*) out=$out$sep${line#"$2="}; sep=$'\n' ;;
+    esac
+  done < "$1" 2>/dev/null
+  printf '%s' "$out"
+}
+
 window_kind() {
   local w=$1 meta kind
   meta=$(fm_backend_meta_for_window "$w" "$STATE" 2>/dev/null || true)
   if [ -n "$meta" ]; then
-    kind=$(grep '^kind=' "$meta" | cut -d= -f2- || true)
+    kind=$(window_meta_values "$meta" kind)
     [ -n "$kind" ] || kind=ship
     echo "$kind"
     return 0
@@ -552,7 +565,7 @@ window_backend() {
   local w=$1 meta backend
   meta=$(fm_backend_meta_for_window "$w" "$STATE" 2>/dev/null || true)
   if [ -n "$meta" ]; then
-    backend=$(grep '^backend=' "$meta" | cut -d= -f2- || true)
+    backend=$(window_meta_values "$meta" backend)
     [ -n "$backend" ] || backend=tmux
     echo "$backend"
     return 0
@@ -564,7 +577,7 @@ window_harness() {
   local w=$1 meta
   meta=$(fm_backend_meta_for_window "$w" "$STATE" 2>/dev/null || true)
   [ -n "$meta" ] || return 0
-  grep '^harness=' "$meta" | cut -d= -f2- || true
+  window_meta_values "$meta" harness
 }
 
 window_label() {
@@ -3161,8 +3174,8 @@ scan_signals() {
     [ -n "$sig" ] || continue
     sf=$(fm_wake_signal_seen_path "$STATE" "$f")
     case "$f" in
-      *.status) fm_wake_signal_seen_current "$STATE" "$f" && continue ;;
-      *) [ "$sig" = "$(cat "$sf" 2>/dev/null)" ] && continue ;;
+      *.status) fm_wake_signal_seen_current "$STATE" "$f" "$sig" && continue ;;
+      *) { [ "$sig" = "$(<"$sf")" ]; } 2>/dev/null && continue ;;
     esac
     printf '%s\t%s\t%s\n' "$sf" "$sig" "$f"
   done

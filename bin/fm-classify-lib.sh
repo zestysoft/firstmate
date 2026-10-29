@@ -1774,9 +1774,60 @@ _status_observed_path_state() {
   fi
 }
 
+# One Darwin stat for the path state, size, and identity fields that
+# status_observed_signature otherwise reads with a stat per field. It yields the
+# same values and the same per-field error words as those separate reads, and
+# returns 1 only where a reader override or a non-Darwin host keeps them.
+_status_observed_darwin_fields() {  # <file>; sets path_state size ident
+  local out epoch birth
+  [ "$_FM_CLASSIFY_UNAME_S" = Darwin ] || return 1
+  [ -z "${FM_STATUS_SIZE_READER:-}${FM_STATUS_IDENTITY_READER:-}" ] || return 1
+  if ! out=$(LC_ALL=C /usr/bin/stat -f '%HT:%p|%z|%d:%i|%B|%FB' "$1" 2>/dev/null); then
+    path_state=stat-error size=size-error ident=identity-error
+    return 0
+  fi
+  path_state=${out%%|*}; out=${out#*|}
+  size=${out%%|*}; out=${out#*|}
+  ident=${out%%|*}; out=${out#*|}
+  epoch=${out%%|*}; birth=${out#*|}
+  [ "$epoch" != 0 ] || birth=''
+  size=${size//[[:space:]]/}
+  case "$size" in ''|*[!0-9]*) size='size-error' ;; esac
+  case "$ident$birth" in
+    *$'\t'*|*$'\n'*|'') ident=identity-error ;;
+    *) if [ -n "$birth" ]; then ident="strong:$ident:$birth"; else ident="weak:$ident"; fi ;;
+  esac
+}
+
+# Hex of the NUL-joined signature fields, byte-identical to
+# printf '%s\0...' | od -An -v -tx1 | tr -d ' \n' but encoded with builtins
+# whenever every field is plain ASCII from the set below; any other byte keeps
+# the od encoding.
+_status_observed_encode() {  # <field>...
+  local field out='' sep='' i h
+  for field in "$@"; do
+    case "$field" in
+      *[!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' :._/@+,=-']*)
+        printf '%s\0%s\0%s\0%s\0%s\0%s' "$@" | LC_ALL=C od -An -v -tx1 | tr -d ' \n'
+        return
+        ;;
+    esac
+  done
+  for field in "$@"; do
+    out=$out$sep; sep=00; i=0
+    while [ "$i" -lt "${#field}" ]; do
+      printf -v h '%02x' "'${field:i:1}"
+      out=$out$h; i=$((i + 1))
+    done
+  done
+  printf '%s' "$out"
+}
+
 status_observed_signature() {
   local f=$1 size=${2-} ident=${3-} path_state link_target=- access kind encoded
-  path_state=$(_status_observed_path_state "$f") || path_state=stat-error
+  if [ -n "$size$ident" ] || ! _status_observed_darwin_fields "$f"; then
+    path_state=$(_status_observed_path_state "$f") || path_state=stat-error
+  fi
   if [ -L "$f" ]; then
     link_target=$(readlink "$f" 2>/dev/null) || link_target=readlink-error
     kind=symlink
@@ -1799,15 +1850,15 @@ status_observed_signature() {
     [ -n "$ident" ] || ident=identity-error
   fi
   if [ -r "$f" ]; then access=readable; else access=unreadable; fi
-  encoded=$(printf '%s\0%s\0%s\0%s\0%s\0%s' \
-    "$size" "$ident" "$path_state" "$link_target" "$access" "$kind" \
-    | LC_ALL=C od -An -v -tx1 | tr -d ' \n') || return 1
+  encoded=$(_status_observed_encode \
+    "$size" "$ident" "$path_state" "$link_target" "$access" "$kind") || return 1
   printf 'r1:%s' "$encoded"
 }
 
 status_presentation_marker_reported_matches() {
   local raw
-  raw=$(cat "$1" 2>/dev/null) || return 1
+  # Read like cat, without forking it on every poll: a directory still fails.
+  [ ! -d "$1" ] && { raw=$(<"$1"); } 2>/dev/null || return 1
   status_presentation_marker_parse "$raw" || return 1
   [ "$STATUS_PRESENTATION_REPORTED" = "$2" ]
 }

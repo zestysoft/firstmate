@@ -16,7 +16,7 @@ FM_LOCK_STALE_AFTER="${FM_LOCK_STALE_AFTER:-2}"
 # confirm and 0.5s attach polls, and forking uname per call is a measurable cost on
 # the platform (Git Bash/MSYS) that already pays the highest fork price.
 _FM_UNAME=$(uname 2>/dev/null || echo unknown)
-mkdir -p "$STATE"
+[ -d "$STATE" ] || mkdir -p "$STATE"
 
 # Most wake-library consumers need only queue and lock primitives, including
 # deliberately minimal recovery fixtures and remote installations.
@@ -3056,9 +3056,11 @@ fm_wake_signal_seen_size() {  # <state> <file>
 # This predicate never consults the owned-append ledger, which is what makes it
 # the safe gate for a captain-facing surface: a line must never be withheld from
 # presentation merely because this home is the writer that appended it.
-fm_wake_signal_reported_current() {  # <state> <file>
-  local sig marker
-  sig=$(fm_wake_signal_sig "$2") || return 1
+# A caller that has just computed <file>'s signature may pass it as <sig> so the
+# file is not signed twice in one check.
+fm_wake_signal_reported_current() {  # <state> <file> [<sig>]
+  local sig=${3-} marker
+  [ -n "$sig" ] || sig=$(fm_wake_signal_sig "$2") || return 1
   [ -n "$sig" ] || return 1
   marker=$(fm_wake_signal_seen_path "$1" "$2")
   case "$2" in
@@ -3078,10 +3080,10 @@ fm_wake_signal_reported_current() {  # <state> <file>
 # without owned growth is not a match, so uncertainty still reads as unreported.
 # This is the wake-scan predicate and answers only "should this wake the home?".
 # Presentation asks the different question and uses
-# fm_wake_signal_reported_current.
-fm_wake_signal_seen_current() {  # <state> <file>
+# fm_wake_signal_reported_current. An optional <sig> is passed through to it.
+fm_wake_signal_seen_current() {  # <state> <file> [<sig>]
   local classified size
-  fm_wake_signal_reported_current "$1" "$2" && return 0
+  fm_wake_signal_reported_current "$1" "$2" "${3-}" && return 0
   case "$2" in *.status) ;; *) return 1 ;; esac
   _fm_wake_require_classify || return 1
   classified=$(fm_wake_signal_seen_size "$1" "$2")
