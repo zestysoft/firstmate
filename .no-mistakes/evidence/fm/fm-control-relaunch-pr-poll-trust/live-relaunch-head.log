@@ -1,0 +1,55 @@
+### lab tree: 66768c017c168be95da9d077d1bf811a3e43635c  task: labcc38af89c978-worker
+### 1. turn trace context on for this home session
+effective: 59013 on  lock: 59013
+### 2. record the PR and arm its merge poll (as fm-pr-check.sh would: pr= last)
+--- meta before relaunch ---
+window=firstmate:fm-labcc38af89c978-worker
+endpoint_task_id=labcc38af89c978-worker
+worktree=/private/tmp/fmlab.nmhead/treehouse/.treehouse/notes-62e4ac/1/notes
+project=/private/tmp/fmlab.nmhead/home/projects/notes
+harness=claude
+approval_mode=auto
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/labcc38af89c978-worker
+tasktmp=/tmp/fm-labcc38af89c978-worker
+model=sonnet
+effort=low
+busy_gen=g1793378692.52875.30980
+spawn_gen=s1793378692.50029.23447
+pr=https://github.com/kunchenguid/firstmate/pull/7994
+pr_head=0c67481b8d5911e9bb8b2a8e116b43b232160b69
+PR poll authenticates: YES
+### 3. real relaunch: fm-control.sh labcc38af89c978-worker relaunch
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+relaunched labcc38af89c978-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-labcc38af89c978-worker worktree=/private/tmp/fmlab.nmhead/treehouse/.treehouse/notes-62e4ac/1/notes
+relaunch rc=0
+--- meta after relaunch ---
+window=firstmate:fm-labcc38af89c978-worker
+endpoint_task_id=labcc38af89c978-worker
+worktree=/private/tmp/fmlab.nmhead/treehouse/.treehouse/notes-62e4ac/1/notes
+project=/private/tmp/fmlab.nmhead/home/projects/notes
+harness=claude
+approval_mode=auto
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/labcc38af89c978-worker
+tasktmp=/tmp/fm-labcc38af89c978-worker
+model=sonnet
+effort=low
+busy_gen=g1793379365.30230.2160
+spawn_gen=s1793379366.29592.1018
+control_relaunch_tx=29070.20261030T165602Z.32177
+traceparent=00-038b3f36b23571aaa33a7c597fab3a8f-6f8f35e9a87954ed-01
+pr=https://github.com/kunchenguid/firstmate/pull/7994
+pr_head=0c67481b8d5911e9bb8b2a8e116b43b232160b69
+### 4. result
+PR poll authenticates: YES
+lines after pr=: 
+traceparent lines: 1
+### 5. the watcher's own check program (fm-pr-poll via labcc38af89c978-worker.check.sh) runs:
+-rw-------@ 1 Ian  wheel  10259 Oct 30 09:55 /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.check.sh
+-rw-------@ 1 Ian  wheel     96 Oct 30 09:55 /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.pr-poll
+-rw-------@ 1 Ian  wheel    314 Oct 30 09:55 /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.pr-poll-registration

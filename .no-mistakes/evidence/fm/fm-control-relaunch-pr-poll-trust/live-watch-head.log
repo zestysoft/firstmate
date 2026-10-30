@@ -1,0 +1,10 @@
+watcher exit=0
+--- watcher stdout/stderr ---
+signal: /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.status /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.turn-ended
+--- new wake-queue rows ---
+1793379424	1	signal	labcc38af89c978-worker.status	signal: /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.status /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.turn-ended
+1793379424	2	signal	labcc38af89c978-worker.turn-ended	signal: /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.status /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.turn-ended
+1793379425	3	signal	labcc38af89c978-worker.status	signal: /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.status /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.turn-ended
+1793379425	4	signal	labcc38af89c978-worker.turn-ended	signal: /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.status /private/tmp/fmlab.nmhead/home/state/labcc38af89c978-worker.turn-ended
+--- .last-check present (sweep ran): yes
+--- unauthenticated rejection seen: 0

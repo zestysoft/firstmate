@@ -1,0 +1,14 @@
+lab: /private/tmp/fmlab.nmbase (tear down with: bin/fm-live-lab.sh down /private/tmp/fmlab.nmbase)
+tree: df81d8166aab83f328aa3a05516cbe21882d5e23 from ~/.no-mistakes/worktrees/260e8caa837a/01M66SKAEGPT1WYVJ1FHE69TY0
+spawned lab79bf2c199b83-worker harness=claude kind=ship mode=local-only yolo=on window=firstmate:fm-lab79bf2c199b83-worker worktree=/private/tmp/fmlab.nmbase/treehouse/.treehouse/notes-f3e8e8/1/notes
+gate: /private/tmp/fmlab.nmbase/home/data/lab79bf2c199b83-worker/gate (touch, then message the worker to resume)
+primary: claude --setting-sources project,local --model sonnet --effort medium --permission-mode auto
+ok primary: claude pid 50820 in /private/tmp/fmlab.nmbase/home
+fail probe: no LABREADY-79bf2c199b83 reply in window main (model refused, turn still running, or a dialog is open)
+ok trust: /private/tmp/fmlab.nmbase/home is trusted in the Claude store
+fail mirror: the dialog mirror has no captain and main entry yet (captain=1 main=0)
+fail host: no live supervision host (expected one)
+fail watcher: no live watcher with a fresh beacon holds the lab home
+ok worker: lab79bf2c199b83-worker parked on /private/tmp/fmlab.nmbase/home/data/lab79bf2c199b83-worker/gate
+ok treehouse: ~/.treehouse unchanged
+not ready after 150s; the lab is left up for inspection: bin/fm-live-lab.sh pane /private/tmp/fmlab.nmbase, then bin/fm-live-lab.sh down /private/tmp/fmlab.nmbase

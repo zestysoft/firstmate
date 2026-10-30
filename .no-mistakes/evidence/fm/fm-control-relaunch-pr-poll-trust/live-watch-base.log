@@ -1,0 +1,7 @@
+watcher exit=0
+--- watcher stdout/stderr ---
+check: rejected unauthenticated state checks: /private/tmp/fmlab.nmbase/home/state/lab79bf2c199b83-worker.check.sh
+--- new wake-queue rows ---
+1793379678	1	check	unauthenticated-state-checks	check: rejected unauthenticated state checks: /private/tmp/fmlab.nmbase/home/state/lab79bf2c199b83-worker.check.sh
+--- .last-check present (sweep ran): yes
+--- unauthenticated rejection seen: 2
