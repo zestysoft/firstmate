@@ -1,0 +1,28 @@
+1..1
+ok - an unverified Codex declared wait records and keeps the long pause cadence
+FM_TEST_COMPLETE
+## test_unverified_codex_declared_wait_keeps_pause_cadence exit=0 secs=22
+1..1
+ok - a parked live worker surfaces once, absorbs pane churn for the whole re-surface window, then re-surfaces when it elapses
+FM_TEST_COMPLETE
+## test_live_declared_wait_churn_honors_the_resurface_throttle exit=0 secs=257
+1..1
+ok - exited declared-pause and captain-held panes use bounded pause cadence while a live decision gate still surfaces once
+FM_TEST_COMPLETE
+## test_exited_declared_pause_is_bounded_but_live_gate_surfaces exit=0 secs=31
+1..1
+ok - a declared pause is periodically rechecked against authoritative active-run state
+FM_TEST_COMPLETE
+## test_nonterminal_paused_rechecks_authoritative_state exit=0 secs=3
+1..1
+ok - a paused status overridden by authoritative working preserves its wedge timer, is rechecked rather than wedge-escalated while the declaration stands, and escalates once it is lifted
+FM_TEST_COMPLETE
+## test_paused_authoritative_working_preserves_wedge_timer exit=0 secs=10
+1..1
+ok - a stale window with no open captain call keeps alarming on every new hash
+FM_TEST_COMPLETE
+## test_stale_churn_without_a_captain_call_still_alarms exit=0 secs=39
+1..1
+ok - a not-provably-working non-terminal stale is surfaced immediately (never left to wait out the timer)
+FM_TEST_COMPLETE
+## test_nonterminal_stale_not_working_surfaced exit=0 secs=3

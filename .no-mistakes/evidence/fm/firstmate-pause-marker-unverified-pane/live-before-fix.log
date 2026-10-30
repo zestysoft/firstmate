@@ -1,0 +1,13 @@
+09:34:04 lab=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.vVqoyj root=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-before.S1zVwv
+09:34:04 worker pane foreground: codex
+09:34:04 status declared: paused: waiting for firstmate to answer the encounter camera question
+probe: agent_alive=alive
+probe: busy_verdict=unknown codex-unverified
+probe: crew_state=state: unknown · source: pane · harness state unavailable (unknown codex-unverified)
+09:34:15 round 0: watcher EXITED after 5s rc=0 reason: signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.vVqoyj/state/camera-question.status|
+09:34:26 round 1: watcher EXITED after 8s rc=0 reason: stale: lab:crew|
+09:35:15 round 2: watcher still quietly running after 45s (no wake); paused-marker=yes stale-since=no
+09:36:06 round 3: watcher still quietly running after 45s (no wake); paused-marker=yes stale-since=no
+09:36:57 round 4: watcher still quietly running after 45s (no wake); paused-marker=yes stale-since=no
+09:37:01 worker pane still alive: codex
+09:37:01 RESULT label=before-fix restarts=4 stale-wakes-printed=1 stale-wakes-queued=1

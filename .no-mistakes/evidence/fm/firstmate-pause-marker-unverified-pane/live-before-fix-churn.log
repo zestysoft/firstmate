@@ -1,0 +1,22 @@
+09:38:30 lab=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.KtDJoQ root=/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-before.S1zVwv
+09:38:30 worker pane foreground: codex
+09:38:30 status declared: paused: waiting for firstmate to answer the encounter camera question
+probe: agent_alive=alive
+probe: busy_verdict=unknown codex-unverified
+probe: crew_state=state: unknown · source: pane · harness state unavailable (unknown codex-unverified)
+09:38:39 round 0: watcher EXITED after 3s rc=0 reason: signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.KtDJoQ/state/camera-question.status|
+09:38:47 round 1: watcher EXITED after 7s rc=0 reason: stale: lab:crew|
+09:39:04 round 2: churned worker pane at 15s
+09:39:20 round 2: churned worker pane at 30s
+09:39:36 round 2: churned worker pane at 45s
+09:39:41 round 2: watcher still quietly running after 50s (no wake); paused-marker=yes stale-since=no
+09:40:00 round 3: churned worker pane at 15s
+09:40:16 round 3: churned worker pane at 30s
+09:40:32 round 3: churned worker pane at 45s
+09:40:37 round 3: watcher still quietly running after 50s (no wake); paused-marker=yes stale-since=no
+09:40:58 round 4: churned worker pane at 15s
+09:41:14 round 4: churned worker pane at 30s
+09:41:30 round 4: churned worker pane at 45s
+09:41:35 round 4: watcher still quietly running after 50s (no wake); paused-marker=yes stale-since=no
+09:41:38 worker pane still alive: codex
+09:41:38 RESULT label=before-fix-churn churn=1 restarts=4 stale-wakes-printed=1 stale-wakes-queued=1
