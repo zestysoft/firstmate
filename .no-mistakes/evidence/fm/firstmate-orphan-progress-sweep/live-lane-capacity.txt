@@ -1,0 +1,32 @@
+## Lane capacity: config/lane-capacity = 3, three ship lanes recorded
+capacity: free_lanes=0 reason=full lanes=3 target=3 secondmates=0 load1=4.20 cores=18 mem_free_pct=14 disk_free_mb=824647
+progressing	waiting	paused
+progressing	accessory	hold-captain
+progressing	witness	hold-captain
+progressing	next-unit	lane-capacity-full
+exit=0
+[guard exit=0]
+
+## Lane capacity = 5 (two lanes free)
+capacity: free_lanes=2 reason=ok lanes=3 target=5 secondmates=0 load1=4.20 cores=18 mem_free_pct=14 disk_free_mb=824643
+progressing	waiting	paused
+progressing	accessory	hold-captain
+progressing	witness	hold-captain
+orphan	next-unit	queued-ready
+exit=0
+
+## Lane capacity file unreadable (chmod 000): must NOT count as full
+capacity: free_lanes=unknown reason=invalid-target lanes=3 target=invalid secondmates=0 load1=4.20 cores=18 mem_free_pct=14 disk_free_mb=824627
+progressing	waiting	paused
+progressing	accessory	hold-captain
+progressing	witness	hold-captain
+orphan	next-unit	queued-ready
+exit=0
+
+## Lane capacity garbage value
+capacity: free_lanes=unknown reason=invalid-target lanes=3 target=invalid secondmates=0 load1=4.20 cores=18 mem_free_pct=14 disk_free_mb=824623
+progressing	waiting	paused
+progressing	accessory	hold-captain
+progressing	witness	hold-captain
+orphan	next-unit	queued-ready
+exit=0

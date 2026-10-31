@@ -1,0 +1,10 @@
+acked: --ack-through 6 --recovery-generation 20037.1793488883.VpMYEQ  (queue rows left: 0
+0)
+=== watcher run 1 (heartbeat-streak before=3)
+check: progress-orphan accessory worker-dead-after-done (+2 more)
+[watcher exit=0]
+heartbeat-streak after=0
+--- check rows in .wake-queue:
+7	progress-orphan:accessory	check: progress-orphan accessory worker-dead-after-done
+8	progress-orphan:witness	check: progress-orphan witness worker-dead
+9	progress-orphan:next-unit	check: progress-orphan next-unit queued-ready

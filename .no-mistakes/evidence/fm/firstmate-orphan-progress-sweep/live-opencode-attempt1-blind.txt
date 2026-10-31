@@ -1,0 +1,69 @@
+un
+un   ▣  Sisyphus - Ultraworker · Claude Haiku 5.5 · 1.4s                                                                                                                            Lab test message
+un                                                                                                                              ┃                                              ┃
+un┃                                                                                                                             ┃  Model not found: omlx/gemma-4-31b-it-4bit.  ┃    Context
+un┃  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                                                   ┃                                              ┃    132,593 tokens
+un┃  ●  TURN WOULD END BLIND - SUPERVISION IS OFF                                                                                                                                   13% used
+un┃  ●  3 task(s) in flight, but no live watcher holds this home lock (last beat: 0s ago).                                                                                          $0.20 spent
+un┃  ●  The Stop-owned auto-arm did not claim this home either, so recovery is NOT already under way.
+un┃  ●  repair missing watcher supervision by letting the OpenCode TUI plugin arm after idle; use bin/fm-watch-arm.sh only as a manual recovery probe if the plugin reports         ▼ MCP
+un┃  failure.                                                                                                                                                                       • ast_grep Connected
+un┃  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                                                                                                       • context7 Connected
+un┃  <!-- OMO_INTERNAL_INITIATOR -->                                                                                                                                                • cua-driver Connected
+un┃                                                                                                                                                                                 • grep_app Connected
+un                                                                                                                                                                                  • lsp Connected
+un┃                                                                                                                                                                                 • websearch Connected
+un┃  ⁣ FIRSTMATE_OP: v1 turn-end-guard: TURN WOULD END BLIND - supervision is off. The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction
+un┃  below before ending the turn.                                                                                                                                                  LSP
+un┃  ⁣                                                                                                                                                                               LSPs are disabled
+un┃  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+un┃  ⁣●  TURN WOULD END BLIND - SUPERVISION IS OFF
+un┃  ●  3 task(s) in flight, but no live watcher holds this home lock (last beat: 2s ago).
+un┃  ●  repair missing watcher supervision by letting the OpenCode TUI plugin arm after idle; use bin/fm-watch-arm.sh only as a manual recovery probe if the plugin reports
+un┃  failure.
+un┃  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+un┃
+un┃
+un
+un   Captain, supervision is still off. The guard fired again: three tasks in flight and no live watcher on this home's lock.
+un
+un   Reply "probe" to run the manual watcher probe bin/fm-watch-arm.sh, or "start" to run bin/fm-session-start.sh. I'm not acting until you choose.
+un
+un   ▣  Sisyphus - Ultraworker · Claude Haiku 5.5 · 1.6s
+un
+un┃
+un┃  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+un┃  ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+un┃  ●  3 task(s) in flight, but no live watcher holds this home lock (last beat: 2s ago).
+un┃  ●  The Stop-owned auto-arm did not claim this home either, so recovery is NOT already under way.
+un┃  ●  repair missing watcher supervision by letting the OpenCode TUI plugin arm after idle; use bin/fm-watch-arm.sh only as a manual recovery probe if the plugin reports
+un┃  failure.
+un┃  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+un┃  <!-- OMO_INTERNAL_INITIATOR -->
+un┃
+un
+un┃
+un┃  ⁣ FIRSTMATE_OP: v1 turn-end-guard: TURN WOULD END BLIND - supervision is off. The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction
+un┃  below before ending the turn.
+un┃  ⁣
+un┃  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+un┃  ⁣●  TURN WOULD END BLIND - SUPERVISION IS OFF
+un┃  ●  3 task(s) in flight, but no live watcher holds this home lock (last beat: 2s ago).
+un┃  ●  repair missing watcher supervision by letting the OpenCode TUI plugin arm after idle; use bin/fm-watch-arm.sh only as a manual recovery probe if the plugin reports
+un┃  failure.
+un┃  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+un┃
+un┃
+un                                                                                                                                                                              yO
+ed   Captain, supervision is still off. The guard fired again: three tasks in flight and no live watcher on this home's lock.
+un
+un   Reply "probe" to run the manual watcher probe bin/fm-watch-arm.sh, or "start" to run bin/fm-session-start.sh. I'm not acting until you choose.
+un
+un   ▣  Sisyphus - Ultraworker · Claude Haiku 5.5 · 1.7s
+un┃
+un┃                                                                                                                                                                                 /private/var/folders/vm/
+un┃                                                                                                                                                                                 y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-
+un┃  Sisyphus - Ultraworker · Claude Haiku 5.5 GitHub Copilot                                                                                                                       lab.iqoMpL:main
+un╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+un                                                                           on       /       ies/                                         132.6K (13%) · $0.20  ctrl+p commands    • OpenCode 1.15.13
+

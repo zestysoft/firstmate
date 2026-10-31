@@ -1,0 +1,19 @@
+## Re-fire: acknowledge the orphan wakes without fixing anything, run the heartbeat again
+acked: --ack-through 9 --recovery-generation 23132.1793488905.TMbtxU  (queue rows left: 0
+0)
+=== watcher run 1 (heartbeat-streak before=3)
+stale: %2
+[watcher exit=0]
+heartbeat-streak after=0
+--- check rows in .wake-queue:
+## (previous run woke 'stale: %2' for the live paused pane - unrelated stale-pane supervision); run again
+acked: --ack-through 10 --recovery-generation 25452.1793488915.wi9tKk  (queue rows left: 0
+0)
+=== watcher run 1 (heartbeat-streak before=3)
+check: progress-orphan accessory worker-dead-after-done (+2 more)
+[watcher exit=0]
+heartbeat-streak after=0
+--- check rows in .wake-queue:
+11	progress-orphan:accessory	check: progress-orphan accessory worker-dead-after-done
+12	progress-orphan:witness	check: progress-orphan witness worker-dead
+13	progress-orphan:next-unit	check: progress-orphan next-unit queued-ready

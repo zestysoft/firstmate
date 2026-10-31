@@ -1,0 +1,69 @@
+un
+un┃                                                                                                                                                                                 Lab test response
+un┃  # Check current crew state in .
+un┃                                                                                                                                                                                 Context
+un┃  $ bin/fm-crew-state.sh 2>&1 | head -80                                                                                                                                         122,561 tokens
+un┃                                                                                                                                                                                 12% used
+un┃  usage: fm-crew-state.sh <id>                                                                                                                                                   $0.13 spent
+un┃
+un                                                                                                                                                                                  ▼ MCP
+un┃                                                                                                                                                                                 • ast_grep Connected
+un┃  # Check current state of accessory and witness in .                                                                                                                            • context7 Connected
+un┃                                                                                                                                                                                 • cua-driver Connected
+un┃  $ for id in accessory witness; do bin/fm-crew-state.sh $id 2>&1 | head -40; echo ---; done                                                                                     • grep_app Connected
+un┃                                                                                                                                                                                 • lsp Connected
+un┃  state: unknown · source: none · worktree gone (torn down?)                                                                                                                     • websearch Connected
+un┃  ---
+un┃  state: unknown · source: none · worktree gone (torn down?)                                                                                                                     LSP
+un┃  ---                                                                                                                                                                            LSPs are disabled
+un┃
+un
+un   + Thought: 755ms
+un
+un┃
+un┃  # Record captain holds for orphaned items
+un┃
+un┃  $ cd /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.iqoMpL && bin/fm-captain-hold.sh hold accessory --reason "worker ended after reporting fix on local
+un┃  branch; worktree is gone, so landing state is unverified; captain to confirm whether to land or clean up" && bin/fm-captain-hold.sh hold witness --reason "worker dead and
+un┃  worktree gone with status showing run in progress; unlanded work status unknown; captain to decide relaunch or cleanup" && bin/fm-captain-hold.sh hold next-unit --reason
+un┃  "queued and ready but no captain go-ahead to dispatch yet" ; echo rc=$?
+un┃
+un┃  accessory
+un┃  witness
+un┃  next-unit
+un┃  rc=0
+un┃
+un
+un┃
+un┃  # Acknowledge drained wake sequence 16 in .
+un┃
+un┃  $ bin/fm-wake-drain.sh --ack-through 16 --recovery-generation 11513.1793489685.dBcVvA
+un┃
+un┃  (no output)
+un┃
+un
+un   Captain, three items were flagged as idle with no recorded reason. I've put each one on hold rather than acting on it. Nothing was torn down, relaunched, or landed.
+un
+un   - accessory: the worker reported its fix on the local branch and then ended. Its worktree is gone, so I can't confirm the fix actually landed. It's on hold until you tell
+un     me whether to land it or clean it up.
+un   - witness: the worker is dead, its worktree is gone, and its last status was "handing back the witness run." Unlanded work may be lost or may already be elsewhere. It's
+un     on hold until you decide whether to relaunch it or clean it up.
+un   - next-unit: queued and ready, but I haven't dispatched it because I don't have your go-ahead. Say the word and I'll spawn it.
+un
+un   The wake queue is drained and acknowledged through sequence 16. Tell me which of these you want, and in what order.
+un
+un   ▣  Sisyphus - Ultraworker · Claude Haiku 5.5 · 26.0s
+un
+un┃
+un┃  Hook command timed out after 30000msfirstmate watcher auto-arm INTERRUPTED by TERM - the Stop-owned automatic supervision mechanism did not reach a terminal watcher
+un┃  outcome.
+un┃  Do not launch a manual background arm from this notice; investigate the automatic Stop hook and watcher startup before ending blind.
+un┃  <!-- OMO_INTERNAL_INITIATOR -->
+un┃
+un┃
+un┃                                                                                                                                                                                 /private/var/folders/vm/
+un┃                                                                                                                                                                                 y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-
+un┃  Sisyphus - Ultraworker · Claude Haiku 5.5 GitHub Copilot                                                                                                                       lab.iqoMpL:main
+un╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+un                                                                           on       /       ies/                                         122.6K (12%) · $0.13  ctrl+p commands    • OpenCode 1.15.13
+

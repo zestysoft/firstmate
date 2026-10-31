@@ -1,0 +1,38 @@
+## Lab primary checkout + real watcher alive; workers witness and accessory gone. Claude Stop, session lab-s1:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  TURN WOULD END IDLE - 3 item(s) in flight or ready with no worker, wait, hold, or blocker:
+●    accessory - worker-dead-after-done
+●    witness - worker-dead
+●    next-unit - queued-ready
+●  Give each one a typed reason before ending the turn: dispatch, steer, or relaunch it; land it through the guarded path when that is within authority; record an external wait as a backlog hold or blocker; or hold it for the captain with bin/fm-captain-hold.sh hold.
+●  A teardown or merge refusal is never cleared with --force: it needs the captain's word, so hold it for the captain.
+●  bin/fm-progress-sweep.sh --all shows every item's reason.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[guard exit=2]
+
+## Same session's very next stop (the one forced follow-up must end):
+[guard exit=0]
+
+## A later turn of the same session is refused again:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  TURN WOULD END IDLE - 3 item(s) in flight or ready with no worker, wait, hold, or blocker:
+●    accessory - worker-dead-after-done
+●    witness - worker-dead
+●    next-unit - queued-ready
+●  Give each one a typed reason before ending the turn: dispatch, steer, or relaunch it; land it through the guarded path when that is within authority; record an external wait as a backlog hold or blocker; or hold it for the captain with bin/fm-captain-hold.sh hold.
+●  A teardown or merge refusal is never cleared with --force: it needs the captain's word, so hold it for the captain.
+●  bin/fm-progress-sweep.sh --all shows every item's reason.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[guard exit=2]
+
+## Codex-style stop, stop_hook_active=false:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  TURN WOULD END IDLE - 3 item(s) in flight or ready with no worker, wait, hold, or blocker:
+●    accessory - worker-dead-after-done
+●    witness - worker-dead
+●    next-unit - queued-ready
+●  Give each one a typed reason before ending the turn: dispatch, steer, or relaunch it; land it through the guarded path when that is within authority; record an external wait as a backlog hold or blocker; or hold it for the captain with bin/fm-captain-hold.sh hold.
+●  A teardown or merge refusal is never cleared with --force: it needs the captain's word, so hold it for the captain.
+●  bin/fm-progress-sweep.sh --all shows every item's reason.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[guard exit=2]

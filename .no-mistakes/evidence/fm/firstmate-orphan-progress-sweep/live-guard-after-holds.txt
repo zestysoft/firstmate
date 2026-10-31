@@ -1,0 +1,24 @@
+## All items held, real watcher alive: Codex-style and Claude-style stops
+[guard exit=0]
+[guard exit=0]
+
+## Adversarial: captain releases the next-unit hold (ready again, nothing dispatched)
+cannot be written is reported as `actionable:` on stderr rather than undoing
+the record; bin/fm-inactive-reconcile.sh's diagnostics name a broken binding.
+[guard exit=0]
+## (retry) captain hold on next-unit lifted via tasks-axi unhold:
+ok: unhold next-unit -> cleared
+task:
+  id: next-unit
+progressing	waiting	paused
+progressing	accessory	hold-captain
+progressing	witness	hold-captain
+orphan	next-unit	queued-ready
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  TURN WOULD END IDLE - 1 item(s) in flight or ready with no worker, wait, hold, or blocker:
+●    next-unit - queued-ready
+●  Give each one a typed reason before ending the turn: dispatch, steer, or relaunch it; land it through the guarded path when that is within authority; record an external wait as a backlog hold or blocker; or hold it for the captain with bin/fm-captain-hold.sh hold.
+●  A teardown or merge refusal is never cleared with --force: it needs the captain's word, so hold it for the captain.
+●  bin/fm-progress-sweep.sh --all shows every item's reason.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[guard exit=2]

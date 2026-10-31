@@ -1,0 +1,59 @@
+[user] LAB TEST ONLY. Reply PONG. Never dispatch, spawn, relaunch, land, or tear down anything in this lab. If you are told an item is idle with no reason, give it a captain hold with bin/fm-captain-hold.sh hold <id> --reason 'lab test' and nothing else.
+[user] ⁣FIRSTMATE_OP: v1 session-start: Run `bin/fm-session-start.sh` now, exactly once, before executing any other instructions.
+[assistant] PONG
+[user] ⁣FIRSTMATE_OP: v1 turn-end-guard: TURN WOULD END BLIND - supervision is off. The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction below before ending the turn.
+
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  TURN WOULD END BLIND - SUPERVISION IS OFF
+●  3 task(s) in flight, but no live watcher holds this home lock (last beat: 61s ago).
+●  repair missing watcher supervision by letting the OpenCode TUI plugin arm after idle; use bin/fm-watch-arm.sh only as a manual recovery probe if the plugin reports failure.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[assistant] Captain, supervision is off: 3 tasks are in flight, but no live watcher holds the home lock (last beat 61s ago). The recovery instruction says the OpenCode TUI plugin should re-arm the watcher after idle. I have no report that the plugin failed, so I have not run `bin/fm-watch-arm.sh`; it is only a manual fallback for a plugin failure. I'm not dispatching, relaunching, landing, or tearing anything down in this lab. If the plugin reports failure, or the watcher is still missing after it should have armed, I'll run the manual probe next.
+[user] ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  TURN WOULD END BLIND - SUPERVISION IS OFF
+●  3 task(s) in flight, but no live watcher holds this home lock (last beat: 66s ago).
+●  The Stop-owned auto-arm did not claim this home either, so recovery is NOT already under way.
+●  repair missing watcher supervision by letting the OpenCode TUI plugin arm after idle; use bin/fm-watch-arm.sh only as a manual recovery probe if the plugin reports failure.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<!-- OMO_INTERNAL_INITIATOR -->
+[user] ⁣FIRSTMATE_OP: v1 turn-end-guard: TURN WOULD END BLIND - supervision is off. The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction below before ending the turn.
+
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  TURN WOULD END BLIND - SUPERVISION IS OFF
+●  3 task(s) in flight, but no live watcher holds this home lock (last beat: 68s ago).
+●  repair missing watcher supervision by letting the OpenCode TUI plugin arm after idle; use bin/fm-watch-arm.sh only as a manual recovery probe if the plugin reports failure.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[assistant] Captain, the notice now says the auto-arm did not claim this home, so recovery is not under way. That counts as the plugin failing to arm, so I'm running the manual probe.
+[tool] bash: bin/fm-watch-arm.sh
+  -> watcher: started pid=31508 (beacon fresh)
+
+
+<shell_metadata>
+shell tool terminated command after exceeding timeout 120000 ms. If this command is expected to take longer and is not waiting for interactive input, retry with a larger timeout value in milliseconds.
+</shell_metadata>
+[tool] bash: ps -p 31508 -o pid=,command= 2>/dev/null || echo "pid 31508 not running"
+  -> pid 31508 not running
+
+[assistant] Captain, the watcher is not holding supervision. The probe printed `watcher: started pid=31508 (beacon fresh)`, but that process is no longer running. The shell also timed out after 120 seconds, so the probe may have exited abnormally or been killed with the shell.
+
+Supervision is still off for the 3 tasks in flight. I have not dispatched, relaunched, landed, or torn anything down. I also have not killed any watcher broadly. Next I need to find out why the probe's watcher exited. I'll check the probe's output and the home lock before arming again.
+[user] ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  TURN WOULD END BLIND - SUPERVISION IS OFF
+●  3 task(s) in flight, but no live watcher holds this home lock (last beat: 15s ago).
+●  The Stop-owned auto-arm did not claim this home either, so recovery is NOT already under way.
+●  repair missing watcher supervision by letting the OpenCode TUI plugin arm after idle; use bin/fm-watch-arm.sh only as a manual recovery probe if the plugin reports failure.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<!-- OMO_INTERNAL_INITIATOR -->
+[user] ⁣FIRSTMATE_OP: v1 turn-end-guard: TURN WOULD END BLIND - supervision is off. The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction below before ending the turn.
+
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  TURN WOULD END BLIND - SUPERVISION IS OFF
+●  3 task(s) in flight, but no live watcher holds this home lock (last beat: 18s ago).
+●  repair missing watcher supervision by letting the OpenCode TUI plugin arm after idle; use bin/fm-watch-arm.sh only as a manual recovery probe if the plugin reports failure.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[assistant] Captain, supervision is still off and the notice is repeating. The probe's watcher died, so I'm checking how the arm script is meant to run before trying again.
+[tool] bash: sed -n '1,60p' bin/fm-watch-arm.sh
+  -> 

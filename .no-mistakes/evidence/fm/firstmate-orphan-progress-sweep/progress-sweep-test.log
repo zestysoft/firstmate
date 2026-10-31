@@ -1,0 +1,21 @@
+1..19
+ok - sweep: the 31 October dead worker and unlanded finished work are orphans
+ok - sweep: a paused, a held, and a blocked row each carry a typed reason
+ok - sweep: the grace window and a working worker are typed reasons
+ok - sweep: finished and unanswered work with a live worker is orphaned
+ok - sweep: Queued orphans, held and secondmate rows, and a missing task record
+ok - sweep: ready public-followup obligations are not read as dispatchable rows
+ok - sweep: TOON-quoted numeric and boolean ids are read as their real ids
+ok - sweep: a ready row held by a full lane cap is progressing and wakes nobody
+ok - sweep: an undeterminable lane capacity still reports the ready row as an orphan
+ok - heartbeat: the 31 October orphans wake firstmate and reset the backoff
+ok - heartbeat: a still-orphaned item re-fires without duplicating its queued wake
+ok - heartbeat: paused, held, and blocked rows stay silent
+ok - turn-end guard: the 31 October state refuses the turn end as IDLE
+ok - turn-end guard: paused, held, and blocked rows let the turn end silently
+ok - turn-end guard: a ready Queued row with nothing in flight is refused once per turn
+ok - turn-end guard: Claude allows exactly one forced idle follow-up per turn
+ok - turn-end guard: each Claude session gets its own one forced idle follow-up
+ok - turn-end guard: a read-only second session is never refused for idle items
+ok - Pi adapter: an idle refusal is relayed without the supervision-outage framing
+FM_TEST_COMPLETE

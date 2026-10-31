@@ -1,0 +1,24 @@
+## Step 1: all three crew panes alive (real tmux lab server), real fm-crew-state
+%0 witness
+%1 accessory
+%2 waiting
+$ fm-progress-sweep.sh --all
+progressing	waiting	paused
+orphan	accessory	terminal-done
+progressing	witness	idle-watched
+orphan	next-unit	queued-ready
+exit=0
+
+## Step 2: kill the witness and accessory panes (worker died), as on 31 October
+%2 waiting
+$ fm-progress-sweep.sh --all
+progressing	waiting	paused
+orphan	accessory	worker-dead-after-done
+orphan	witness	worker-dead
+orphan	next-unit	queued-ready
+exit=0
+$ fm-progress-sweep.sh   (orphans only)
+orphan	accessory	worker-dead-after-done
+orphan	witness	worker-dead
+orphan	next-unit	queued-ready
+exit=0
