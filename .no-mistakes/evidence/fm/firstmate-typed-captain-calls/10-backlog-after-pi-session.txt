@@ -1,0 +1,7 @@
+- [ ] lab-fw - Flash the router firmware (repo: lab) (kind: captain) (since 2026-10-31) (hold: fm-hold-v1:Zmxhc2hpbmcgbmVlZHMgaGlzIHNheQ==) (hold-kind: captain)
+  Captain hold set: 2026-11-01T05:00:23Z
+  Captain hold class: exploit-kernel-security-flash
+- [ ] lab-ci-spend - Approve 40 USD spend on CI minutes (repo: lab) (kind: captain) (since 2026-10-31) (hold: fm-hold-v1:NDAgVVNEIENJIG1pbnV0ZXM7IGNhcHRhaW4ncyBhcHByb3ZhbCByZXF1aXJlZCBiZWZvcmUgc3BlbmRpbmc=) (hold-kind: captain)
+  Captain hold set: 2026-11-01T05:00:41Z
+  Captain hold class: money
+

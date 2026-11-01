@@ -1,0 +1,29 @@
+ Thinking...
+ $ cd /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/primary && echo "== crew-state beta =="; ./bin/fm-crew-state.sh beta 2>&1 | head -20; echo "== crew-state gamma ==";
+ ./bin/fm-crew-state.sh gamma 2>&1 | head -20; echo "== note-archive =="; cat /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/data/note-archive.md
+ ... (5 earlier lines, ctrl+o to expand)
+ ## Archived 2026-10-31
+ - [ ] lab-login - Sign in to the vendor portal (repo: lab) (kind: captain) (since 2026-10-31) (hold: fm-hold-v1:bmVlZHMgdGhlIGNhcHRhaW4ncyBsb2dpbg==) (hold-kind: captain)
+   Captain hold set: 2026-11-01T04:47:11Z
+   Captain hold class: physical-or-credential
+ Took 0.2s
+ Thinking...
+ Operation aborted
+ Thinking...
+ $ cd /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/primary && ./bin/fm-tasks-axi.sh add --help 2>&1 | head -30; echo "=== hold usage ==="; ./bin/fm-captain-hold.sh hold 2>&1
+ | head -12; echo "=== classes ==="; ./bin/fm-captain-hold.sh classes 2>&1 | head -20
+ ... (31 earlier lines, ctrl+o to expand)
+ destructive-irreversible-security
+ discard-unlanded
+ design-pick
+ repeated-finding-ruling
+ deferred-by-captain
+ Took 0.4s
+ Lab test only. Reply with exactly OK. No tools.
+ Thinking...
+ OK
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/primary (main)
+↑27k ↓5.0k R239k CH98.6% 12.3%/262k (auto)                                                                                                                          (qwen38fn) qwen3.8-flash-next • high
+Waiting on you: 0

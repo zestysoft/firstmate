@@ -1,0 +1,61 @@
+== S1: the class vocabulary
+$ bin/fm-captain-hold.sh classes
+money
+permanent-removal
+merge-or-landing-outside-authority
+exploit-kernel-security-flash
+physical-or-credential
+product-or-scope-expansion
+destructive-irreversible-security
+discard-unlanded
+design-pick
+repeated-finding-ruling
+deferred-by-captain
+[exit 0]
+
+== S2: Waiting on you with no holds
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 0
+[exit 0]
+
+== S3: hold with no --class is refused
+$ bin/fm-captain-hold.sh hold lab-rental --title Spend on the rental car --reason approve 300 USD rental --repo lab
+fm-captain-hold: --class is required: name which of the captain's categories this call belongs to (money, permanent-removal, merge-or-landing-outside-authority, exploit-kernel-security-flash, physical-or-credential, product-or-scope-expansion, destructive-irreversible-security, discard-unlanded, design-pick, repeated-finding-ruling, deferred-by-captain); if no class fits, it is not a captain call and is firstmate's to decide
+[exit 1]
+
+== S4: hold with an unknown class is refused
+$ bin/fm-captain-hold.sh hold lab-rental --title Spend on the rental car --class misc --reason approve 300 USD rental --repo lab
+fm-captain-hold: unknown --class misc: the captain-hold classes are money, permanent-removal, merge-or-landing-outside-authority, exploit-kernel-security-flash, physical-or-credential, product-or-scope-expansion, destructive-irreversible-security, discard-unlanded, design-pick, repeated-finding-ruling, deferred-by-captain; if no class fits, it is not a captain call and is firstmate's to decide
+[exit 1]
+
+== S5: deferred-by-captain without --until is refused
+$ bin/fm-captain-hold.sh hold lab-later --title Revisit cutover --class deferred-by-captain --reason captain said later --repo lab
+fm-captain-hold: --class deferred-by-captain records the captain's own later and requires --until YYYY-MM-DD
+[exit 1]
+-- backlog after refusals (nothing written):
+## In flight
+
+## Queued
+
+## Done
+
+== S6: valid money hold
+$ bin/fm-captain-hold.sh hold lab-rental --title Spend on the rental car --class money --reason approve 300 USD rental --repo lab
+lab-rental
+[exit 0]
+-- backlog:
+## In flight
+
+## Queued
+- [ ] lab-rental - Spend on the rental car (repo: lab) (kind: captain) (since 2026-10-31) (hold: fm-hold-v1:YXBwcm92ZSAzMDAgVVNEIHJlbnRhbA==) (hold-kind: captain)
+  Captain hold set: 2026-11-01T04:46:58Z
+  Captain hold class: money
+## Done
+
+== S7: Waiting on you shows count, title, class
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 1 - Spend on the rental car [money]
+[exit 0]
+$ bin/fm-waiting-on-you.sh --claude
+{"systemMessage":"Waiting on you: 1 - Spend on the rental car [money]"}
+[exit 0]

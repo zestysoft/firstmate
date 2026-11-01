@@ -1,0 +1,31 @@
+ {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny"},"systemMessage":"[persistent-cd] a persistent top-level directory change in the primary firstmate checkout is
+ blocked; it would move the shell out of the home so a later firstmate-owned command runs inside a project clone. Reach the target without moving the shell - use git -C <dir> or an absolute path on
+ the command itself - or scope the cd to a subshell like (cd <dir> && ...)."}
+ Took 0.3s
+ Thinking...
+ $ (cd /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/state && ls -la); echo; echo "== data =="; ls -la
+ /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/data; echo "== projects =="; ls -la /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/projects; echo "==
+ config =="; ls -la /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/config; for f in /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/config/*; do echo
+ "--$f"; cat "$f"; done 2>/dev/null
+ ... (48 earlier lines, ctrl+o to expand)
+ -rw-------@  1 Ian  staff    5 Oct 31 21:50 startup-memory-budget
+ -rw-r--r--@  1 Ian  staff    0 Oct 31 21:48 supervision-host
+ --/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/config/startup-memory-budget
+ 7500
+ --/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/config/supervision-host
+ Took 0.0s
+ Thinking...
+ $ cd /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/primary && echo "== crew-state beta =="; ./bin/fm-crew-state.sh beta 2>&1 | head -20; echo "== crew-state gamma ==";
+ ./bin/fm-crew-state.sh gamma 2>&1 | head -20; echo "== note-archive =="; cat /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/data/note-archive.md
+ ... (5 earlier lines, ctrl+o to expand)
+ ## Archived 2026-10-31
+ - [ ] lab-login - Sign in to the vendor portal (repo: lab) (kind: captain) (since 2026-10-31) (hold: fm-hold-v1:bmVlZHMgdGhlIGNhcHRhaW4ncyBsb2dpbg==) (hold-kind: captain)
+   Captain hold set: 2026-11-01T04:47:11Z
+   Captain hold class: physical-or-credential
+ Took 0.2s
+ Thinking...
+── ⠹ Working ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.FJiKAr/primary (main)
+↑26k ↓3.6k R177k CH95.1% 11.4%/262k (auto)                                                                                                                          (qwen38fn) qwen3.8-flash-next • high
+Waiting on you: 1 - Delete the old photo archive [permanent-removal]

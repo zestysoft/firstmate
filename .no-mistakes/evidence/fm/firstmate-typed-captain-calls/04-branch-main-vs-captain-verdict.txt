@@ -1,0 +1,72 @@
+== S16: supervision branch reports main and captain verdicts (fixture host turn names alpha beta gamma)
+$ env FM_SUPERVISION_ACTOR=branch FM_BRANCH_REPORT_TURN=t1 bin/fm-branch-report.sh --task alpha --verdict main --summary PR ready https://github.com/x/y/pull/7
+recorded seq 1 [main]; the captain has returned, so it is queued for MAIN to act on
+[exit 0]
+$ env FM_SUPERVISION_ACTOR=branch FM_BRANCH_REPORT_TURN=t1 bin/fm-branch-report.sh --task beta --verdict captain --summary needs the captain's login [physical-or-credential]
+recorded seq 2 [captain]; the captain has returned, so it is queued for MAIN to relay
+[exit 0]
+$ env FM_SUPERVISION_ACTOR=branch FM_BRANCH_REPORT_TURN=t1 bin/fm-branch-report.sh --task beta --verdict main --summary tests now green, ready to land
+recorded seq 3 [main]; the captain has returned, so it is queued for MAIN to act on
+[exit 0]
+$ env FM_SUPERVISION_ACTOR=branch FM_BRANCH_REPORT_TURN=t1 bin/fm-branch-report.sh --task gamma --verdict captain --summary spend 40 USD on CI minutes [money]
+recorded seq 4 [captain]; the captain has returned, so it is queued for MAIN to relay
+[exit 0]
+-- refused verdict:
+$ env FM_SUPERVISION_ACTOR=branch FM_BRANCH_REPORT_TURN=t1 bin/fm-branch-report.sh --task alpha --verdict question --summary x
+invalid report: --task, --verdict (routine|main|captain), and --summary are required
+[exit 2]
+-- refused silent main:
+$ env FM_SUPERVISION_ACTOR=branch FM_BRANCH_REPORT_TURN=t1 bin/fm-branch-report.sh --task alpha --verdict main --summary x --silent true
+invalid report: --silent true requires the routine verdict
+[exit 2]
+-- store:
+{"seq":1,"epoch":1793508528,"task":"alpha","wake":"signal: alpha.status","verdict":"main","summary":"PR ready https://github.com/x/y/pull/7","silent":false,"statusEndpoint":0,"statusIdent":"-"}
+{"seq":2,"epoch":1793508529,"task":"beta","wake":"signal: alpha.status","verdict":"captain","summary":"needs the captain's login [physical-or-credential]","silent":false,"statusEndpoint":0,"statusIdent":"-"}
+{"seq":3,"epoch":1793508530,"task":"beta","wake":"signal: alpha.status","verdict":"main","summary":"tests now green, ready to land","silent":false,"statusEndpoint":0,"statusIdent":"-"}
+{"seq":4,"epoch":1793508531,"task":"gamma","wake":"signal: alpha.status","verdict":"captain","summary":"spend 40 USD on CI minutes [money]","silent":false,"statusEndpoint":0,"statusIdent":"-"}
+
+== S17: main's drain presents them
+$ bin/fm-wake-drain.sh
+1793508529	1	check	supervision-host-return:1	check: supervision-host outcome 1 for alpha [main] was recorded after the captain returned, so the return brief may not show it; act on it yourself, it is not a captain call: PR ready https://github.com/x/y/pull/7
+1793508529	2	check	supervision-host-return:2	check: supervision-host outcome 2 for beta [captain] was recorded after the captain returned, so the return brief may not show it; relay it to the captain: needs the captain's login [physical-or-credential]
+1793508531	3	check	supervision-host-return:3	check: supervision-host outcome 3 for beta [main] was recorded after the captain returned, so the return brief may not show it; act on it yourself, it is not a captain call: tests now green, ready to land
+1793508532	4	check	supervision-host-return:4	check: supervision-host outcome 4 for gamma [captain] was recorded after the captain returned, so the return brief may not show it; relay it to the captain: spend 40 USD on CI minutes [money]
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 4 --recovery-generation 82176.1793508529.b9QTsY
+BRANCH OUTCOMES (outcomes the supervision session recorded for you to act on, one line per task, oldest first; verdict main is firstmate's own to act on and never a question for the captain, while verdict captain names one of the captain's own categories; each says what was true when it was recorded, so check the task's current state first, including its still-open decisions listed above under OPEN DECISIONS, and sort them into still open and already settled, such as a decision since answered, a PR since merged, or a task since finished - process the still-open ones as firstmate: tell the captain, land or merge what is ready, answer or escalate a decision, or act on a blocker; your reply to the captain covers only those, as if the settled ones had never been listed, and a settled one needs only the acknowledgement):
+[seq 1, recorded 0m ago, main to act, not a captain call] alpha: PR ready https://github.com/x/y/pull/7
+[seq 3, newest of 2 for this task, recorded 0m ago, includes a captain call] beta: tests now green, ready to land
+[seq 4, recorded 0m ago] gamma: spend 40 USD on CI minutes [money]
+BRANCH OUTCOMES: after processing them run bin/fm-branch-outcome.sh mark-processed --through 4; until then every drain presents them again
+[exit 0]
+
+== S18: unprocessed lists main + captain rows; acknowledge through a main row
+$ bin/fm-branch-outcome.sh unprocessed
+{"seq":1,"epoch":1793508528,"task":"alpha","wake":"signal: alpha.status","verdict":"main","summary":"PR ready https://github.com/x/y/pull/7","silent":false,"statusEndpoint":0,"statusIdent":"-","recordedAgo":"0m"}
+{"seq":2,"epoch":1793508529,"task":"beta","wake":"signal: alpha.status","verdict":"captain","summary":"needs the captain's login [physical-or-credential]","silent":false,"statusEndpoint":0,"statusIdent":"-","recordedAgo":"0m"}
+{"seq":3,"epoch":1793508530,"task":"beta","wake":"signal: alpha.status","verdict":"main","summary":"tests now green, ready to land","silent":false,"statusEndpoint":0,"statusIdent":"-","recordedAgo":"0m"}
+{"seq":4,"epoch":1793508531,"task":"gamma","wake":"signal: alpha.status","verdict":"captain","summary":"spend 40 USD on CI minutes [money]","silent":false,"statusEndpoint":0,"statusIdent":"-","recordedAgo":"0m"}
+[exit 0]
+$ bin/fm-branch-outcome.sh mark-processed --through 1
+[exit 0]
+$ bin/fm-branch-outcome.sh unprocessed
+{"seq":2,"epoch":1793508529,"task":"beta","wake":"signal: alpha.status","verdict":"captain","summary":"needs the captain's login [physical-or-credential]","silent":false,"statusEndpoint":0,"statusIdent":"-","recordedAgo":"0m"}
+{"seq":3,"epoch":1793508530,"task":"beta","wake":"signal: alpha.status","verdict":"main","summary":"tests now green, ready to land","silent":false,"statusEndpoint":0,"statusIdent":"-","recordedAgo":"0m"}
+{"seq":4,"epoch":1793508531,"task":"gamma","wake":"signal: alpha.status","verdict":"captain","summary":"spend 40 USD on CI minutes [money]","silent":false,"statusEndpoint":0,"statusIdent":"-","recordedAgo":"0m"}
+[exit 0]
+-- second drain still presents the rest (until acknowledged):
+$ bin/fm-wake-drain.sh
+1793508529	1	check	supervision-host-return:1	check: supervision-host outcome 1 for alpha [main] was recorded after the captain returned, so the return brief may not show it; act on it yourself, it is not a captain call: PR ready https://github.com/x/y/pull/7
+1793508529	2	check	supervision-host-return:2	check: supervision-host outcome 2 for beta [captain] was recorded after the captain returned, so the return brief may not show it; relay it to the captain: needs the captain's login [physical-or-credential]
+1793508531	3	check	supervision-host-return:3	check: supervision-host outcome 3 for beta [main] was recorded after the captain returned, so the return brief may not show it; act on it yourself, it is not a captain call: tests now green, ready to land
+1793508532	4	check	supervision-host-return:4	check: supervision-host outcome 4 for gamma [captain] was recorded after the captain returned, so the return brief may not show it; relay it to the captain: spend 40 USD on CI minutes [money]
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 4 --recovery-generation 82176.1793508529.b9QTsY
+BRANCH OUTCOMES (outcomes the supervision session recorded for you to act on, one line per task, oldest first; verdict main is firstmate's own to act on and never a question for the captain, while verdict captain names one of the captain's own categories; each says what was true when it was recorded, so check the task's current state first, including its still-open decisions listed above under OPEN DECISIONS, and sort them into still open and already settled, such as a decision since answered, a PR since merged, or a task since finished - process the still-open ones as firstmate: tell the captain, land or merge what is ready, answer or escalate a decision, or act on a blocker; your reply to the captain covers only those, as if the settled ones had never been listed, and a settled one needs only the acknowledgement):
+[seq 3, newest of 2 for this task, recorded 0m ago, includes a captain call] beta: tests now green, ready to land
+[seq 4, recorded 0m ago] gamma: spend 40 USD on CI minutes [money]
+BRANCH OUTCOMES: after processing them run bin/fm-branch-outcome.sh mark-processed --through 4; until then every drain presents them again
+[exit 0]
+
+== S19: Waiting on you counts only captain HOLDS, not main rows
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 1 - Delete the old photo archive [permanent-removal]
+[exit 0]

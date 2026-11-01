@@ -1,0 +1,3 @@
+$ bin/fm-captain-hold.sh hold lab-fw --title Flash the router firmware --class exploit-kernel-security-flash --reason flashing needs his say --repo lab
+lab-fw
+[exit 0]

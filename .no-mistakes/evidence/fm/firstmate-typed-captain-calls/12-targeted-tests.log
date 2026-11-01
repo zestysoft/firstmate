@@ -1,0 +1,37 @@
+### fm-waiting-on-you
+1..11
+ok - a turn end with no live captain hold shows Waiting on you: 0
+ok - a live captain hold shows its count, title, and class, and a dated deferral does not count
+ok - many live holds name three titles and count the rest
+ok - an aged unanswered hold still counts and is marked with its hold date
+ok - a registered secondmate makes the line say its holds are not counted
+ok - an unreadable backlog shows unknown, never a false zero
+ok - a home on a non-markdown backlog backend never prints a zero
+ok - a crewmate or scout worktree prints nothing
+ok - the registered Claude Stop hook shows the waiting line as its systemMessage, and only for Claude
+ok - only the Claude Stop hook registry runs the waiting line among the tracked JSON hook registries
+ok - a Pi turn end refreshes the footer status to the live waiting line, zero included
+FM_TEST_COMPLETE
+### fm-waiting-on-you exit=0
+### fm-stow-cascade
+ok - each home is accounted against its own allowance instead of a fleet total
+ok - the cascade emits one stanza per registered home and refuses a double-counted registry
+ok - transport follows placement and live-agent state, and a remote home without an agent defers
+ok - each stanza carries the facts a per-home receipt needs, before and after curation
+ok - one slow or unreachable home is bounded and every other home still reports
+ok - the cascade stays silent with no secondmates and never runs from a secondmate home
+ok - --reach reports a shared-to-shared move as reachable and a shared move to home-local storage as a removal
+ok - --reach judges a dropped duplicate by whether every reader still reads its surviving copy
+### fm-stow-cascade exit=0
+### fm-bearings-board-render
+ok - a decision card badges its captain-hold class and an unrecognized class degrades to a marked badge
+ok - an underway row leads with the task name and still reports its run status
+ok - an underway identifier label is not replaced by run status
+ok - charted next renders the most recently filed work first
+ok - charted rows with no filed date follow the dated rows in payload order
+ok - a warning row badges needs repair while queued work keeps waiting
+ok - the charted next count counts queued work only, and still renders warnings
+ok - a warning-only board reports nothing queued and still shows the warning
+ok - omitted warnings remain separate from omitted queued work
+ok - an omitted kind renders exactly as queued work always did
+### fm-bearings-board-render exit=0

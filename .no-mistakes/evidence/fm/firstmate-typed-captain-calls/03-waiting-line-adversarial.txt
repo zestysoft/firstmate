@@ -1,0 +1,29 @@
+$ bin/fm-captain-hold.sh hold lab-wipe --title Delete the old photo archive --class permanent-removal --reason permanently deletes his archive --repo lab
+lab-wipe
+[exit 0]
+== S11: aged hold still counted (age threshold forced to 0 days)
+$ env FM_SNAPSHOT_UNDATED_HOLD_AGE_DAYS=0 bin/fm-waiting-on-you.sh
+Waiting on you: 1 (1 unanswered since 1 Nov) - Delete the old photo archive [permanent-removal, unanswered since 1 Nov]
+[exit 0]
+
+== S12: Beads-backend home never prints a zero
+$ bin/fm-waiting-on-you.sh
+Waiting on you: unknown - captain holds on the beads backlog are not counted
+[exit 0]
+$ bin/fm-waiting-on-you.sh --claude
+{"systemMessage":"Waiting on you: unknown - captain holds on the beads backlog are not counted"}
+[exit 0]
+
+== S13: unreadable backlog -> unknown, not 0, and exit 0
+$ bin/fm-waiting-on-you.sh
+Waiting on you: unknown - the captain holds could not be read
+[exit 0]
+
+== S14: inside a linked task worktree (not a primary) the line prints nothing
+$ (from gate worktree) bin/fm-waiting-on-you.sh
+[exit 0 , output above (empty = nothing printed)]
+
+== S15: back to normal
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 1 - Delete the old photo archive [permanent-removal]
+[exit 0]

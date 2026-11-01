@@ -1,0 +1,36 @@
+== S8: a second, credential hold
+$ bin/fm-captain-hold.sh hold lab-login --title Sign in to the vendor portal --class physical-or-credential --reason needs the captain's login --repo lab
+lab-login
+[exit 0]
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 2 - Spend on the rental car [money]; Sign in to the vendor portal [physical-or-credential]
+[exit 0]
+
+== S9: defer the money call (captain said: later, 2099-01-01) keeping its class
+$ bin/fm-captain-hold.sh hold lab-rental --title Spend on the rental car --class money --until 2099-01-01 --reason captain said revisit in 2099 --repo lab
+lab-rental
+[exit 0]
+- [ ] lab-rental - Spend on the rental car (repo: lab) (kind: captain) (since 2026-10-31) (hold: fm-hold-v1:Y2FwdGFpbiBzYWlkIHJldmlzaXQgaW4gMjA5OQ==) (hold-kind: captain) (hold-until: 2099-01-01)
+  Captain hold set: 2026-11-01T04:46:58Z
+  Captain hold class: money
+- [ ] lab-login - Sign in to the vendor portal (repo: lab) (kind: captain) (since 2026-10-31) (hold: fm-hold-v1:bmVlZHMgdGhlIGNhcHRhaW4ncyBsb2dpbg==) (hold-kind: captain)
+-- line (dated deferral is not waiting on him):
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 1 - Sign in to the vendor portal [physical-or-credential]
+[exit 0]
+-- Bearings snapshot projection of the deferred hold:
+$ bash -c bin/fm-fleet-snapshot.sh --json | jq -c ".backlog.records[]? // empty | select(.id==\"lab-rental\") | {id,hold_class,hold_until,hold_bucket}"
+{"id":"lab-rental","hold_class":"money","hold_until":"2099-01-01","hold_bucket":"dated"}
+[exit 0]
+-- captain-calls projection:
+$ bin/fm-fleet-snapshot.sh --captain-calls
+{"count":1,"aged":0,"calls":[{"id":"lab-login","title":"Sign in to the vendor portal","class":"physical-or-credential","aged":false,"since":null}],"secondmates_uncounted":false}
+[exit 0]
+
+== S10: answer the credential call -> line back to 0
+$ bin/fm-captain-hold.sh answer lab-login --decision-file /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.FJiKAr/decision.txt --release
+released: lab-login
+[exit 0]
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 0
+[exit 0]
