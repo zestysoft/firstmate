@@ -1,0 +1,37 @@
+## away entry with --spend 3
+3
+## NEW live-workers --explain (real fm-crew-state.sh, real lab tmux panes)
+busy-1: counted - working (pane)
+busy-2: not counted - paused, a declared external wait
+busy-3: not counted - paused, a declared external wait
+throw-family: not counted - done, awaiting landing or cleanup
+upstream-1: not counted - paused, a declared external wait
+upstream-2: not counted - paused, a declared external wait
+upstream-3: not counted - paused, a declared external wait
+upstream-4: not counted - paused, a declared external wait
+visit-adapter: not counted - held for the captain
+1
+## OLD (base 043d8344) live-workers on same home
+9
+## NEW fm-spawn.sh fresh-work (cap check)
+spawn exit=1
+bin/fm-spawn.sh: line 2494: POS[1]: unbound variable
+caps-concurrent lines: 0
+## OLD (base) fm-spawn.sh fresh-work (cap check)
+error: spawn refused - the away-posture record caps concurrent workers at 3 and 9 ordinary task(s) are live in this home; task fresh-work stays queued for the captain's return or for a worker to finish (spend cap: bin/fm-afk-contract.sh)
+## ADVERSARIAL: two more lanes start working (Claude hook: busy) -> 3 working lanes under cap 3
+3
+error: spawn refused - the away-posture record caps concurrent workers at 3 and 3 ordinary task(s) are doing work in this home [busy-1: counted - working (pane); busy-2: counted - working (pane); busy-3: counted - working (pane); throw-family: not counted - done, awaiting landing or cleanup; upstream-1: not counted - paused, a declared external wait; upstream-2: not counted - paused, a declared external wait; upstream-3: not counted - paused, a declared external wait; upstream-4: not counted - paused, a declared external wait; visit-adapter: not counted - held for the captain]; task fresh-work stays queued for the captain's return or for a lane to finish or park (spend cap: bin/fm-afk-contract.sh live-workers --explain)
+spawn exit=1
+## tmux windows in the lab server
+zsh
+fm-upstream-1
+fm-upstream-2
+fm-upstream-3
+fm-upstream-4
+fm-throw-family
+fm-visit-adapter
+fm-busy-1
+fm-busy-2
+fm-busy-3
+(no fresh-work record left by either spawn)

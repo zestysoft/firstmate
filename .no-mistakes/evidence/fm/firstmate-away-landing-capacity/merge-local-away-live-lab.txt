@@ -1,0 +1,48 @@
+
+### S1 base: yolo=on away main (before fix)  [code=OLD-043d8344 yolo=on posture=away actor=main args=none]
+exit=0  landed-on-main=yes
+merged fm/local-task into local main (501f574c0b4cce2380ec2dbe71a0b009bb0732ce -> a68925c) in /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.1LFn03/projects/demo
+
+### S2 regression: yolo=on away relocated branch (before fix)  [code=OLD-043d8344 yolo=on posture=away actor=branch args=none]
+exit=6  landed-on-main=no
+error: local-only landing (fm-merge-local) refused - the supervision branch never performs this action; report the outcome and leave it to main (role partition: docs/pi-supervision-branch.md)
+
+### S1 yolo=on away main  [code=NEW yolo=on posture=away actor=main args=none]
+exit=0  landed-on-main=yes
+merged fm/local-task into local main (23df37e3990c3507eeb578b79afd238f2bf960a9 -> 3bb63ed) in /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.NcKLQC/projects/demo
+
+### S2 yolo=on away relocated branch  [code=NEW yolo=on posture=away actor=branch args=none]
+exit=0  landed-on-main=yes
+note: local-only landing (fm-merge-local) proceeds for the supervision branch under the away-posture record: main is parked and its standing authority is relocated; this script's own gate still applies (docs/pi-supervision-branch.md "Postures")
+note: local-only landing (fm-merge-local) proceeds for the supervision branch under the away-posture record: main is parked and its standing authority is relocated; this script's own gate still applies (docs/pi-supervision-branch.md "Postures")
+merged fm/local-task into local main (ee5e3d03b5512bb8a4237d34620019e2ffe44a7c -> ff010dd) in /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.3A5PkF/projects/demo
+
+### S3 yolo=off away main, no override  [code=NEW yolo=off posture=away actor=main args=none]
+exit=1  landed-on-main=no
+error: local merge refused while away - task local-task's recorded merge posture is not yolo=on, so its landing waits for the captain's word; pass --attended-override only for an explicit captain instruction naming this landing; nothing was landed
+
+### S3b no recorded yolo away main  [code=NEW yolo=- posture=away actor=main args=none]
+exit=1  landed-on-main=no
+error: local merge refused while away - task local-task's recorded merge posture is not yolo=on, so its landing waits for the captain's word; pass --attended-override only for an explicit captain instruction naming this landing; nothing was landed
+
+### S4 yolo=off away main --attended-override  [code=NEW yolo=off posture=away actor=main args=--attended-override]
+exit=0  landed-on-main=yes
+merged fm/local-task into local main (70b0f346390ff536c6a3c87fb2c7a6acc5e00bde -> e211999) in /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.3Gm1WT/projects/demo
+
+### S5 adversarial: branch tries --attended-override  [code=NEW yolo=off posture=away actor=branch args=--attended-override]
+exit=1  landed-on-main=no
+note: local-only landing (fm-merge-local) proceeds for the supervision branch under the away-posture record: main is parked and its standing authority is relocated; this script's own gate still applies (docs/pi-supervision-branch.md "Postures")
+note: local-only landing (fm-merge-local) proceeds for the supervision branch under the away-posture record: main is parked and its standing authority is relocated; this script's own gate still applies (docs/pi-supervision-branch.md "Postures")
+error: local merge refused - --attended-override carries an explicit captain instruction, which the supervision branch cannot hear; nothing was landed
+
+### S6 attended: branch still never lands  [code=NEW yolo=on posture=attended actor=branch args=none]
+exit=6  landed-on-main=no
+error: local-only landing (fm-merge-local) refused - the supervision branch never performs this action; report the outcome and leave it to main (role partition: docs/pi-supervision-branch.md)
+
+### S6b attended: main lands yolo=on  [code=NEW yolo=on posture=attended actor=main args=none]
+exit=0  landed-on-main=yes
+merged fm/local-task into local main (280832606c4421536195d0c7c7fa2bd1b3d88774 -> 703c26a) in /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.ID4mTD/projects/demo
+
+### S7 adversarial: bad 2nd arg  [code=NEW yolo=on posture=away actor=main args=--attended-override=yes]
+exit=2  landed-on-main=no
+error: invalid local merge request

@@ -1,0 +1,12 @@
+## live-workers --explain (real fm-crew-state.sh reader, lab home)
+gone-lane: not counted - no live endpoint (worktree gone (torn down?))
+upstream-1: counted - unknown, not proven parked (none: backend unreachable (tmux endpoint state: unreadable))
+upstream-2: counted - unknown, not proven parked (none: backend unreachable (tmux endpoint state: unreadable))
+upstream-3: counted - unknown, not proven parked (none: backend unreachable (tmux endpoint state: unreadable))
+upstream-4: counted - unknown, not proven parked (none: backend unreachable (tmux endpoint state: unreadable))
+visit-adapter: not counted - held for the captain
+4
+exit=0
+## same home, base commit 043d8344 live-workers (old count)
+6
+exit=0
