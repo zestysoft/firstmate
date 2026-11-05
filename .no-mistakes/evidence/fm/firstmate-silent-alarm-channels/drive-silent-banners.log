@@ -1,0 +1,98 @@
+doc command (configuration.md): printf '\nsound:off\n' >> "${FM_CONFIG_OVERRIDE:-${FM_HOME:-.}/config}/usage-warner"
+doc command (wedge-alarm.md):   printf '\nsound:off\n' >> "${FM_CONFIG_OVERRIDE:-${FM_HOME:-.}/config}/wedge-alarm"
+
+=== S1 usage warner, default config (threshold only) in custom config dir
+usage-warner: five_hour at 85% (>=80%)
+warner check rc=0
+osascript argv:
+--- osascript call
+<-e>
+<on run argv>
+<-e>
+<display notification (item 1 of argv) with title "Firstmate: Claude usage">
+<-e>
+<end run>
+<five_hour at 85% (>=80%)>
+usernoted: hasSound: false 
+
+=== S2 usage warner, follow configuration.md command with FM_CONFIG_OVERRIDE set
+custom dir usage-warner now:
+  | five_hour:80
+  | 
+  | sound:off
+lab $FM_HOME/config/usage-warner exists? no
+usage-warner: five_hour at 85% (>=80%)
+warner check rc=0
+osascript argv:
+--- osascript call
+<-e>
+<on run argv>
+<-e>
+<display notification (item 1 of argv) with title "Firstmate: Claude usage">
+<-e>
+<end run>
+<five_hour at 85% (>=80%)>
+usernoted: hasSound: false 
+
+=== S3 wedge alarm, no config/wedge-alarm (auto default)
+wedge_alarm_notify rc=0
+osascript argv:
+--- osascript call
+<-e>
+<on run argv>
+<-e>
+<display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)>
+<-e>
+<end run>
+<gate live probe: wedge>
+<Basso>
+usernoted: hasSound: true 
+
+=== S4 adversarial: pre-fix command ${FM_HOME:-.}/config/wedge-alarm with FM_CONFIG_OVERRIDE set
+custom dir wedge-alarm exists? no  (alarm reads the custom dir)
+wedge_alarm_notify rc=0
+osascript argv:
+--- osascript call
+<-e>
+<on run argv>
+<-e>
+<display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)>
+<-e>
+<end run>
+<gate live probe: wedge>
+<Basso>
+usernoted: hasSound: true 
+
+=== S5 wedge alarm, follow wedge-alarm.md command with FM_CONFIG_OVERRIDE set (file holds only sound:off)
+custom dir wedge-alarm now:
+  | 
+  | sound:off
+wedge_alarm_notify rc=0
+osascript argv:
+--- osascript call
+<-e>
+<on run argv>
+<-e>
+<display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED">
+<-e>
+<end run>
+<gate live probe: wedge>
+usernoted: hasSound: false 
+
+=== S6 wedge alarm, delete the sound:off line (restore sound)
+wedge_alarm_notify rc=0
+osascript argv:
+--- osascript call
+<-e>
+<on run argv>
+<-e>
+<display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)>
+<-e>
+<end run>
+<gate live probe: wedge>
+<Basso>
+usernoted: hasSound: true 
+
+=== S7 contrast: real osascript with an EMPTY sound name "" (the old approach)
+rc=0
+usernoted: hasSound: true 
