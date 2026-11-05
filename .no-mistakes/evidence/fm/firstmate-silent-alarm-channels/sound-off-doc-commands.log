@@ -1,0 +1,93 @@
+doc command (configuration.md): printf '\nsound:off\n' >> "${FM_CONFIG_OVERRIDE:-${FM_HOME:-.}/config}/usage-warner"
+doc command (wedge-alarm.md):   printf '\nsound:off\n' >> "${FM_CONFIG_OVERRIDE:-${FM_HOME:-.}/config}/wedge-alarm"
+usage-warner: five_hour at 85% (>=80%)
+--- usage-warner [uw-doc-override] override=1
+  custom-config/usage-warner:
+    | five_hour:80
+    | 
+    | sound:off
+  osascript argv:
+    <-e>
+    <on run argv>
+    <-e>
+    <display notification (item 1 of argv) with title "Firstmate: Claude usage" sound name "">
+    <-e>
+    <end run>
+    <five_hour at 85% (>=80%)>
+  RESULT: silent (sound name "")
+usage-warner: five_hour at 85% (>=80%)
+--- usage-warner [uw-doc-nooverride] override=0
+  config/usage-warner:
+    | five_hour:80
+    | 
+    | sound:off
+  osascript argv:
+    <-e>
+    <on run argv>
+    <-e>
+    <display notification (item 1 of argv) with title "Firstmate: Claude usage" sound name "">
+    <-e>
+    <end run>
+    <five_hour at 85% (>=80%)>
+  RESULT: silent (sound name "")
+usage-warner: five_hour at 85% (>=80%)
+--- usage-warner [uw-OLD-override] override=1
+  config/usage-warner:
+    | 
+    | sound:off
+  custom-config/usage-warner:
+    | five_hour:80
+  osascript argv:
+    <-e>
+    <on run argv>
+    <-e>
+    <display notification (item 1 of argv) with title "Firstmate: Claude usage">
+    <-e>
+    <end run>
+    <five_hour at 85% (>=80%)>
+  RESULT: AUDIBLE (default sound)
+--- wedge-alarm [wa-doc-override] override=1
+  custom-config/wedge-alarm:
+    | 
+    | sound:off
+  osascript argv:
+    <-e>
+    <on run argv>
+    <-e>
+    <display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)>
+    <-e>
+    <end run>
+    <away-mode WEDGED 900s>
+    <>
+  RESULT: silent (empty sound name)
+--- wedge-alarm [wa-doc-nooverride] override=0
+  config/wedge-alarm:
+    | 
+    | sound:off
+  osascript argv:
+    <-e>
+    <on run argv>
+    <-e>
+    <display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)>
+    <-e>
+    <end run>
+    <away-mode WEDGED 900s>
+    <>
+  RESULT: silent (empty sound name)
+--- wedge-alarm [wa-OLD-override] override=1
+  config/wedge-alarm:
+    | 
+    | sound:off
+  osascript argv:
+    <-e>
+    <on run argv>
+    <-e>
+    <display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)>
+    <-e>
+    <end run>
+    <away-mode WEDGED 900s>
+    <Basso>
+  RESULT: AUDIBLE (Basso)
+--- unset FM_HOME and FM_CONFIG_OVERRIDE: path the doc commands resolve to
+usage-warner
+wedge-alarm
