@@ -1,0 +1,21 @@
+#### BASE 4869cf58 (pre-fix) run
+== 03:50:10 watch.lock pid=22279 alive=yes
+== 03:50:10 wrote lab-task-a.turn-ended
+== 03:50:57 after wake a: watch.lock pid=39043 alive=yes
+arm_pid=22210	watcher_pid=22279	origin=started	started_at=1793879398	ended_at=1793879452	exit_code=0	signal=none	reason=actionable-signal	beacon_age=34	lock_before=pid:22279|identity:Thu Nov  5 11:49:58 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-base.IFnqaG/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:39043
+── ⠇ Working ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+== 03:50:57 wrote lab-task-c.turn-ended while main turn is in flight
+== 03:51:50 after wake c: watch.lock pid=60172 alive=yes
+arm_pid=22210	watcher_pid=22279	origin=started	started_at=1793879398	ended_at=1793879452	exit_code=0	signal=none	reason=actionable-signal	beacon_age=34	lock_before=pid:22279|identity:Thu Nov  5 11:49:58 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-base.IFnqaG/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:39043
+arm_pid=39026	watcher_pid=39043	origin=started	started_at=1793879453	ended_at=1793879505	exit_code=0	signal=none	reason=actionable-signal	beacon_age=34	lock_before=pid:39043|identity:Thu Nov  5 11:50:53 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-base.IFnqaG/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:60172
+-- pane:
+ Took 2.6s
+ Thinking...
+ $ echo "--- wake queue file lines ---"; ls -la /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.UwWfba/state/ 2>&1 | head -50; echo "--- status file ---"; cat
+ /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.UwWfba/state/lab-task-a.status 2>&1; echo "--- turn-ended ---"; cat /private/var/folders/vm/y9zpsxps43q2cvqmb
+ Follow-up: ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.UwWfba/state/lab-task-c.turn-ended
+ ↳ Option+Up to edit all queued messages
+── ⠼ Working ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-base.IFnqaG
+↑19k ↓50 7.2%/262k (auto)                                                                                                                                           (qwen38fn) qwen3.8-flash-next • high

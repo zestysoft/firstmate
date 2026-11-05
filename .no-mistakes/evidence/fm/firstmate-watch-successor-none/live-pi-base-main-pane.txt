@@ -1,0 +1,50 @@
+
+
+ ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.UwWfba/state/lab-task-a.turn-ended
+
+ Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+
+
+ Thinking...
+
+
+ $ bin/fm-wake-drain.sh 2>&1
+
+ 1793879451   2   signal   lab-task-a.turn-ended   signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.UwWfba/state/lab-task-a.turn-ended
+ WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 22279.1793879451.JIbnYV
+
+ Took 2.6s
+
+
+ Thinking...
+
+
+ $ echo "--- wake queue file lines ---"; ls -la /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.UwWfba/state/ 2>&1 | head -50; echo "--- status file ---"; cat
+ /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.UwWfba/state/lab-task-a.status 2>&1; echo "--- turn-ended ---"; cat
+ /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.UwWfba/state/lab-task-a.turn-ended 2>&1
+
+ ... (30 earlier lines, ctrl+o to expand)
+ drwxr-xr-x@  2 Ian  staff    64 Nov  5 03:50 terminal-outcomes
+ --- status file ---
+ cat: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.UwWfba/state/lab-task-a.status: No such file or directory
+ --- turn-ended ---
+ x
+
+ Took 0.0s
+
+
+ Thinking...
+
+
+ $ cd /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.UwWfba 2>/dev/null || cd /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-base.IFnqaG; pwd; echo "=== FM_HOME tree
+ ==="; ls -la; echo "=== state meta files ==="; ls -la state/*.meta state/*.json 2>/dev/null; echo "=== .watch
+
+
+ Follow-up: ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.UwWfba/state/lab-task-c.turn-ended
+ ↳ Option+Up to edit all queued messages
+
+── ⠙ Working ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-base.IFnqaG
+↑19k ↓320 R19k CH99.3% 7.6%/262k (auto)                                                                                                                             (qwen38fn) qwen3.8-flash-next • high

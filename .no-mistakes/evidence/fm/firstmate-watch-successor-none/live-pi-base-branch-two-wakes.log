@@ -1,0 +1,29 @@
+#### BASE 4869cf58 (pre-fix) run (away posture: .afk-contract present -> rows offered to supervision branch)
+== 03:52:44 watch.lock pid=77687 alive=yes
+== 03:52:44 wrote lab-task-a.turn-ended
+== 03:53:29 after wake a: watch.lock pid=93857 alive=yes
+arm_pid=77636	watcher_pid=77687	origin=started	started_at=1793879553	ended_at=1793879604	exit_code=0	signal=none	reason=actionable-signal	beacon_age=33	lock_before=pid:77687|identity:Thu Nov  5 11:52:33 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-base.IFnqaG/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:93857
+-- extension state:
+ WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 77687.1793879603.DIcsbm
+ Elapsed 1.1s
+── ⠹ Working ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-base.IFnqaG
+↑100 ↓44 R19k CH99.5% 7.2%/262k (auto)                                                                                                                              (qwen38fn) qwen3.8-flash-next • high
+== 03:53:29 wrote lab-task-c.turn-ended while wake a's delivery is in flight
+== 03:54:24 after wake c: watch.lock pid=686 alive=yes
+arm_pid=77636	watcher_pid=77687	origin=started	started_at=1793879553	ended_at=1793879604	exit_code=0	signal=none	reason=actionable-signal	beacon_age=33	lock_before=pid:77687|identity:Thu Nov  5 11:52:33 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-base.IFnqaG/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:93857
+arm_pid=93784	watcher_pid=93857	origin=started	started_at=1793879604	ended_at=1793879655	exit_code=0	signal=none	reason=actionable-signal	beacon_age=35	lock_before=pid:93857|identity:Thu Nov  5 11:53:24 2026     bash /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-base.IFnqaG/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:686
+-- pane:
+ === .inactive-outcome-reconcile ===
+ epoch=1793879556
+ cursor=
+ Took 0.1s
+ Thinking...
+ read /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn
+ Follow-up: ⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.Qone0O/state/lab-task-c.turn-ended
+ ↳ Option+Up to edit all queued messages
+── ⠏ Working ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-base.IFnqaG
+↑2.2k ↓998 R97k CH94.5% 8.5%/262k (auto)                                                                                                                            (qwen38fn) qwen3.8-flash-next • high
