@@ -1,0 +1,12 @@
+BRANCH OUTCOMES (outcomes the supervision session recorded for you to act on, one line per task, oldest first, with a task's still-open captain call as its own row above its newest main result; verdic
+BRANCH OUTCOMES: after processing them run bin/fm-branch-outcome.sh mark-processed --through 3; until then every drain presents them again
+[seq 1, captain call, recorded 1m ago] alpha: needs the captain login to publish
+[seq 1, recorded 3m ago] alpha: needs the captain login to publish
+[seq 1, recorded 4m ago] alpha: needs the captain login to publish
+[seq 2, recorded 1m ago] alpha: local branch ready to land
+[seq 2, recorded 3m ago, main to act, not a captain call] alpha: local branch ready to land
+[seq 2, recorded 4m ago, main to act, not a captain call] alpha: local branch ready to land
+[seq 3, recorded 1m ago, main to act, not a captain call] beta: PR 12 green, merge it
+[seq 3, recorded 3m ago, main to act, not a captain call] beta: PR 12 green, merge it
+[seq 3, recorded 4m ago, main to act, not a captain call] beta: PR 12 green, merge it
+⁣FIRSTMATE_OP: v1 branch-outcome: This is a supervision processing request delivered automatically by the supervision branch. It was not typed by the captain. The outcomes below are stored durably, an

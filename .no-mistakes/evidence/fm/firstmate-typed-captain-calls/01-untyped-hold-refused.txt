@@ -1,0 +1,37 @@
+$ bin/fm-waiting-on-you.sh   (no holds yet)
+Waiting on you: 0
+
+$ bin/fm-captain-hold.sh classes
+money
+permanent-removal
+merge-or-landing-outside-authority
+exploit-kernel-security-flash
+physical-or-credential
+product-or-scope-expansion
+destructive-irreversible-security
+discard-unlanded
+design-pick
+repeated-finding-ruling
+deferred-by-captain
+
+$ bin/fm-captain-hold.sh hold lab-login --title "Log in to the registry" --reason "need captain login" --repo lab   (no --class)
+fm-captain-hold: --class is required: name which of the captain's categories this call belongs to (money, permanent-removal, merge-or-landing-outside-authority, exploit-kernel-security-flash, physical-or-credential, product-or-scope-expansion, destructive-irreversible-security, discard-unlanded, design-pick, repeated-finding-ruling, deferred-by-captain); if no class fits, it is not a captain call and is firstmate's to decide
+exit=1
+
+$ ... --class reversible-cleanup   (not a captain category)
+fm-captain-hold: unknown --class reversible-cleanup: the captain-hold classes are money, permanent-removal, merge-or-landing-outside-authority, exploit-kernel-security-flash, physical-or-credential, product-or-scope-expansion, destructive-irreversible-security, discard-unlanded, design-pick, repeated-finding-ruling, deferred-by-captain; if no class fits, it is not a captain call and is firstmate's to decide
+exit=1
+
+$ ... hold lab-later --class deferred-by-captain   (no --until)
+fm-captain-hold: --class deferred-by-captain records the captain's own later and requires --until YYYY-MM-DD
+exit=1
+
+--- data/backlog.md after the refused holds ---
+## In flight
+
+## Queued
+
+## Done
+
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 0

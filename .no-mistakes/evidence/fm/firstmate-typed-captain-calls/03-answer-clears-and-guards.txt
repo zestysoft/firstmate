@@ -1,0 +1,14 @@
+$ bin/fm-captain-hold.sh answer lab-login --decision-file state/decision.txt --release
+released: lab-login
+exit=0
+
+$ bin/fm-waiting-on-you.sh   (after the answer)
+Waiting on you: 0
+
+--- adversarial: backlog made unreadable ---
+$ bin/fm-waiting-on-you.sh
+Waiting on you: unknown - the captain holds could not be read
+exit=0
+
+--- adversarial: a crewmate (linked worktree) checkout ---
+exit=0 (printed nothing above = correct)

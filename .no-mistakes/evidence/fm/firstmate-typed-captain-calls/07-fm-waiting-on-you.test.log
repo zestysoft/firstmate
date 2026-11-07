@@ -1,0 +1,15 @@
+1..12
+ok - a turn end with no live captain hold shows Waiting on you: 0
+ok - a live captain hold shows its count, title, and class, and a dated deferral does not count
+ok - many live holds name three titles and count the rest
+ok - an aged unanswered hold still counts and is marked with its hold date
+ok - a registered secondmate makes the line say its holds are not counted
+ok - an unreadable backlog shows unknown, never a false zero
+ok - a home on a non-markdown backlog backend never prints a zero
+ok - a crewmate or scout worktree prints nothing
+ok - the registered Claude Stop hook shows the waiting line as its systemMessage, and only for Claude
+ok - only the Claude Stop hook registry runs the waiting line among the tracked JSON hook registries
+ok - a Pi turn end refreshes the footer status to the live waiting line, zero included
+ok - a Pi read that finishes after a newer one does not put back its stale count
+FM_TEST_COMPLETE
+exit=0

@@ -1,0 +1,29 @@
+$ bin/fm-captain-hold.sh hold lab-login --class physical-or-credential --title "Log in to the registry" --reason "needs the captain login" --repo lab
+lab-login
+exit=0
+
+$ bin/fm-captain-hold.sh hold lab-later --class deferred-by-captain --until 2099-01-01 --title "Revisit the cutover" --reason "captain said later" --repo lab
+lab-later
+exit=0
+
+--- data/backlog.md ---
+## In flight
+
+## Queued
+- [ ] lab-login - Log in to the registry (repo: lab) (kind: captain) (since 2026-11-06) (hold: fm-hold-v1:bmVlZHMgdGhlIGNhcHRhaW4gbG9naW4=) (hold-kind: captain)
+  Captain hold set: 2026-11-07T03:33:19Z
+  Captain hold class: physical-or-credential
+- [ ] lab-later - Revisit the cutover (repo: lab) (kind: captain) (since 2026-11-06) (hold: fm-hold-v1:Y2FwdGFpbiBzYWlkIGxhdGVy) (hold-kind: captain) (hold-until: 2099-01-01)
+  Captain hold set: 2026-11-07T03:33:21Z
+  Captain hold class: deferred-by-captain
+## Done
+
+$ bin/fm-waiting-on-you.sh   (turn 1)
+Waiting on you: 1 - Log in to the registry [physical-or-credential]
+$ bin/fm-waiting-on-you.sh   (turn 2, still unanswered)
+Waiting on you: 1 - Log in to the registry [physical-or-credential]
+$ bin/fm-waiting-on-you.sh --claude   (Stop-hook form)
+{"systemMessage":"Waiting on you: 1 - Log in to the registry [physical-or-credential]"}
+
+$ bin/fm-fleet-snapshot.sh --captain-calls
+{"count":1,"aged":0,"calls":[{"id":"lab-login","title":"Log in to the registry","class":"physical-or-credential","aged":false,"since":null}],"secondmates_uncounted":false}

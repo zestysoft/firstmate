@@ -1,0 +1,60 @@
+ echo "=== decision.txt ==="; cat state/decision.txt; echo; echo "=== branch-outcomes.jsonl ==="; cat state/branch-outcomes.jsonl; echo; echo "=== host-mirror ==="; cat state/.host-mirror.jsonl;
+ echo; echo "=== config ==="; ls -la config;
+
+ {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny"},"systemMessage":"[persistent-cd] a persistent top-level directory change in the primary firstmate checkout is
+ blocked; it would move the shell out of the home so a later firstmate-owned command runs inside a project clone. Reach the target without moving the shell - use git -C <dir> or an absolute path on
+ the command itself - or scope the cd to a subshell like (cd <dir> && ...)."}
+
+ Took 0.3s
+
+
+
+ $ cd /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.1dCzK0 && bin/fm-tasks-axi.sh list --state all 2>&1 | head -40; echo "=== projects ==="; ls -la projects; echo "=== git worktrees
+ ==="; git -C primary-root worktree list 2>&1
+
+ {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny"},"systemMessage":"[persistent-cd] a persistent top-level directory change in the primary firstmate checkout is
+ blocked; it would move the shell out of the home so a later firstmate-owned command runs inside a project clone. Reach the target without moving the shell - use git -C <dir> or an absolute path on
+ the command itself - or scope the cd to a subshell like (cd <dir> && ...)."}
+
+ Took 0.3s
+
+
+ Thinking...
+
+
+ $ H=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.1dCzK0; echo "=== backlog.md ==="; cat $H/data/backlog.md; echo; echo "=== note-archive.md ==="; cat $H/data/note-archive.md;
+ echo; echo "=== decision.txt ==="; cat $H/state/decision.txt; echo; echo "=== branch-outcomes.jsonl ==="; cat $H/state/branch-outcomes.jsonl; echo; echo "=== host-mirror ==="; cat
+ $H/state/.host-mirror.jsonl; echo; echo "=== config ls ==="; ls -la $H/config
+
+ ... (42 earlier lines, ctrl+o to expand)
+ total 8
+ drwxr-xr-x@  4 Ian  staff  128 Nov  6 19:34 .
+ drwx------@ 10 Ian  staff  320 Nov  6 19:32 ..
+ -rw-------@  1 Ian  staff    5 Nov  6 19:34 startup-memory-budget
+ -rw-r--r--@  1 Ian  staff    0 Nov  6 19:33 supervision-host
+
+ Took 0.0s
+
+
+
+ $ H=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.1dCzK0; (cd $H/primary-root && bin/fm-tasks-axi.sh list --state all 2>&1 | head -50); echo "=== projects dir ==="; ls -la
+ $H/projects; echo "=== worktrees ==="; git -C $H/primary-root worktree list
+
+ ... (3 earlier lines, ctrl+o to expand)
+ total 0
+ drwxr-xr-x@  2 Ian  staff   64 Nov  6 19:33 .
+ drwx------@ 10 Ian  staff  320 Nov  6 19:32 ..
+ === worktrees ===
+ /private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.1dCzK0/primary-root 326b0093 (detached HEAD)
+
+ Took 0.5s
+
+
+ Thinking...
+
+── ⠧ Working ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-lab.1dCzK0/primary-root (detached)
+↑26k ↓1.9k R121k CH99.2% 10.8%/262k (auto)                                                                                                                          (qwen38fn) qwen3.8-flash-next • high
+Waiting on you: 1 - Approve the hosting spend [money]
