@@ -1,0 +1,10 @@
+script: display notification (item 1 of argv) with title "Firstmate: Claude usage"
+osacompile rc=0
+script: display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED"
+osacompile rc=0
+script: display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)
+osacompile rc=0
+
+old (pre-428d48a6) documented commands:
+printf '\nsound:off\n' >> "${FM_HOME:-.}/config/wedge-alarm"
+printf '\nsound:off\n' >> "${FM_HOME:-.}/config/usage-warner"

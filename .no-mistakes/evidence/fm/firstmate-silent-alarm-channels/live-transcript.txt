@@ -1,0 +1,106 @@
+== documented usage-warner command: printf '\nsound:off\n' >> "${FM_CONFIG_OVERRIDE:-${FM_HOME:-.}/config}/usage-warner"
+== documented wedge-alarm command:  printf '\nsound:off\n' >> "${FM_CONFIG_OVERRIDE:-${FM_HOME:-.}/config}/wedge-alarm"
+
+### S1 usage warner, FM_CONFIG_OVERRIDE=altcfg, default (no sound:off)
+usage-warner: five_hour at 85% (>=80%)
+rc=0
+osascript log:
+--- osascript call
+  arg: <-e>
+  arg: <on run argv>
+  arg: <-e>
+  arg: <display notification (item 1 of argv) with title "Firstmate: Claude usage">
+  arg: <-e>
+  arg: <end run>
+  arg: <five_hour at 85% (>=80%)>
+
+### S2 run documented usage-warner append command with FM_CONFIG_OVERRIDE=altcfg
+altcfg/usage-warner now:
+  | five_hour:80
+  | 
+  | sound:off
+FM_HOME/config/usage-warner exists? no
+usage-warner: five_hour at 85% (>=80%)
+rc=0
+osascript log:
+--- osascript call
+  arg: <-e>
+  arg: <on run argv>
+  arg: <-e>
+  arg: <display notification (item 1 of argv) with title "Firstmate: Claude usage">
+  arg: <-e>
+  arg: <end run>
+  arg: <five_hour at 85% (>=80%)>
+
+### S3 usage warner, no override: documented command writes to $FM_HOME/config
+FM_HOME/config/usage-warner now:
+  | 
+  | sound:off
+
+### S4 wedge alarm, FM_CONFIG_OVERRIDE=altcfg, no config (default auto)
+osascript log:
+--- osascript call
+  arg: <-e>
+  arg: <on run argv>
+  arg: <-e>
+  arg: <display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)>
+  arg: <-e>
+  arg: <end run>
+  arg: <live summary: escalations wedged>
+  arg: <Basso>
+
+### S5 run documented wedge-alarm append command, then fire alarm
+altcfg/wedge-alarm now:
+  | 
+  | sound:off
+FM_HOME/config/wedge-alarm exists? no
+osascript log:
+--- osascript call
+  arg: <-e>
+  arg: <on run argv>
+  arg: <-e>
+  arg: <display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED">
+  arg: <-e>
+  arg: <end run>
+  arg: <live summary: escalations wedged>
+
+### S6 delete the sound:off line -> Basso back
+osascript log:
+--- osascript call
+  arg: <-e>
+  arg: <on run argv>
+  arg: <-e>
+  arg: <display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED" sound name (item 2 of argv)>
+  arg: <-e>
+  arg: <end run>
+  arg: <live summary: escalations wedged>
+  arg: <Basso>
+
+### S7 FM_WEDGE_ALARM_CHANNEL=sound:off, no config file -> banner kept, silent
+osascript log:
+--- osascript call
+  arg: <-e>
+  arg: <on run argv>
+  arg: <-e>
+  arg: <display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED">
+  arg: <-e>
+  arg: <end run>
+  arg: <live summary: escalations wedged>
+
+### S8 adversarial: sound:off + off -> nothing fires
+osascript log:
+
+### S9 sound:off + osascript + command: -> silent banner, command still runs
+osascript log:
+--- osascript call
+  arg: <-e>
+  arg: <on run argv>
+  arg: <-e>
+  arg: <display notification (item 1 of argv) with title "firstmate: away-mode escalations WEDGED">
+  arg: <-e>
+  arg: <end run>
+  arg: <live summary: escalations wedged>
+command log:
+cmd got: live summary: escalations wedged
+
+lab removed: yes
