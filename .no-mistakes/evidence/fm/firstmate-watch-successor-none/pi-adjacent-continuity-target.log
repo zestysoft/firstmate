@@ -1,0 +1,31 @@
+=== target 3ed319ef: adjacent Pi continuity paths ===
+--- test_pi_actionable_close_starts_single_successor_before_delivery
+ok - Pi actionable close starts one successor before wake delivery settles
+exit=0
+--- test_pi_streaming_time_delivery_keeps_the_successor_chain
+ok - Pi streaming-time wake delivery keeps the successor chain and replays only unconsumed wakes
+exit=0
+--- test_pi_hung_successor_falls_back_to_typed_wake
+ok - Pi hung successor falls back to one typed actionable wake
+exit=0
+--- test_pi_unretired_successor_falls_back_without_retry
+ok - Pi unretired successor falls back without an overlapping retry
+exit=0
+--- test_pi_empty_close_retries_instead_of_disappearing
+ok - Pi clean empty close triggers a bounded continuity retry
+exit=0
+--- test_pi_session_replacement_carries_inflight_actionable_close
+ok - Pi session replacement auto-arms and carries its in-flight actionable close
+exit=0
+--- test_pi_streaming_followup_is_replayed_after_replacement
+ok - Pi replacement replays a streaming follow-up before consumption
+exit=0
+--- test_pi_late_retiring_actionable_reaches_replacement
+ok - Pi replacement receives actionable closes after retirement timeout
+exit=0
+--- test_pi_branch_offer_owns_actionable_wake
+ok - Pi dispatcher branch offer owns accepted wakes and falls back to main
+exit=0
+--- test_pi_repair_starts_fresh_arm_over_dead_child
+ok - Pi repair starts a fresh arm instead of no-opping on a dead child
+exit=0

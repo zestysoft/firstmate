@@ -1,0 +1,14 @@
+=== target 3ed319ef: test_pi_held_delivery_close_retries_over_dead_child x12 ===
+run 1 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+run 2 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+run 3 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+run 4 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+run 5 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+run 6 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+run 7 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+run 8 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+run 9 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+run 10 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+run 11 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+run 12 exit=0: ok - Pi successor close during held delivery retries, and repair replaces a dead child
+passed 12/12

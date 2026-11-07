@@ -1,0 +1,18 @@
+== target 31599e1f, 8 runs
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+not ok - Pi deferred close must start a fresh arm over a dead child handle: file://{worktrees}
+not ok - Pi deferred close must start a fresh arm over a dead child handle: file://{worktrees}
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+== base bf05a4fc, 8 runs
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child
+ok - Pi deferred close starts a fresh arm instead of stalling on a dead child

@@ -1,0 +1,7 @@
+Fri Nov  6 18:24:47 PST 2026
+watch.lock pid: 86748
+62252 72359 bash ~/github/firstmate/bin/fm-watch-arm.sh --restart
+62273 62252 bash ~/github/firstmate/bin/fm-watch.sh
+96579 59046 codex --model gpt-5.6-sol -c model_reasoning_effort="medium" --dangerously-bypass-approvals-and-sandbox --disable hooks -c notify=["bash","-c","touc
+86624 13160 bash {run-worktree}/bin/fm-watch-arm.sh --restart
+86748 86624 bash {run-worktree}/bin/fm-watch.sh

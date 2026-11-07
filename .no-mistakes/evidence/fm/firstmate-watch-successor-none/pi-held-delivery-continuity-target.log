@@ -1,0 +1,19 @@
+=== target 3ed319ef: successor close during held delivery ===
+--- test_pi_successor_close_during_delivery_keeps_continuity actionable branch
+ok - Pi actionable successor close restores continuity or reports failure during held branch delivery (replacement=no, reject-alarm=no)
+exit=0
+--- test_pi_successor_close_during_delivery_keeps_continuity actionable main
+ok - Pi actionable successor close restores continuity or reports failure during held main delivery (replacement=no, reject-alarm=no)
+exit=0
+--- test_pi_successor_close_during_delivery_keeps_continuity failure branch
+ok - Pi failure successor close restores continuity or reports failure during held branch delivery (replacement=no, reject-alarm=no)
+exit=0
+--- test_pi_successor_close_during_delivery_keeps_continuity refused branch
+ok - Pi refused successor close restores continuity or reports failure during held branch delivery (replacement=no, reject-alarm=no)
+exit=0
+--- test_pi_successor_close_during_delivery_keeps_continuity refused branch yes
+ok - Pi refused successor close restores continuity or reports failure during held branch delivery (replacement=yes, reject-alarm=no)
+exit=0
+--- test_pi_successor_close_during_delivery_keeps_continuity refused branch yes yes
+ok - Pi refused successor close restores continuity or reports failure during held branch delivery (replacement=yes, reject-alarm=yes)
+exit=0

@@ -1,0 +1,25 @@
+=== base bf05a4fc extension: successor close during held delivery (expected to fail = bug reproduced) ===
+--- test_pi_successor_close_during_delivery_keeps_continuity actionable branch
+not ok - Pi actionable successor close must restore continuity during held branch delivery (replacement=no, reject-alarm=no): file://{run-worktree}/[eval1]:50
+  throw new Error(`timeout waiting for ${label}: arms=${rows().join(" | ")} prompts=${prompts.join(" | ")}`);
+        ^
+
+Error: timeout waiting for live replacement while delivery is held: arms=arm=85267 predecessor= | arm=85300 predecessor=85267 prompts=
+    at waitFor (file://{run-worktree}/[eval1]:50:9)
+    at async file://{run-worktree}/[eval1]:80:3
+
+Node.js v26.13.0: expected exit 0, got 1
+exit=1
+--- test_pi_successor_close_during_delivery_keeps_continuity actionable main
+not ok - Pi actionable successor close must restore continuity during held main delivery (replacement=no, reject-alarm=no): file://{run-worktree}/[eval1]:50
+  throw new Error(`timeout waiting for ${label}: arms=${rows().join(" | ")} prompts=${prompts.join(" | ")}`);
+        ^
+
+Error: timeout waiting for live replacement while delivery is held: arms=arm=92751 predecessor= | arm=92794 predecessor=92751 prompts=⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: wake before the successor closes
+
+Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+    at waitFor (file://{run-worktree}/[eval1]:50:9)
+    at async file://{run-worktree}/[eval1]:80:3
+
+Node.js v26.13.0: expected exit 0, got 1
+exit=1
