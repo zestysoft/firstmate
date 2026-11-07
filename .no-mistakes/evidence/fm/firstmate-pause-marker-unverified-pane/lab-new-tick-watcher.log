@@ -1,0 +1,17 @@
+--- [new-tick] watcher start #1 at 08:47:33
+signal: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.VDptkI/state/lane.status
+    (watcher exited with a wake)
+--- [new-tick] watcher start #2 at 08:47:36
+    (no wake in 20s; watcher stopped = restart)
+    (pane ticked: composer now shows › c)
+--- [new-tick] watcher start #3 at 08:48:22
+    (no wake in 20s; watcher stopped = restart)
+    (pane ticked: composer now shows › d)
+--- [new-tick] watcher start #4 at 08:49:07
+    (no wake in 20s; watcher stopped = restart)
+    (pane ticked: composer now shows › e)
+--- [new-tick] watcher start #5 at 08:49:53
+    (no wake in 20s; watcher stopped = restart)
+    (pane ticked: composer now shows › f)
+--- [new-tick] watcher start #6 at 08:50:38
+    (no wake in 20s; watcher stopped = restart)
