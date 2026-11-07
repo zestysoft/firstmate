@@ -1,0 +1,43 @@
+=== target: lab home /private/tmp/fm-lab.awgvzO
+=== launch-brief.md rendered by real fm-spawn.sh: yes
+--- worker role contract lines naming task records:
+5:Your steering inbox is `<LAB>/state/shadow-target.inbox`; this exact path belongs to your current task even when it is outside the worktree or under the supervising firstmate home, so read and acknowledge its messages and do not reject it as another home's state.
+6:Your status log is `<LAB>/state/shadow-target.status`, and your firstmate-facing report belongs in `<LAB>/data/shadow-target/`; append every status line and write that report by these absolute paths.
+7:Any relative `state/shadow-target` or `data/shadow-target/` path in this brief, a steering message, or a project file means these same home records, never a same-named path inside the project worktree, even when the project tracks its own `state/` or `data/` directories.
+23:The report exists and the status log ends with a done line.
+worker (codex) exit=0
+--- worker final output:
+hook: SessionStart
+hook: SessionStart Completed
+hook: SessionStart Completed
+hook: SessionStart Completed
+hook: SessionStart Completed
+codex
+I’ll count README.md and write the result to the assigned report path.
+
+exec
+/bin/zsh -lc "if [ -f <LAB>/state/shadow-target.inbox ]; then cat <LAB>/state/shadow-target.inbox; fi
+printf '%s\\n' 'working: counting' >> <LAB>/state/shadow-target.status
+wc -l README.md" in <PROJ>/wt
+ succeeded in 0ms:
+       3 README.md
+
+exec
+/bin/zsh -lc "mkdir -p <LAB>/data/shadow-target
+printf '%s\\n' '# README line count' '' 'README.md contains 3 lines (counted with wc -l).' > <LAB>/data/shadow-target/report.md
+printf '%s\\n' 'done: report written' >> <LAB>/state/shadow-target.status" in <PROJ>/wt
+ succeeded in 0ms:
+codex
+README.md contains 3 lines. Report written to `<LAB>/data/shadow-target/report.md`; status ends with `done: report written`. No commits made.
+tokens used
+11,631
+README.md contains 3 lines. Report written to `<LAB>/data/shadow-target/report.md`; status ends with `done: report written`. No commits made.
+--- HOME records:
+home state/shadow-target.status: PRESENT
+    working: counting
+    done: report written
+home data/shadow-target/report.md: PRESENT
+--- PROJECT worktree shadow records:
+worktree state/shadow-target.status: absent
+worktree data/shadow-target/report.md: absent
+worktree git status --porcelain:

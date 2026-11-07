@@ -1,0 +1,43 @@
+=== target: lab home /private/tmp/fm-lab.51MvVW
+=== launch-brief.md rendered by real fm-spawn.sh: yes
+--- worker role contract lines naming task records:
+5:Your steering inbox is `<LAB>/state/shadow-ship-target.inbox`; this exact path belongs to your current task even when it is outside the worktree or under the supervising firstmate home, so read and acknowledge its messages and do not reject it as another home's state.
+6:Your status log is `<LAB>/state/shadow-ship-target.status`, and your firstmate-facing report belongs in `<LAB>/data/shadow-ship-target/`; append every status line and write that report by these absolute paths.
+7:Any relative `state/shadow-ship-target` or `data/shadow-ship-target/` path in this brief, a steering message, or a project file means these same home records, never a same-named path inside the project worktree, even when the project tracks its own `state/` or `data/` directories.
+23:The report exists and the status log ends with a done line.
+worker (codex) exit=0
+--- worker final output:
+base = Path('<LAB>')
+status = base / 'state/shadow-ship-target.status'
+status.parent.mkdir(parents=True, exist_ok=True)
+with status.open('a') as f:
+    f.write('working: counting\\n')
+readme = Path('README.md')
+data = readme.read_bytes()
+count = len(data.splitlines())
+report = base / 'data/shadow-ship-target/report.md'
+report.parent.mkdir(parents=True, exist_ok=True)
+report.write_text(f'README.md contains {count} lines.\\n')
+assert report.read_text() == f'README.md contains {count} lines.\\n'
+with status.open('a') as f:
+    f.write('done: report written\\n')
+assert status.read_text().endswith('done: report written\\n')
+print(report.read_text(), end='')
+PY" in <PROJ>/wt
+ succeeded in 4ms:
+README.md contains 3 lines.
+
+codex
+README.md contains 3 lines. Report written to the specified path; status ends with `done: report written`. No commits made.
+tokens used
+17,176
+README.md contains 3 lines. Report written to the specified path; status ends with `done: report written`. No commits made.
+--- HOME records:
+home state/shadow-ship-target.status: PRESENT
+    working: counting
+    done: report written
+home data/shadow-ship-target/report.md: PRESENT
+--- PROJECT worktree shadow records:
+worktree state/shadow-ship-target.status: absent
+worktree data/shadow-ship-target/report.md: absent
+worktree git status --porcelain:

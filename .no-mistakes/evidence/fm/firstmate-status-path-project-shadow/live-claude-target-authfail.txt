@@ -1,0 +1,17 @@
+=== target: lab home /private/tmp/fm-lab.NvpdoU
+=== launch-brief.md rendered by real fm-spawn.sh: yes
+--- worker role contract lines naming task records:
+5:Your steering inbox is `<LAB>/state/shadow-target.inbox`; this exact path belongs to your current task even when it is outside the worktree or under the supervising firstmate home, so read and acknowledge its messages and do not reject it as another home's state.
+6:Your status log is `<LAB>/state/shadow-target.status`, and your firstmate-facing report belongs in `<LAB>/data/shadow-target/`; append every status line and write that report by these absolute paths.
+7:Any relative `state/shadow-target` or `data/shadow-target/` path in this brief, a steering message, or a project file means these same home records, never a same-named path inside the project worktree, even when the project tracks its own `state/` or `data/` directories.
+23:The report exists and the status log ends with a done line.
+claude exit=1
+--- claude final message:
+Failed to authenticate: OAuth session expired and could not be refreshed
+--- HOME records:
+home state/shadow-target.status: absent
+home data/shadow-target/report.md: absent
+--- PROJECT worktree shadow records:
+worktree state/shadow-target.status: absent
+worktree data/shadow-target/report.md: absent
+worktree git status --porcelain:

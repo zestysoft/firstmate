@@ -1,0 +1,41 @@
+=== base: lab home /private/tmp/fm-lab.Myl68K
+=== launch-brief.md rendered by real fm-spawn.sh: yes
+--- worker role contract lines naming task records:
+5:Your steering inbox is `<LAB>/state/shadow-base.inbox`; this exact path belongs to your current task even when it is outside the worktree or under the supervising firstmate home, so read and acknowledge its messages and do not reject it as another home's state.
+21:The report exists and the status log ends with a done line.
+worker (codex) exit=0
+--- worker final output:
+/bin/zsh -lc "pwd; rg --files -g 'README.md' -g 'AGENTS.md' -g 'CONTRIBUTING.md'; if [ -f <LAB>/state/shadow-base.inbox ]; then cat <LAB>/state/shadow-base.inbox; fi" in <PROJ>/wt
+ succeeded in 0ms:
+<PROJ>/wt
+README.md
+
+exec
+/bin/zsh -lc "mkdir -p state data/shadow-base
+printf '%s\\n' 'working: counting' >> state/shadow-base.status
+count="'$(wc -l < README.md | tr -d '"' ')
+printf '# README line count\\n\\nREADME.md contains %s lines.\\n' \""'$count" > data/shadow-base/report.md
+printf '"'%s\\n' 'done: report written' >> state/shadow-base.status
+cat data/shadow-base/report.md
+ tail -n 2 state/shadow-base.status" in <PROJ>/wt
+ succeeded in 0ms:
+# README line count
+
+README.md contains 3 lines.
+working: counting
+done: report written
+
+codex
+README.md contains 3 lines. Report written to `data/shadow-base/report.md`; status ends with `done: report written`. No commits made.
+tokens used
+11,510
+README.md contains 3 lines. Report written to `data/shadow-base/report.md`; status ends with `done: report written`. No commits made.
+--- HOME records:
+home state/shadow-base.status: absent
+home data/shadow-base/report.md: absent
+--- PROJECT worktree shadow records:
+worktree state/shadow-base.status: PRESENT
+worktree data/shadow-base/report.md: PRESENT
+worktree git status --porcelain:
+    ?? data/shadow-base/
+    ?? state/shadow-base.status

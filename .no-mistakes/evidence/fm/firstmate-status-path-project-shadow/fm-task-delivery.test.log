@@ -18,7 +18,7 @@ ok - fm-promote: a promoted worker receives the same mode-specific delivery cont
 ●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
 ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ok - fm-promote: a selected branch prefix reaches both worker instructions and durable task state
-Switched to a new branch '$(touch${IFS}/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-task-delivery.wKuiF5/promote-branch-shell-safe-marker)/promote-branch-safe-e3'
+Switched to a new branch '$(touch${IFS}/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-task-delivery.7WGpdw/promote-branch-shell-safe-marker)/promote-branch-safe-e3'
 ok - fm-promote: ref-format-valid shell metacharacters stay literal in promotion branch commands
 ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ●  WATCHER DOWN - SUPERVISION IS OFF
@@ -42,7 +42,11 @@ ok - fm-spawn: a ship branch that deviates from the registered prefix is announc
 ok - fm-spawn: a registry forge token the parser refuses stops the launch, reason included
 ok - fm-promote: a promoted worker receives the project's registered forge contract with no flag to remember
 ok - forge=forgejo: spawn agreement and promotion carry the binding, name tea, and keep yolo
+ok - fm-brief: pr=manual records its contract suffix, skips pr and ci, and hands the PR text to the worker
+ok - fm-brief: pr=manual is refused on direct-PR, local-only, a bound forge, an unknown value, and a scout
+ok - fm-spawn: the registered pr=manual binding must agree with the brief's contract line
+ok - fm-promote: a promoted no-mistakes worker receives the registered pr=manual contract 
 ok - fm-spawn/fm-promote: leftover Task placeholders are refused until both subsections are filled
 ok - fm-project-mode: --branch-prefix resolves order-independently and defaults to the legacy fm/ prefix
 # all fm-task-delivery tests passed
-bash tests/fm-task-delivery.test.sh  51.25s user 84.84s system 72% cpu 3:08.99 total
+bash tests/fm-task-delivery.test.sh  25.85s user 39.20s system 79% cpu 1:21.91 total
