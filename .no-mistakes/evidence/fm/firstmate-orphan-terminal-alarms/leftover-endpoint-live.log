@@ -1,0 +1,26 @@
+=== AFTER (target commit) ===
+[after] retiring task: removing retired1.meta while the wait is open
+[after] wait rc=0 pane=w1:p2 to=blocked
+[after] after edge 1: wakes=0 stale_rows=0
+[after] after edge 2: wakes=0 stale_rows=0
+[after] wake-queue:
+  (none)
+[after] triage log:
+[2026-11-06T18:20:31-0800] absorbed push blocked (leftover endpoint, no task record): fm-lab-leftover-after-6154:w1:p2
+[2026-11-06T18:20:31-0800] absorbed push blocked (leftover endpoint, no task record): fm-lab-leftover-after-6154:w1:p2
+[after] RESULT wakes=0
+exit=0
+=== BEFORE (base commit bf05a4fc lib) ===
+[before] retiring task: removing retired1.meta while the wait is open
+[before] wait rc=0 pane=w1:p2 to=blocked
+[before] WAKE: stale: fm-lab-leftover-before-11724:w1:p2 (herdr: agent blocked - waiting on human, escalated immediately, not via wedge timer)
+[before] after edge 1: wakes=1 stale_rows=1
+[before] WAKE: stale: fm-lab-leftover-before-11724:w1:p2 (herdr: agent blocked - waiting on human, escalated immediately, not via wedge timer)
+[before] after edge 2: wakes=2 stale_rows=2
+[before] wake-queue:
+1794018038	1	stale	fm-lab-leftover-before-11724:w1:p2	stale: fm-lab-leftover-before-11724:w1:p2 (herdr: agent blocked - waiting on human, escalated immediately, not via wedge timer)
+1794018039	2	stale	fm-lab-leftover-before-11724:w1:p2	stale: fm-lab-leftover-before-11724:w1:p2 (herdr: agent blocked - waiting on human, escalated immediately, not via wedge timer)
+[before] triage log:
+  (none)
+[before] RESULT wakes=2
+exit=0
