@@ -1,0 +1,10 @@
+## /bin/bash version
+GNU bash, version 3.2.57(1)-release (arm64-apple-darwin26)
+
+## BEFORE fix (2c5aa185) : /bin/bash -n tests/fm-pi-watch-extension.test.sh
+/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/tmp.RfxRjVxlCp/before.sh: line 5831: unexpected EOF while looking for matching `"'
+/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/tmp.RfxRjVxlCp/before.sh: line 5908: syntax error: unexpected end of file
+exit=2
+
+## AFTER fix (e4a7fb6d) : /bin/bash -n tests/fm-pi-watch-extension.test.sh
+exit=0

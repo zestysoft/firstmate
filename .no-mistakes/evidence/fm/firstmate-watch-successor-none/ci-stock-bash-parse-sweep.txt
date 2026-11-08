@@ -1,0 +1,5 @@
+GNU bash, version 3.2.57(1)-release (arm64-apple-darwin26)
+files in inventory: 591
+pi-watch test listed: 1
+parse sweep: OK
+exit=0
