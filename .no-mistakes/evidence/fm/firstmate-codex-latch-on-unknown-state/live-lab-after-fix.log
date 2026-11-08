@@ -1,0 +1,40 @@
+== real codex pane (first lines) ==
+  Update available · 0.166.0 → 0.167.0
+  Release notes: https://github.com/openai/codex/releases/latest
+› 1. Update now (runs `brew upgrade --cask codex`)
+  2. Skip
+  3. Skip until next version
+  enter continue · esc skip
+
+== step 1: lane still working ==
+state: unknown · source: pane · harness state unavailable (unknown codex-unverified)
+(no local_done_head recorded)
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: missing or malformed local done head for task local-task; report readiness before approval
+[land exit=1]
+main=BASE
+
+== step 2: lane reports done ==
+state: unknown · source: pane · harness state unavailable (unknown codex-unverified)
+local_done_head=0b2b0e035c3284e12673357daa3c1dbc81cd412d
+X=0b2b0e035c3284e12673357daa3c1dbc81cd412d
+
+== step 3: branch moves after done (adversarial) ==
+state: unknown · source: pane · harness state unavailable (unknown codex-unverified)
+local_done_head=0b2b0e035c3284e12673357daa3c1dbc81cd412d
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: branch fm/local-task differs from the recorded local done head; refusing
+[land exit=1]
+main=BASE
+
+== step 4: branch back at reported X, land ==
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+merged fm/local-task into local main (478b1450614ebcc0b3d2f864846fa7a8af15c6db -> 0b2b0e0) in /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.siBrFP/projects/demo
+[land exit=0]
+main=0b2b0e035c3284e12673357daa3c1dbc81cd412d (X=0b2b0e035c3284e12673357daa3c1dbc81cd412d) LANDED_X

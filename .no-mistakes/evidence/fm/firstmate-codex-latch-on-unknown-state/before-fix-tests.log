@@ -1,0 +1,17 @@
+1..12
+ok - two approved tasks with the same tree cannot roll back a successful landing
+ok - branch advance refuses, and restoring the reported X lands exactly X
+ok - missing, malformed and ambiguous done heads refuse without moving main
+ok - a branch move inside the final Git invocation refuses without changing main or its checkout
+ok - a diverged default branch refuses without changing main or its checkout
+ok - approval and branch changes during the hold read refuse without moving main
+ok - captured metadata cannot pin a replacement task generation
+ok - ledger and teardown record the first done head without reacquiring or releasing caller locks
+not ok - the finished head was not recorded from the status log: kind=ship
+mode=local-only
+branch=fm/local-task
+project=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-merge-local.wdjAU0/unknown-done/project
+worktree=/private/var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T/fm-merge-local.wdjAU0/unknown-done/worker
+spawn_gen=fixture-1
+window=fm:fm-local-task
+harness=codex
