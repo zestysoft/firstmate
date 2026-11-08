@@ -1,0 +1,6 @@
+[gate exit 0]
+--- identical rebase:
+[gate exit 0]
+--- rebase with edited content:
+local-only done head could not be recorded or differs from the recorded head; revised work requires a new task/approval record
+[gate exit 1]

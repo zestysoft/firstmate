@@ -1,0 +1,84 @@
+== 1. all three lanes report done; readiness gate records each head
+$ E bash {run-worktree}/bin/fm-crew-state.sh lane-a
+state: done · source: status-log · ready in branch fm/lane-a
+[exit 0]
+local_done_head=739c6cbae4bd62d9ccf992a60f4353c1f3964018
+$ E bash {run-worktree}/bin/fm-crew-state.sh lane-b
+state: done · source: status-log · ready in branch fm/lane-b
+[exit 0]
+local_done_head=d4e7ddf8cbc08121901b5733cca834a268ef2d15
+$ E bash {run-worktree}/bin/fm-crew-state.sh lane-c
+state: done · source: status-log · ready in branch fm/lane-c
+[exit 0]
+local_done_head=e11958b02aafae4ccf05e1a835cebfea0ba74251
+== 2. lane a lands first (moves main)
+$ E bash {run-worktree}/bin/fm-merge-local.sh lane-a
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  3 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+merged fm/lane-a into local main (2b70cf9738952b21542aab95b6e6ebb36b275716 -> 739c6cb) in /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.IrGCQW/projects/demo
+[exit 0]
+== 3. lane b, not rebased: refused as before with rebase hint
+$ E bash {run-worktree}/bin/fm-merge-local.sh lane-b
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+REFUSED: fm/lane-b is not a fast-forward of main (it has diverged).
+Have the crewmate rebase fm/lane-b onto main, then retry.
+[exit 1]
+== 4. lane b rebases identically onto main; readiness still ready (not 'new task')
+lane b old head d4e7ddf8cbc08121901b5733cca834a268ef2d15 new head 92fa42693743d90e05c88d83caaaeb319ae8ca09
+$ E bash {run-worktree}/bin/fm-crew-state.sh lane-b
+state: done · source: status-log · ready in branch fm/lane-b
+[exit 0]
+== 5. lane b lands the identical rebase; record rebinds
+$ E bash {run-worktree}/bin/fm-merge-local.sh lane-b
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+recorded rebased head 92fa42693743d90e05c88d83caaaeb319ae8ca09 for task lane-b (identical content to d4e7ddf8cbc08121901b5733cca834a268ef2d15 on main)
+merged fm/lane-b into local main (739c6cbae4bd62d9ccf992a60f4353c1f3964018 -> 92fa426) in /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.IrGCQW/projects/demo
+[exit 0]
+local_done_head=92fa42693743d90e05c88d83caaaeb319ae8ca09
+92fa426 lane b
+739c6cb lane a
+2b70cf9 base
+== 6. lane c rebased onto a's landing only, then b landed: main moved again
+$ E bash {run-worktree}/bin/fm-merge-local.sh lane-c
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: branch fm/lane-c differs from the recorded local done head and is not a provably identical rebase: the branch is not a fast-forward of main; have the crewmate rebase it onto main again, then retry; refusing
+[exit 1]
+== 7. adversarial: lane c rebases onto current main but sneaks in edited content
+$ E bash {run-worktree}/bin/fm-crew-state.sh lane-c
+state: blocked · source: status-log · local-only done head could not be recorded or differs from the recorded head; revised work requires a new task/approval record
+[exit 0]
+$ E bash {run-worktree}/bin/fm-merge-local.sh lane-c
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: branch fm/lane-c differs from the recorded local done head and is not a provably identical rebase: the rebased content differs from the recorded done head combined with main; refusing
+[exit 1]
+record unchanged? yes
+main still 92fa426 lane b
+== 8. adversarial: lane c adds an extra unapproved commit on an identical rebase
+$ E bash {run-worktree}/bin/fm-merge-local.sh lane-c
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: branch fm/lane-c differs from the recorded local done head and is not a provably identical rebase: the rebased content differs from the recorded done head combined with main; refusing
+[exit 1]
+== 9. lane c drops the extra commit: identical rebase lands
+$ E bash {run-worktree}/bin/fm-crew-state.sh lane-c
+state: done · source: status-log · ready in branch fm/lane-c
+[exit 0]
+$ E bash {run-worktree}/bin/fm-merge-local.sh lane-c
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+recorded rebased head 58f827223b687cba312746c162f250c5fee61303 for task lane-c (identical content to e11958b02aafae4ccf05e1a835cebfea0ba74251 on main)
+merged fm/lane-c into local main (92fa42693743d90e05c88d83caaaeb319ae8ca09 -> 58f8272) in /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.IrGCQW/projects/demo
+[exit 0]
+local_done_head=58f827223b687cba312746c162f250c5fee61303
+58f8272 lane c
+92fa426 lane b
+739c6cb lane a
+2b70cf9 base
+README
+a.txt
+b.txt
+c.txt
+== lab removed on exit: /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.IrGCQW

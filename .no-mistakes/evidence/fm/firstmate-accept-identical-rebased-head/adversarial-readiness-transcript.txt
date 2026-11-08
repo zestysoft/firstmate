@@ -1,0 +1,21 @@
+D recorded head=3746a8fd9fee79bb4952d2bb2c2d71893aacf901
+=== S4b: identical rebase PLUS an extra unapproved commit on top ===
+$ bin/fm-merge-local.sh d
+error: branch fm/d differs from the recorded local done head and is not a provably identical rebase: the rebased content differs from the recorded done head combined with main; refusing
+[exit 1]
+main unchanged: yes; record unchanged: yes; sneaky on main: 
+=== S5: readiness gate re-reads the lane after an identical rebase, before landing ===
+D worktree HEAD now identical rebase 5776464
+$ fm_dod_accept_ship_done (readiness gate) for d
+local-only done head could not be recorded or differs from the recorded head; revised work requires a new task/approval record
+[exit 1]
+record after gate: 3746a8fd
+=== S6: after the gate read, the identical rebase still lands ===
+$ bin/fm-merge-local.sh d
+recorded rebased head 577646410b39428084bb0f266ae8894f2b9c4db6 for task d (identical content to 3746a8fd9fee79bb4952d2bb2c2d71893aacf901 on main)
+merged fm/d into local main (6c8d480cefb28f1034a1ad2f2cf092882ac973ed -> 5776464) in /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.wDlKYG/projects/demo
+[exit 0]
+main=5776464 files: README d.txt e.txt  record=57764641
+=== S5b: readiness gate after landing (record now rebased head) ===
+$ fm_dod_accept_ship_done (readiness gate) for d
+[exit 0]

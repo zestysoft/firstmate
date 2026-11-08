@@ -1,0 +1,113 @@
+=== S1/S2: three lanes A,B,C finish together (each recorded done head on old main) ===
+recorded: a=3bcef943 b=97d02db5 c=57b78d2a
+$ bin/fm-merge-local.sh a
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  3 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+merged fm/a into local main (d1db8b2c59260bba4df0d812c48d57f7f1f39e6c -> 3bcef94) in /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.7wSZOM/projects/demo
+[exit 0]
+  main=3bcef94 files: README a.txt 
+--- B not rebased yet: still refused with the rebase hint
+$ bin/fm-merge-local.sh b
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+REFUSED: fm/b is not a fast-forward of main (it has diverged).
+Have the crewmate rebase fm/b onto main, then retry.
+[exit 1]
+  main=3bcef94 files: README a.txt 
+--- B rebases onto main (identical content), C also rebases onto main now
+B rebased head=f810a9b
+--- S5 readiness gate view between rebase and landing:
+$ bin/fm-crew-state.sh b
+state: unknown · source: none · no backend target recorded
+$ bin/fm-merge-local.sh b
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+recorded rebased head f810a9b2b196c082899ac0da48a82178021d1c2e for task b (identical content to 97d02db535ed8cd5071508ddfe6500a8ae1875e7 on main)
+merged fm/b into local main (3bcef943377d695a8dd5bc3081539edcf1188ccd -> f810a9b) in /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.7wSZOM/projects/demo
+[exit 0]
+  main=f810a9b files: README a.txt b.txt 
+B record now: f810a9b2
+--- S3: C rebased onto A only; B landed since. C retries:
+$ bin/fm-merge-local.sh c
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: branch fm/c differs from the recorded local done head and is not a provably identical rebase: the branch is not a fast-forward of main; have the crewmate rebase it onto main again, then retry; refusing
+[exit 1]
+  main=f810a9b files: README a.txt b.txt 
+C record still: 57b78d2a
+C rebased again head=093c879
+$ bin/fm-merge-local.sh c
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+recorded rebased head 093c8799d7bd2768ea99cb5b4d417d51939e1b44 for task c (identical content to 57b78d2afc8cc91651344e663985f9a1ade29e3d on main)
+merged fm/c into local main (f810a9b2b196c082899ac0da48a82178021d1c2e -> 093c879) in /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.7wSZOM/projects/demo
+[exit 0]
+  main=093c879 files: README a.txt b.txt c.txt 
+C record now: 093c8799
+  main:a.txt = lane A
+  main:b.txt = lane B
+  main:c.txt = lane C
+  checkout clean: []
+=== S4 adversarial: rebased lane smuggles different content ===
+$ bin/fm-merge-local.sh d
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: branch fm/d differs from the recorded local done head and is not a provably identical rebase: the rebased content differs from the recorded done head combined with main; refusing
+[exit 1]
+  main=f86d259 files: README a.txt b.txt c.txt e.txt 
+main unchanged: yes  record unchanged: yes
+--- extra unapproved commit on top of identical rebase
+usage: git cherry-pick [--edit] [-n] [-m <parent-number>] [-s] [-x] [--ff]
+                       [-S[<keyid>]] <commit>...
+   or: git cherry-pick (--continue | --skip | --abort | --quit)
+
+    --quit                end revert or cherry-pick sequence
+    --continue            resume revert or cherry-pick sequence
+    --abort               cancel revert or cherry-pick sequence
+    --skip                skip current commit and continue
+    --[no-]cleanup <mode> how to strip spaces and #comments from message
+    -n, --no-commit       don't automatically commit
+    --commit              opposite of --no-commit
+    -e, --[no-]edit       edit the commit message
+    -s, --[no-]signoff    add a Signed-off-by trailer
+    -m, --[no-]mainline <parent-number>
+                          select mainline parent
+    --[no-]rerere-autoupdate
+                          update the index with reused conflict resolution if possible
+    --[no-]strategy <strategy>
+                          merge strategy
+    -X, --[no-]strategy-option <option>
+                          option for merge strategy
+    -S, --[no-]gpg-sign[=<key-id>]
+                          GPG sign commit
+    -x                    append commit name
+    --[no-]ff             allow fast-forward
+    --[no-]allow-empty    preserve initially empty commits
+    --[no-]allow-empty-message
+                          allow commits with empty messages
+    --[no-]keep-redundant-commits
+                          deprecated: use --empty=keep instead
+    --empty (stop|drop|keep)
+                          how to handle commits that become empty
+
+$ bin/fm-merge-local.sh d
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: branch fm/d differs from the recorded local done head and is not a provably identical rebase: the rebased content differs from the recorded done head combined with main; refusing
+[exit 1]
+  main=f86d259 files: README a.txt b.txt c.txt e.txt 
+record unchanged: yes
+--- conflict resolved differently: main changed the same file the lane touched
+Auto-merging README
+CONFLICT (content): Merge conflict in README
+$ bin/fm-merge-local.sh f
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: branch fm/f differs from the recorded local done head and is not a provably identical rebase: the recorded done head does not combine cleanly with main (Git 2.38 or newer required); refusing
+[exit 1]
+  main=f44f055 files: README a.txt b.txt c.txt e.txt 
+record unchanged: yes
+--- sanity: restoring D to an exact identical rebase lands
+$ bin/fm-merge-local.sh d
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: branch fm/d differs from the recorded local done head and is not a provably identical rebase: the branch is not a fast-forward of main; have the crewmate rebase it onto main again, then retry; refusing
+[exit 1]
+  main=f44f055 files: README a.txt b.txt c.txt e.txt 
