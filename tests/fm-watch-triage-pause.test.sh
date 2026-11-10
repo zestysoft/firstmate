@@ -529,7 +529,7 @@ test_unverified_codex_declared_wait_keeps_pause_cadence() {
   local dir state fakebin out capture_file statusf window key sig pid wakes round
   dir=$(make_case unverified-codex-declared-wait); state="$dir/state"; fakebin="$dir/fakebin"
   out="$dir/watch.out"; capture_file="$dir/pane.txt"; statusf="$state/pokemodz-encounter-camera-question.status"
-  window="default:wRQ:p2"; key=$(printf '%s' "$window" | tr ':/. ' '____')
+  window="default:wRQ:p2"; key=$(watch_window_key "$window")
   printf 'window=%s\nkind=ship\nharness=codex\nbackend=tmux\n' "$window" > "$state/pokemodz-encounter-camera-question.meta"
   printf 'paused: waiting for firstmate to answer the encounter camera question\n' > "$statusf"
   sig=$(seen_sig "$statusf"); printf '%s' "$sig" > "$state/.seen-pokemodz-encounter-camera-question_status"
