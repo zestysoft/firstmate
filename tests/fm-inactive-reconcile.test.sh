@@ -334,6 +334,39 @@ test_local_done_head_is_pinned_before_parent_delivery() {
   pass 'inactive reconciliation pins local readiness under its existing lock before one parent delivery'
 }
 
+# A ready report after main moved and the worker rebased the same change is
+# delivered and re-records the head instead of being dropped.
+test_rebased_local_done_head_is_repinned_and_delivered() {
+  local project worker sha rebased
+  make_world local-done-rebase
+  bind_secondmate local
+  project="$MATE/projects/local"
+  worker="$WORLD/worker"
+  fm_git_worktree "$project" "$worker" fm/child
+  printf 'change\n' > "$worker/change.txt"
+  git -C "$worker" add change.txt
+  git -C "$worker" commit -q -m change
+  sha=$(git -C "$worker" rev-parse HEAD)
+  fm_write_meta "$MATE/state/child.meta" \
+    "window=firstmate:fm-child" "worktree=$worker" "project=$project" \
+    'harness=codex' 'kind=ship' 'mode=local-only' 'yolo=off' 'branch=fm/child' 'spawn_gen=local-one'
+  printf 'done: ready in branch fm/child\n' > "$MATE/state/child.status"
+  FM_FAKE_CREW_STATE=busy run_reconcile "$MATE"
+  [ "$(sed -n 's/^local_done_head=//p' "$MATE/state/child.meta")" = "$sha" ] \
+    || fail 'the first ready report was not pinned'
+  git -C "$project" commit -q --allow-empty -m 'main moves'
+  git -C "$worker" rebase -q main
+  rebased=$(git -C "$worker" rev-parse HEAD)
+  printf 'done: rebased; ready in branch fm/child\n' >> "$MATE/state/child.status"
+  FM_FAKE_CREW_STATE=busy run_reconcile "$MATE"
+  [ "$(sed -n 's/^local_done_head=//p' "$MATE/state/child.meta")" = "$rebased" ] \
+    || fail 'the rebased ready report was dropped and the record kept the old head'
+  [ "$(outcome_count "$MATE" reported)" = 2 ] || fail 'the rebased ready report was not delivered'
+  grep -Fq 'child child done: rebased; ready in branch fm/child' "$MAIN/state/mate.status" \
+    || fail 'the parent did not receive the rebased ready report'
+  pass 'a rebased ready report of the same change re-pins the head and reaches the parent'
+}
+
 # The ledger pass runs on every poll, so a ship done: already delivered does
 # not pay for the git reachability check again.
 test_delivered_ledger_done_skips_git_gate() {
@@ -1486,6 +1519,7 @@ test_dead_agent_keeps_terminal_outcome
 test_branch_ack_retires_inactive_outcome_receipt
 test_unpushed_ci_ready_done_is_not_published
 test_local_done_head_is_pinned_before_parent_delivery
+test_rebased_local_done_head_is_repinned_and_delivered
 test_delivered_ledger_done_skips_git_gate
 test_local_secondmate_delivers_terminal_ledger_line
 test_secondmate_multiline_terminal_outcome_is_delivered_once

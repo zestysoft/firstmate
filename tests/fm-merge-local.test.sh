@@ -66,6 +66,51 @@ test_branch_advance_does_not_change_approval() {
   pass 'branch advance refuses, and restoring the reported X lands exactly X'
 }
 
+# Ready, then main moves, then the worker rebases and reports ready again.
+move_main_and_rebase() {
+  printf 'other\n' > "$PROJ/other.txt"
+  git -C "$PROJ" add other.txt
+  git -C "$PROJ" commit -q -m 'main moves'
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+  git -C "$WT" rebase -q main
+  Y=$(git -C "$WT" rev-parse HEAD)
+}
+
+test_rebased_same_change_replaces_recorded_head() {
+  make_case rebased
+  record_done || fail 'first ready report was not accepted'
+  move_main_and_rebase
+  record_done || fail 'ready report after a rebase of the same change was refused'
+  [ "$(fm_dod_local_done_head "$META")" = "$Y" ] || fail 'the record still names the pre-rebase head'
+  land >/dev/null || fail 'the rebased head did not land'
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$Y" ] || fail 'landing did not use the rebased head'
+  [ "$(cat "$PROJ/approved.txt")" = 'approved X' ] || fail 'landing did not bring the change'
+  [ "$(cat "$PROJ/other.txt")" = 'other' ] || fail 'landing lost the newer main'
+  pass 'a ready report after rebasing the same change re-records the head and lands it'
+}
+
+test_rebased_revision_or_unbranched_head_refuses() {
+  make_case rebased-changed
+  record_done || fail 'first ready report was not accepted'
+  move_main_and_rebase
+  printf 'revised\n' > "$WT/approved.txt"
+  git -C "$WT" commit -q -a --amend -m 'X revised'
+  record_done >/dev/null 2>&1 && fail 'a rebase that changed the content replaced the record'
+  [ "$(fm_dod_local_done_head "$META")" = "$X" ] || fail 'changed content moved the record'
+  assert_refused
+
+  make_case rebased-off-branch
+  record_done || fail 'first ready report was not accepted'
+  move_main_and_rebase
+  git -C "$WT" checkout -q --detach "$Y"
+  git -C "$PROJ" branch -q side "$Y"
+  git -C "$PROJ" branch -q -f fm/local-task "$X"
+  record_done >/dev/null 2>&1 && fail 'a head the ship branch does not point at replaced the record'
+  [ "$(fm_dod_local_done_head "$META")" = "$X" ] || fail 'an off-branch head moved the record'
+  assert_refused
+  pass 'a rebase with different content, or a head off the ship branch, keeps the recorded head and refuses'
+}
+
 test_missing_and_malformed_head_refuse() {
   local value
   for value in missing empty abbreviated expression duplicate; do
@@ -311,4 +356,5 @@ SH
 fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
   test_missing_and_malformed_head_refuse test_change_after_hold_check_refuses \
   test_diverged_default_refuses test_change_during_approval_check_refuses \
-  test_snapshot_cannot_pin_a_replacement_task test_done_recording_preserves_caller_locks
+  test_snapshot_cannot_pin_a_replacement_task test_done_recording_preserves_caller_locks \
+  test_rebased_same_change_replaces_recorded_head test_rebased_revision_or_unbranched_head_refuses
