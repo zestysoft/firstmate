@@ -1,0 +1,12 @@
+== test_finished_parked_redraw_absorbed
+ok - a finished-and-parked lane alarms once per record on any harness, then a redraw is absorbed with a visible log line
+rc=
+== test_finished_parked_wedges_still_alarm
+ok - finished-and-parked exemption leaves failed and parked runs, refused reports, and later turns alarming
+rc=
+== test_finished_parked_refusals_name_their_signal
+ok - finished-and-parked exemption is refused, with the refusing signal logged, for open decisions, blockers, background work, and unrecognised verdicts
+rc=
+== test_terminal_stale_surfaced
+ok - a stale pane sitting on a terminal status is surfaced (queue + exit)
+rc=
