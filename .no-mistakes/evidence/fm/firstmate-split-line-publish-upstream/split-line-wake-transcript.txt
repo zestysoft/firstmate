@@ -1,0 +1,61 @@
+== FIXED code (target 63e41a72), 3 rounds ==
+ok - Pi exit settlement delivers one full wake (split)
+exit=0
+ok - Pi exit settlement delivers one full wake (whole)
+exit=0
+ok - Pi exit settlement delivers one full wake (drain)
+exit=0
+ok - Pi exit settlement delivers one full wake (split)
+exit=0
+ok - Pi exit settlement delivers one full wake (whole)
+exit=0
+ok - Pi exit settlement delivers one full wake (drain)
+exit=0
+ok - Pi exit settlement delivers one full wake (split)
+exit=0
+ok - Pi exit settlement delivers one full wake (whole)
+exit=0
+ok - Pi exit settlement delivers one full wake (drain)
+exit=0
+ok - Pi actionable output draining after exit stays actionable
+exit=0
+== PRE-FIX code (base 427056c4), 3 rounds ==
+not ok - Pi exit settlement must deliver one full wake (split): file://{run-worktree}/[eval1]:39
+if (failure) throw new Error(failure);
+                   ^
+
+Error: expected one wake, got 2: ["⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /some/pa\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.","⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /some/path\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned."]
+    at file://{run-worktree}/[eval1]:39:20
+
+Node.js v26.13.1: expected exit 0, got 1
+exit=
+ok - Pi exit settlement delivers one full wake (whole)
+exit=
+ok - Pi exit settlement delivers one full wake (drain)
+exit=
+not ok - Pi exit settlement must deliver one full wake (split): file://{run-worktree}/[eval1]:39
+if (failure) throw new Error(failure);
+                   ^
+
+Error: expected one wake, got 2: ["⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /some/pa\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.","⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /some/path\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned."]
+    at file://{run-worktree}/[eval1]:39:20
+
+Node.js v26.13.1: expected exit 0, got 1
+exit=
+ok - Pi exit settlement delivers one full wake (whole)
+exit=
+ok - Pi exit settlement delivers one full wake (drain)
+exit=
+not ok - Pi exit settlement must deliver one full wake (split): file://{run-worktree}/[eval1]:39
+if (failure) throw new Error(failure);
+                   ^
+
+Error: expected one wake, got 2: ["⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /some/pa\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.","⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /some/path\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned."]
+    at file://{run-worktree}/[eval1]:39:20
+
+Node.js v26.13.1: expected exit 0, got 1
+exit=
+ok - Pi exit settlement delivers one full wake (whole)
+exit=
+ok - Pi exit settlement delivers one full wake (drain)
+exit=

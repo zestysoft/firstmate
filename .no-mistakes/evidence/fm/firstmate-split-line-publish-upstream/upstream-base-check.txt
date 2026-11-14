@@ -1,0 +1,10 @@
+== commits on branch not in upstream origin/main ==
+63e41a72 fix(pi): deliver a half-drained wake line once when the arm exits
+== merge-base with origin/main ==
+427056c4181c41074ad24f051f79919330df0fa5
+== files changed vs upstream base ==
+ .pi/extensions/fm-primary-pi-watch.ts | 22 ++++++--
+ tests/fm-pi-watch-extension.test.sh   | 94 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 111 insertions(+), 5 deletions(-)
+== original local commit 5f218a50 patch-id vs published commit ==
+cd596dc697af4b0924a5936b084c4afa4c8a7733 63e41a72ea1e3b4918f6f384d23b8fbcef2585fe
