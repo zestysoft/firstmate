@@ -1,0 +1,20 @@
+== OLD test (77a663e8), HEAD product ==
+SPY id=records-tracked-scout project=/privatefm-shape-spy.Ycdt4f/home-task-records/projects/proj tracked-state/data=[data/keep.txt state/keep.txt]
+SPY id=records-tracked-no-mistakes project=/privatefm-shape-spy.Ycdt4f/home-task-records/projects/proj tracked-state/data=[data/keep.txt state/keep.txt]
+SPY id=records-untracked-scout project=/privatefm-shape-spy.Ycdt4f/home-task-records/projects/proj tracked-state/data=[data/keep.txt state/keep.txt]
+SPY id=records-untracked-no-mistakes project=/privatefm-shape-spy.Ycdt4f/home-task-records/projects/proj tracked-state/data=[data/keep.txt state/keep.txt]
+ok - fm-spawn: the launch contract routes status and report to the home whether or not the project tracks state/ or data/
+exit=0
+
+== HEAD test, BASE product bf05a4fc (no fix) ==
+SPY id=records-tracked-scout project=/privatefm-shape-spy.lRIVrO/home-task-records-tracked/projects/proj tracked-state/data=[data/keep.txt state/keep.txt]
+not ok - tracked scout launch contract did not name the home status log (got '')
+exit=1
+
+== HEAD test, HEAD product ==
+SPY id=records-tracked-scout project=/privatefm-shape-spy.03tg6k/home-task-records-tracked/projects/proj tracked-state/data=[data/keep.txt state/keep.txt]
+SPY id=records-tracked-no-mistakes project=/privatefm-shape-spy.03tg6k/home-task-records-tracked/projects/proj tracked-state/data=[data/keep.txt state/keep.txt]
+SPY id=records-untracked-scout project=/privatefm-shape-spy.03tg6k/home-task-records-untracked/projects/proj tracked-state/data=[]
+SPY id=records-untracked-no-mistakes project=/privatefm-shape-spy.03tg6k/home-task-records-untracked/projects/proj tracked-state/data=[]
+ok - fm-spawn: the launch contract routes status and report to the home whether or not the project tracks state/ or data/
+exit=0
