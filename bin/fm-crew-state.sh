@@ -211,7 +211,9 @@
 #      proven historical head, or kind=scout): fall back to the recorded
 #      backend's pane busy state, then the resolved status declaration
 #      when its verb maps to a recognized run-state. Decision-only events such as
-#      `resolved` never become current state or detail.
+#      `resolved` never become current state or detail. A Codex pane, which is
+#      unverified by design, stays unknown except that a ship `done:` the
+#      named-head gate accepts reads done from the status log.
 #   5. Missing meta or torn-down worktree: report unknown · none. If no run is
 #      attributed to this crew, a dead endpoint also reports unknown · none rather
 #      than trusting a stale status log. On tmux, herdr, and rex, which own a
@@ -1611,7 +1613,21 @@ if [ "$KIND" != secondmate ]; then
   case "${BUSY_VERDICT%% *}" in
     busy) emit working pane "harness busy (${BUSY_VERDICT#* })" ;;
     idle) ;;
-    *) emit unknown pane "harness state unavailable ($BUSY_VERDICT)" ;;
+    *)
+      # Codex is unclassified by design (bin/fm-busy-lib.sh's Codex
+      # negotiation), so its pane can never read idle. A ship done: needs no
+      # pane verdict: the named-head gate proves it on its own and latches a
+      # local-only head. Only a claim that gate proves reads done, naming the
+      # unverified pane; any other line keeps the unknown pane reading.
+      if [ "$BUSY_VERDICT" = "unknown codex-unverified" ] \
+        && fm_dod_should_gate_ship_done "$KIND" "$(meta_value mode)" "$LOG_LINE"; then
+        if DONE_REFUSAL=$(fm_dod_accept_ship_done "$KIND" "$(meta_value mode)" "$WT" "$(meta_value project)" "$LOG_LINE" "$STATE" "$ID" "$META"); then
+          emit "done" status-log "$(status_line_note "$LOG_LINE")${SEP}harness state unavailable ($BUSY_VERDICT)"
+        fi
+        emit unknown pane "harness state unavailable ($BUSY_VERDICT)${SEP}done claim refused: $DONE_REFUSAL"
+      fi
+      emit unknown pane "harness state unavailable ($BUSY_VERDICT)"
+      ;;
   esac
 fi
 

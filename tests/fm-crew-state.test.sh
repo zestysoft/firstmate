@@ -2558,6 +2558,105 @@ test_unpushed_ship_done_is_blocked() {
   pass "unpushed ship done: is current-state blocked"
 }
 
+# A Codex pane is unverified by design, so it never reads idle and the no-run
+# fallback used to stop at it, leaving a finished local-only Codex worker with
+# no latched head for bin/fm-merge-local.sh. A ship done: the named-head gate
+# proves now reads done and latches the head; every other Codex line, and every
+# other harness, keeps its earlier reading.
+codex_local_only_case() {  # <name> <id> <harness> <status-line> -> echoes case dir
+  local d
+  d=$(new_case "$1")
+  make_repo_on_branch "$d/wt" "fm/$2"
+  git -C "$d/wt" commit -q --allow-empty -m 'finished fix'
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/$2.meta" "window=fm:fm-$2" "worktree=$d/wt" "project=$d/wt" \
+    "kind=ship" "mode=local-only" "harness=$3"
+  printf '%s\n' "$4" > "$d/state/$2.status"
+  printf '%s\n' "$d"
+}
+
+test_codex_local_only_done_latches_head() {
+  reset_fakes
+  local d sha out
+  d=$(codex_local_only_case codex-done codexdone codex 'done: ready in branch fm/codexdone')
+  sha=$(git -C "$d/wt" rev-parse HEAD)
+  out=$(run_crew_state "$d" codexdone)
+  assert_contains "$out" "state: done" "a proven Codex local-only done must read done"
+  assert_contains "$out" "source: status-log" "the done verdict comes from the status log"
+  assert_contains "$out" "harness state unavailable (unknown codex-unverified)" \
+    "the Codex pane must still be named unverified"
+  [ "$(grep '^local_done_head=' "$d/state/codexdone.meta")" = "local_done_head=$sha" ] \
+    || fail "a proven Codex local-only done must latch its head: $(cat "$d/state/codexdone.meta")"
+  FM_STATE_OVERRIDE="$d/state" FM_ROOT_OVERRIDE="$d" bash -c \
+    '. "$1/bin/fm-dod-lib.sh"; [ "$(fm_dod_local_done_head "$2")" = "$3" ]' \
+    _ "$ROOT" "$d/state/codexdone.meta" "$sha" \
+    || fail "the latched head must be the one the landing guard reads"
+  pass "a proven Codex local-only done reads done and latches its head"
+}
+
+test_codex_unfinished_records_no_head() {
+  reset_fakes
+  local d out
+  d=$(codex_local_only_case codex-working codexwork codex 'working: still implementing')
+  out=$(run_crew_state "$d" codexwork)
+  assert_contains "$out" "state: unknown" "an unfinished Codex worker stays unknown"
+  assert_contains "$out" "source: pane" "an unfinished Codex worker keeps the pane source"
+  assert_contains "$out" "harness state unavailable (unknown codex-unverified)" \
+    "an unfinished Codex worker keeps the unverified reading"
+  assert_not_contains "$out" "done claim refused" "a non-done line is not judged as a done claim"
+  ! grep -q '^local_done_head=' "$d/state/codexwork.meta" \
+    || fail "an unfinished Codex worker must not latch a head"
+  pass "an unfinished Codex worker records no head and stays unknown"
+}
+
+test_codex_unproven_done_stays_unknown() {
+  reset_fakes
+  local d out
+  d=$(codex_local_only_case codex-unproven codexunproven codex 'done: ready in branch fm/codexunproven')
+  # The named head lives only in the worker copy: the project clone is another
+  # repository that never received the branch.
+  make_repo_on_branch "$d/proj" main
+  fm_write_meta "$d/state/codexunproven.meta" "window=fm:fm-codexunproven" "worktree=$d/wt" \
+    "project=$d/proj" "kind=ship" "mode=local-only" "harness=codex"
+  out=$(run_crew_state "$d" codexunproven)
+  assert_contains "$out" "state: unknown" "an unproven Codex done must not read done"
+  assert_contains "$out" "source: pane" "an unproven Codex done keeps the pane source"
+  assert_contains "$out" "done claim refused: named head" "the refusal reason is named"
+  ! grep -q '^local_done_head=' "$d/state/codexunproven.meta" \
+    || fail "an unproven Codex done must not latch a head"
+  pass "an unproven Codex done stays unknown and names the refusal"
+}
+
+test_codex_unreadable_pane_still_reports_unreachable() {
+  reset_fakes
+  local d out
+  d=$(codex_local_only_case codex-unreadable codexunread codex 'done: ready in branch fm/codexunread')
+  FM_FAKE_TMUX_UNREADABLE=1
+  out=$(run_crew_state "$d" codexunread)
+  assert_contains "$out" "state: unknown" "an unreadable Codex pane stays unknown"
+  assert_contains "$out" "source: none" "an unreadable Codex pane has no state source"
+  assert_contains "$out" "backend unreachable" "an unreadable Codex pane still reads unreachable"
+  ! grep -q '^local_done_head=' "$d/state/codexunread.meta" \
+    || fail "an unreadable Codex pane must not latch a head"
+  pass "an unreadable Codex pane still reports unreachable"
+}
+
+test_other_unclassified_harnesses_keep_unknown_done() {
+  reset_fakes
+  local d out harness
+  for harness in kimi claude; do
+    # kimi is unverified by its own gate; claude here has no busy record.
+    d=$(codex_local_only_case "other-$harness" "other$harness" "$harness" "done: ready in branch fm/other$harness")
+    out=$(run_crew_state "$d" "other$harness")
+    assert_contains "$out" "state: unknown" "$harness without an idle verdict keeps unknown"
+    assert_contains "$out" "source: pane" "$harness without an idle verdict keeps the pane source"
+    assert_not_contains "$out" "done claim refused" "$harness is not judged on a done claim here"
+    ! grep -q '^local_done_head=' "$d/state/other$harness.meta" \
+      || fail "$harness without an idle verdict must not latch a head"
+  done
+  pass "other harnesses without an idle verdict keep their unknown reading"
+}
+
 # Fleet snapshot hands crew-state a captured meta copy outside state/. The
 # poll's merge marker stays in the live state dir, so a squash-merged PR whose
 # branch fleet sync pruned still reads done there.
@@ -6825,6 +6924,11 @@ test_terminal_run_without_live_sibling_is_unchanged
 test_coarse_run_does_not_probe_other_branch_ci_log_for_ready_status
 test_other_branch_run_ignored
 test_unpushed_ship_done_is_blocked
+test_codex_local_only_done_latches_head
+test_codex_unfinished_records_no_head
+test_codex_unproven_done_stays_unknown
+test_codex_unreadable_pane_still_reports_unreachable
+test_other_unclassified_harnesses_keep_unknown_done
 test_merged_pr_reads_done_under_captured_meta
 test_no_mistakes_prevalidation_done_stays_done
 test_moved_remote_branch_without_named_head_is_blocked
