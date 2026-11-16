@@ -1283,6 +1283,170 @@ EOF
   pass ".pi primary extension: delivery failure resets the logical-run latch"
 }
 
+# A machine restart kills every process, and Herdr then restores the Pi primary
+# into an idle session: no run means no agent_settled, so before this check the
+# fleet stayed unwatched until someone typed. These cases open a Pi process
+# (session_start reason startup) over a real guard predicate in a primary-shaped
+# home and count watcher cycles. The model's repair is simulated: answering the
+# recovery follow-up starts one watcher-shaped process holding the lock with a
+# fresh beacon, which is what fm_watch_arm_pi leaves behind.
+install_pi_opening_fixture() {
+  local dir=$1
+  mkdir -p "$dir/.pi/extensions/lib"
+  cp "$ROOT/.pi/extensions/fm-primary-turnend-guard.ts" "$dir/.pi/extensions/fm-primary-turnend-guard.ts"
+  cp "$ROOT/.pi/extensions/lib/fm-operational-input.ts" "$dir/.pi/extensions/lib/fm-operational-input.ts"
+  cp "$ROOT/.pi/extensions/lib/fm-sessionstart-supervisor.mjs" "$dir/.pi/extensions/lib/fm-sessionstart-supervisor.mjs"
+  printf '#!/usr/bin/env bash\nexit 3\n' > "$dir/bin/fm-sessionstart-run.sh"
+  cat > "$dir/sim-arm.sh" <<'SH'
+#!/usr/bin/env bash
+# Simulated fm_watch_arm_pi: one watcher-shaped process holding this home's lock.
+dir=$1
+sleep 120 >/dev/null 2>&1 </dev/null &
+pid=$!
+identity=$(FM_STATE_OVERRIDE="$dir/state" bash -c '. "$1"; fm_pid_identity "$2"' _ "$dir/bin/fm-wake-lib.sh" "$pid")
+mkdir -p "$dir/state/.watch.lock"
+printf '%s\n' "$pid" > "$dir/state/.watch.lock/pid"
+printf '%s\n' "$dir" > "$dir/state/.watch.lock/fm-home"
+printf '%s\n' "$dir/bin/fm-watch.sh" > "$dir/state/.watch.lock/watcher-path"
+printf '%s\n' "$identity" > "$dir/state/.watch.lock/pid-identity"
+touch "$dir/state/.last-watcher-beat"
+printf '%s\n' "$pid" >> "$dir/arms.log"
+SH
+  chmod +x "$dir/bin/fm-sessionstart-run.sh" "$dir/sim-arm.sh"
+}
+
+# Opens one Pi process over $1 and prints "followups=<n> arms=<n>".
+# $2 is the context's hasUI value. After the opening check settles, the
+# recovery run (if any) settles and one later ordinary turn ends, so a second
+# blind verdict would show up as a second follow-up.
+run_pi_opening() {
+  local dir=$1 has_ui=$2
+  PLUGIN="$dir/.pi/extensions/fm-primary-turnend-guard.ts" FM_HOME="$dir" FIXTURE="$dir" HAS_UI="$has_ui" \
+    node --input-type=module 2>&1 <<'EOF'
+import { spawnSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
+
+const handlers = new Map();
+let followups = 0;
+let arms = 0;
+const pi = {
+  on(event, handler) {
+    handlers.set(event, handler);
+  },
+  async sendUserMessage(message, options) {
+    followups += 1;
+    if (!message.startsWith("⁣FIRSTMATE_OP: v1 turn-end-guard: ")) throw new Error(`untyped operational prompt: ${message}`);
+    if (!message.includes("SESSION OPENED BLIND")) throw new Error(`unexpected opening prompt: ${message}`);
+    if (!message.includes("watcher cycle is missing, failed, or unhealthy")) throw new Error(`opening prompt omitted recovery-only state: ${message}`);
+    if (options?.deliverAs !== "followUp") throw new Error("opening prompt was not a follow-up");
+    const armed = spawnSync("bash", [`${process.env.FIXTURE}/sim-arm.sh`, process.env.FIXTURE], { stdio: "inherit" });
+    if (armed.status !== 0) throw new Error("simulated arm failed");
+    arms += 1;
+  },
+};
+const mod = await import(pathToFileURL(process.env.PLUGIN).href);
+mod.default(pi);
+const ctx = {
+  hasUI: process.env.HAS_UI === "true",
+  isIdle: () => true,
+  sessionManager: { getHeader: () => ({ timestamp: "2000-01-01T00:00:00.000Z" }), getSessionId: () => "opening-test" },
+};
+const pause = (ms) => new Promise((resolveWait) => setTimeout(resolveWait, ms));
+await handlers.get("session_start")({ type: "session_start", reason: "startup" }, ctx);
+// The opening check runs the real guard in the background; give a blind
+// verdict time to land before counting.
+const deadline = Date.now() + 6000;
+while (followups === 0 && Date.now() < deadline) await pause(100);
+await pause(500);
+if (ctx.hasUI) {
+  // The recovery run settles, then one later ordinary turn ends.
+  const settled = handlers.get("agent_settled");
+  await settled({ type: "agent_settled" }, {});
+  await settled({ type: "agent_settled" }, {});
+}
+await handlers.get("session_shutdown")?.({ type: "session_shutdown", reason: "quit" }, {});
+console.log(`followups=${followups} arms=${arms}`);
+EOF
+}
+
+reap_pi_opening_watchers() {
+  local dir=$1 pid
+  [ -f "$dir/arms.log" ] || return 0
+  while IFS= read -r pid; do
+    kill "$pid" 2>/dev/null || true
+  done < "$dir/arms.log"
+}
+
+live_watcher_count() {
+  local dir=$1 pid count=0
+  [ -f "$dir/arms.log" ] || { printf '0\n'; return 0; }
+  while IFS= read -r pid; do
+    kill -0 "$pid" 2>/dev/null && count=$((count + 1))
+  done < "$dir/arms.log"
+  printf '%s\n' "$count"
+}
+
+test_pi_opening_with_work_and_no_watcher_restores_one_cycle() {
+  local dir dead out live
+  dir=$(make_primary_dir "$TMP_ROOT/pi-opening-blind")
+  install_pi_opening_fixture "$dir"
+  : > "$dir/state/task1.meta"
+  # The shape a restart leaves: the lock names a watcher that no longer exists
+  # and the beacon stopped when the machine went down.
+  dead=$(nonexistent_pid)
+  record_watcher_lock "$dir" "$dead" "pre-restart watcher identity"
+  touch -t 202601010000 "$dir/state/.last-watcher-beat"
+  out=$(run_pi_opening "$dir" true)
+  live=$(live_watcher_count "$dir")
+  reap_pi_opening_watchers "$dir"
+  [ "$out" = "followups=1 arms=1" ] || fail "Pi opening with work and no watcher must request exactly one recovery: $out"
+  [ "$live" = 1 ] || fail "Pi opening with work must leave exactly one live cycle, saw $live"
+
+  # A print-mode process cannot run the recovery turn, so it must not try.
+  dir=$(make_primary_dir "$TMP_ROOT/pi-opening-blind-print")
+  install_pi_opening_fixture "$dir"
+  : > "$dir/state/task1.meta"
+  out=$(run_pi_opening "$dir" false)
+  reap_pi_opening_watchers "$dir"
+  [ "$out" = "followups=0 arms=0" ] || fail "Pi print-mode opening must not request recovery: $out"
+  pass ".pi primary extension: opening with work and no watcher restores exactly one cycle"
+}
+
+test_pi_opening_with_no_work_starts_no_cycle() {
+  local dir out
+  dir=$(make_primary_dir "$TMP_ROOT/pi-opening-idle")
+  install_pi_opening_fixture "$dir"
+  touch -t 202601010000 "$dir/state/.last-watcher-beat"
+  out=$(run_pi_opening "$dir" true)
+  reap_pi_opening_watchers "$dir"
+  [ "$out" = "followups=0 arms=0" ] || fail "Pi opening with no work must not request recovery: $out"
+  pass ".pi primary extension: opening with no work starts no cycle"
+}
+
+test_pi_opening_already_watching_keeps_one_cycle() {
+  local dir pid identity out live
+  dir=$(make_primary_dir "$TMP_ROOT/pi-opening-watching")
+  install_pi_opening_fixture "$dir"
+  : > "$dir/state/task1.meta"
+  sleep 120 >/dev/null 2>&1 &
+  pid=$!
+  identity=$(watcher_identity "$dir" "$pid") || {
+    kill "$pid" 2>/dev/null || true
+    fail "could not identify the pre-existing watcher"
+  }
+  record_watcher_lock "$dir" "$pid" "$identity"
+  touch "$dir/state/.last-watcher-beat"
+  out=$(run_pi_opening "$dir" true)
+  live=0
+  kill -0 "$pid" 2>/dev/null && live=1
+  kill "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+  reap_pi_opening_watchers "$dir"
+  [ "$out" = "followups=0 arms=0" ] || fail "Pi opening over a live watcher must not start a second cycle: $out"
+  [ "$live" = 1 ] || fail "the pre-existing watcher must still be the one live cycle"
+  pass ".pi primary extension: opening while already watching keeps exactly one cycle"
+}
+
 # A Pi command started from inside the live session, such as the `pi --help`
 # capability probe, auto-loads this extension too and passes the ancestor walk
 # in lockOwnership. Its pid dies at once, so the marker must stay on the live
@@ -2716,6 +2880,9 @@ test_codex_hook_preserves_streams_without_login_logout_output
 test_opencode_plugin_anchors_guard_to_worktree
 test_pi_extension_injects_once_per_logical_agent_run
 test_pi_extension_retries_after_followup_delivery_failure
+test_pi_opening_with_work_and_no_watcher_restores_one_cycle
+test_pi_opening_with_no_work_starts_no_cycle
+test_pi_opening_already_watching_keeps_one_cycle
 test_pi_extension_keeps_marker_of_live_ancestor_session
 test_pi_extension_reads_a_windows_tagged_session_lock
 test_hook_claude_mode_reblocks_stop_hook_active_when_unhealthy

@@ -259,7 +259,7 @@ Each enabled primary harness adapts its own turn-end mechanism to the shared gua
 | Claude | Two `Stop` hooks in `.claude/settings.json` | Blocks with exit status 2, cooperating with the Stop auto-arm |
 | Codex | `Stop` hook in `.codex/hooks.json` | Blocks with exit status 2 |
 | OpenCode | `session.execution.succeeded`/`failed`/`interrupted` (OpenCode 2) or `session.idle` (OpenCode 1) in `.opencode/plugins/fm-primary-turnend-guard.js` | Passive callback that schedules one follow-up |
-| Pi | `agent_settled` in `.pi/extensions/fm-primary-turnend-guard.ts` | Passive callback that schedules one follow-up |
+| Pi | `agent_settled`, plus process-start `session_start`, in `.pi/extensions/fm-primary-turnend-guard.ts` | Passive callback that schedules one follow-up |
 | omp | `session_stop` in `.omp/extensions/fm-primary-turnend-guard.ts` | Blocking hook that compels one continuation |
 | Cursor | `stop` hook in `.cursor/hooks.json` | Cannot block, so it parks and returns at most one follow-up |
 | Grok | `Stop` hook in `.grok/hooks/fm-primary-turnend-guard.json` | Native blocking, or one legacy `grok --resume` fallback |
@@ -279,6 +279,8 @@ The registrations in detail:
   [Runtime backend verification](verification/runtime-backends.md#stop-response-parsing) owns the parser evidence and its portable and token-free live regression entry points.
 - OpenCode subscribes to the terminal `session.execution.succeeded`, `session.execution.failed`, and `session.execution.interrupted` events through `ctx.event.subscribe` in `.opencode/plugins/fm-primary-turnend-guard.js`, latched to the root worker session so child-session turns do not trip it, lets the watcher coordinator act first, and calls `ctx.session.prompt` once when the guard returns 2. The legacy OpenCode 1 `session.idle` + `client.session.promptAsync` path is retained in the plugin's `server` export.
 - Pi listens for `agent_settled` in `.pi/extensions/fm-primary-turnend-guard.ts`, runs once per logical agent run, and calls `pi.sendUserMessage(..., { deliverAs: "followUp" })` once when the guard returns 2.
+  A run is what fires `agent_settled`, so a Pi process that opens idle on a blind home, as when Herdr restores the primary after a machine restart, would otherwise wait for someone to type.
+  A `session_start` with reason `startup` in an interactive process therefore asks the same guard once and, when it returns 2 while Pi is still idle, sends the same kind of follow-up to start the recovery run; print mode and in-process replacements are unaffected.
 - omp answers its blocking `session_stop` hook in `.omp/extensions/fm-primary-turnend-guard.ts`, passing the payload's own `stop_hook_active` to the shared guard.
   When the guard returns 2, it returns `{ continue: true, additionalContext }`, so the continuation is compelled rather than requested.
   The continuation's stop carries `stop_hook_active: true`, which bounds it to one per turn, and omp's own cap of eight consecutive continuations is the second backstop.
@@ -614,6 +616,7 @@ That warning uses `bin/fm-supervision-instructions.sh --repair-line`, so it alwa
 - Away-mode daemon ownership between watcher cycles and over a watcher lock left behind by an exited watcher, plus its dead, pid-reused, absent, stale-beacon, and away-mode-off negatives.
 - The away-mode beacon's poll-derived grace widening for a live daemon still mid-cycle and its bound against a dead daemon, a beacon older than that wider grace, and FM_POLL's inapplicability with away mode off.
 - Pi logical-run latching.
+- Pi process-start recovery: one recovery run and one cycle with supervised work and no watcher, none with no work or over a live watcher, and none in print mode.
 - Missing-`jq` behavior.
 - All five primary registrations.
 - Grok native and legacy selection.

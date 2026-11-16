@@ -107,6 +107,14 @@ type SessionStartContext = {
   };
 };
 
+// Pi's ExtensionContext fields the process-start supervision check reads: only
+// an interactive (TUI or RPC) process can run the recovery turn, and a run that
+// already started owns its own turn-end check.
+type OpeningContext = SessionStartContext & {
+  hasUI?: unknown;
+  isIdle?: () => boolean;
+};
+
 function restoredSessionEvidence(ctx: SessionStartContext): boolean {
   try {
     const timestamp = ctx.sessionManager?.getHeader?.()?.timestamp;
@@ -576,12 +584,48 @@ export default function (pi: ExtensionAPI) {
   };
   registerSessionstartExitListener();
 
+  const sendGuardFollowup = async (opening: string, detail: string): Promise<void> => {
+    guardFollowupActive = true;
+    try {
+      const content = encodeFirstmateOperationalInput(
+        "turn-end-guard",
+        opening +
+          "The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction below before ending the turn.\n\n" +
+          detail,
+      );
+      await pi.sendUserMessage(content, { deliverAs: "followUp" });
+    } catch {
+      guardFollowupActive = false;
+    }
+  };
+
+  // agent_settled needs a run, so a Pi process that opens on a home whose work
+  // needs supervision, with no live watcher, stays blind until someone types:
+  // Herdr restoring this session after a machine restart is exactly that shape.
+  // Process start therefore asks the same guard predicate once and, when it
+  // would block an idle interactive session, starts the one recovery run the
+  // turn-end follow-up would have started. A run that began meanwhile gets its
+  // own agent_settled check instead.
+  const checkOpeningSupervision = async (ctx: OpeningContext): Promise<void> => {
+    if (guardFollowupActive) return;
+    const result = await runGuard();
+    if (result.code !== 2 || guardFollowupActive) return;
+    if (typeof ctx.isIdle === "function" && !ctx.isIdle()) return;
+    await sendGuardFollowup(
+      "SESSION OPENED BLIND - supervision is off. This Pi process started with supervised work and no live watcher. ",
+      result.stderr,
+    );
+  };
+
   pi.on?.("session_start", (event, ctx) => {
     const reason = String((event as { reason?: unknown }).reason ?? "");
     const source = reason === "startup"
       ? startupRebuildSource(ctx) ?? "startup"
       : { new: "clear", resume: "resume", fork: "fork" }[reason];
     markLoaded();
+    if (reason === "startup" && (ctx as OpeningContext | undefined)?.hasUI === true) {
+      void checkOpeningSupervision(ctx as OpeningContext);
+    }
     if (!source) return;
     registerSessionstartExitListener();
     sessionstartGeneration = createSessionstartGeneration(
@@ -645,18 +689,7 @@ export default function (pi: ExtensionAPI) {
     const result = await runGuard();
     if (result.code !== 2) return;
 
-    guardFollowupActive = true;
-    try {
-      const content = encodeFirstmateOperationalInput(
-        "turn-end-guard",
-        "TURN WOULD END BLIND - supervision is off. " +
-          "The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction below before ending the turn.\n\n" +
-          result.stderr,
-      );
-      await pi.sendUserMessage(content, { deliverAs: "followUp" });
-    } catch {
-      guardFollowupActive = false;
-    }
+    await sendGuardFollowup("TURN WOULD END BLIND - supervision is off. ", result.stderr);
   });
 
   markLoaded();
