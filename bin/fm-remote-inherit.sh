@@ -126,10 +126,13 @@ mkdir -p "$PARENT" || die "cannot create inherited destination parent"
 PARENT_REAL=$(CDPATH='' cd -- "$PARENT" && pwd -P)
 case "$PARENT_REAL" in "$HOME_REAL/config"|"$HOME_REAL/data") ;; *) die "inherited destination escapes FM_HOME" ;; esac
 DEST="$PARENT_REAL/$(basename "$REL")"
-[ ! -L "$DEST" ] || die "inherited destination is a symlink"
+# A refusal names the file and the operator's remedy, because the primary that
+# reports it cannot inspect this home.
+unsafe_dest() { die "inherited destination $REL in $HOME_REAL $1; remove it there or replace it with a plain file, then retry"; }
+[ ! -L "$DEST" ] || unsafe_dest "is a symlink"
 if [ -e "$DEST" ]; then
-  [ -f "$DEST" ] || die "inherited destination is not a regular file"
-  [ "$(file_link_count "$DEST")" = 1 ] || die "inherited destination is hardlinked"
+  [ -f "$DEST" ] || unsafe_dest "is not a regular file"
+  [ "$(file_link_count "$DEST")" = 1 ] || unsafe_dest "is hardlinked"
 fi
 
 BASE=$(basename "$REL")

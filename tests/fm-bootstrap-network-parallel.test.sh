@@ -615,6 +615,82 @@ test_inherit_push_older_receiver_absent_item_is_unchanged() {
   pass "remote inheritance push: an older receiver's refusal counts as unchanged only for an absent item"
 }
 
+# The role grant runs the real receiver at a chosen allowlist: <receiver-items>
+# is that code root's declaration, so leaving firstmate-role out is an older
+# host copy and including it is a current one.
+run_role_push() {  # <receiver-items> <id> <generation>
+  local receiver_items=$1
+  shift
+  PATH="$CF_FAKEBIN:$BASE_PATH" \
+    FM_HOME="$CF_HOME" \
+    FM_ROOT_OVERRIDE="$CF_PRIMARY" \
+    FM_SSH_BIN="$CF_FAKEBIN/fake-ssh" \
+    FM_FAKE_SSH_LOG="$CF_LOG" \
+    FM_FAKE_OLDER_RECEIVER_CONFIG="$receiver_items" \
+    FM_FAKE_RECEIVER_BIN="$ROOT/bin" \
+    FM_REMOTE_INHERIT_PUSH_JOBS=1 \
+    FM_INHERITABLE_CONFIG='item-a firstmate-role' \
+    "$ROOT/bin/fm-remote-inherit-push.sh" "$@" 2>&1
+}
+
+remote_role() {  # <remote-home>: the role that home resolves, as role/source
+  bash -c '. "$1/bin/fm-role-lib.sh"; fm_role_resolve "$2" "$2/config"; printf "%s/%s\n" "$FM_ROLE" "$FM_ROLE_SOURCE"' \
+    _ "$ROOT" "$1"
+}
+
+test_inherit_push_role_grant_to_older_receiver_is_skipped() {
+  local out rc remote_home
+  convergence_fixture "$TMP_ROOT/push-role-older" sm:host-sm
+  remote_home="$TMP_ROOT/push-role-older/remote/sm/home"
+  printf 'sm\n' > "$remote_home/.fm-secondmate-home"
+  printf 'first\n' > "$CF_HOME/config/item-a"
+
+  # A primary with no grant was never affected and stays that way.
+  out=$(run_role_push 'item-a' sm 1); rc=$?
+  expect_code 0 "$rc" "a primary without a role file must still converge an older receiver: $out"
+  assert_contains "$out" "unchanged: config/firstmate-role" "the absent role reads as unchanged"
+  assert_not_contains "$out" "warning:" "a primary without a role file draws no warning"
+
+  printf 'maintainer github.com/example/firstmate\n' > "$CF_HOME/config/firstmate-role"
+  out=$(run_role_push 'item-a' sm 2); rc=$?
+  expect_code 0 "$rc" "an older receiver's refusal of the role grant must not refuse the launch: $out"
+  assert_contains "$out" "warning: skipped config/firstmate-role:" "the skipped grant is reported"
+  assert_contains "$out" "refresh that copy with /updatefirstmate" "the warning names the refresh that delivers the grant"
+  assert_not_contains "$out" "error:" "the skipped grant is not reported as an error"
+  assert_contains "$out" "unchanged: data/captain-shared.md" "items after the role grant are still sent"
+  assert_absent "$remote_home/config/firstmate-role" "the older receiver must not gain the grant"
+  assert_absent "$remote_home/config/.fm-inherit-firstmate-role.generation" "the older receiver must not gain a receipt"
+  [ "$(remote_role "$remote_home")" = user/absent ] \
+    || fail "the remote home must resolve to user without the grant: $(remote_role "$remote_home")"
+  pass "remote inheritance push: an older receiver's refusal of the role grant is skipped with a warning"
+}
+
+test_inherit_push_role_grant_to_current_receiver() {
+  local out rc remote_home
+  convergence_fixture "$TMP_ROOT/push-role-current" sm:host-sm
+  remote_home="$TMP_ROOT/push-role-current/remote/sm/home"
+  printf 'sm\n' > "$remote_home/.fm-secondmate-home"
+  printf 'maintainer github.com/example/firstmate\n' > "$CF_HOME/config/firstmate-role"
+  out=$(run_role_push 'item-a firstmate-role' sm 1); rc=$?
+  expect_code 0 "$rc" "a current receiver must accept the role grant: $out"
+  assert_contains "$out" "pushed: config/firstmate-role" "the grant is delivered"
+  assert_not_contains "$out" "warning:" "a delivered grant draws no warning"
+  [ -f "$remote_home/config/.fm-inherit-firstmate-role.generation" ] || fail "the grant's receipt was not written"
+  [ "$(remote_role "$remote_home")" = maintainer/inherited ] \
+    || fail "the remote home must resolve the inherited grant: $(remote_role "$remote_home")"
+
+  # An unsafe destination still refuses, naming the file and the remedy.
+  rm -f "$remote_home/config/firstmate-role"
+  ln -s "$TMP_ROOT/push-role-current/elsewhere" "$remote_home/config/firstmate-role"
+  printf 'maintainer github.com/example/other\n' > "$CF_HOME/config/firstmate-role"
+  out=$(run_role_push 'item-a firstmate-role' sm 2); rc=$?
+  expect_code 1 "$rc" "a symlinked role destination must refuse the push: $out"
+  assert_contains "$out" "inherited destination config/firstmate-role in" "the refusal names the unsafe file"
+  assert_contains "$out" "is a symlink; remove it there or replace it with a plain file, then retry" "the refusal names the remedy"
+  [ -L "$remote_home/config/firstmate-role" ] || fail "the refused destination was changed"
+  pass "remote inheritance push: a current receiver holds the grant, and an unsafe destination refuses with its remedy"
+}
+
 test_inherit_push_local_refusal_sends_nothing() {
   local out rc
   convergence_fixture "$TMP_ROOT/push-refusal" sm:host-sm
@@ -822,6 +898,8 @@ test_remote_inheritance_failure_names_its_own_error_not_an_unchanged_item
 test_inherit_push_overlaps_items_and_replays_in_order
 test_inherit_push_failure_stops_new_sends
 test_inherit_push_older_receiver_absent_item_is_unchanged
+test_inherit_push_role_grant_to_older_receiver_is_skipped
+test_inherit_push_role_grant_to_current_receiver
 test_inherit_push_local_refusal_sends_nothing
 test_convergence_budget_isolates_a_hung_mate
 test_partial_push_failure_keeps_the_reread_owed

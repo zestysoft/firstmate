@@ -18,6 +18,13 @@
 # uses floor zero and leaves write-time generation checks intact; counter
 # recovery requires a receiver that supports the query. Other query failures
 # and malformed replies fail closed.
+# A receiver whose code root does not declare an item refuses it as "not
+# inherited material". For an absent item that refusal counts as unchanged. A
+# present item fails the push, with one exception: the resolved role grant
+# (config/firstmate-role). A receiver that cannot store the grant cannot hold
+# its receipt either, so that home resolves to user/operator whatever the push
+# does; refusing would only keep the mate from launching or recovering. The
+# grant is skipped with a warning naming the refresh that delivers it.
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -139,6 +146,12 @@ send_item() {  # <n>
   if [ "$plan" = put ]; then
     "$SCRIPT_DIR/fm-on.sh" --stdin "$ID" fm-remote-inherit.sh put "$rel" "$bytes" "$hash" "$GENERATION" \
       < "$TMP/item.$n.snapshot" > "$TMP/item.$n.out" 2> "$TMP/item.$n.err" || rc=$?
+    if [ "$rc" = 1 ] && [ "$rel" = config/firstmate-role ] \
+      && grep -Fxq -- "error: path is not inherited material: $rel" "$TMP/item.$n.err"; then
+      printf 'warning: skipped %s: the Firstmate copy on the host of secondmate %s predates role inheritance, so that home holds no inherited grant and resolves to user/operator; refresh that copy with /updatefirstmate, then converge again to deliver the grant\n' \
+        "$rel" "$ID" > "$TMP/item.$n.err"
+      rc=0
+    fi
   else
     "$SCRIPT_DIR/fm-on.sh" "$ID" fm-remote-inherit.sh absent "$rel" 0 "$EMPTY_HASH" "$GENERATION" \
       < /dev/null > "$TMP/item.$n.out" 2> "$TMP/item.$n.err" || rc=$?
