@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Local-only landing must use the durable done head, including across races.
+# Once main moves past that head, a branch tip lands only when its content
+# equals the recorded change applied to the current main.
 set -u
 # shellcheck source=tests/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -353,8 +355,155 @@ SH
   pass 'two approved tasks with the same tree cannot roll back a successful landing'
 }
 
+# Move main past the recorded head with an unrelated commit, as another landing would.
+advance_main() {
+  printf 'other work\n' > "$PROJ/other.txt"
+  git -C "$PROJ" add other.txt
+  git -C "$PROJ" commit -q -m other
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+}
+
+assert_moved_main_refused() {
+  local out rc=0 label=$1
+  out=$(land 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail "$label: landing unexpectedly succeeded: $out"
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail "$label: refusal moved main"
+  [ "$(git -C "$PROJ" rev-parse "refs/heads/fm/local-task")" = "$(git -C "$WT" rev-parse HEAD)" ] \
+    || fail "$label: refusal moved the ship branch"
+  LAST_OUT=$out
+}
+
+assert_landed_tip() {
+  local tip out label=$1
+  tip=$(git -C "$WT" rev-parse HEAD)
+  out=$(land 2>&1) || fail "$label: landing refused: $out"
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$tip" ] || fail "$label: main is not the branch tip"
+  [ "$(cat "$PROJ/approved.txt")" = 'approved X' ] || fail "$label: approved content missing"
+  [ "$(cat "$PROJ/other.txt")" = 'other work' ] || fail "$label: main's newer content missing"
+  [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail "$label: landing left a dirty checkout"
+  [ "$(fm_dod_local_done_head "$META")" = "$X" ] || fail "$label: landing changed the recorded head"
+  assert_contains "$out" "whose tree equals recorded done head $X" "$label: landing did not name the recorded head"
+}
+
+test_stale_commit_name_lands_rebased_branch() {
+  make_case stale-name
+  record_done || fail 'stale-name fixture done was not accepted'
+  advance_main
+  git -C "$WT" -c advice.skippedCherryPicks=false rebase -q main
+  [ "$(git -C "$WT" rev-parse HEAD)" != "$X" ] || fail 'rebase kept the recorded commit name'
+  assert_landed_tip 'stale name'
+  pass 'a rebase of the recorded head onto a moved main lands under its new commit name'
+}
+
+test_content_equal_branch_lands() {
+  make_case content-equal
+  record_done || fail 'content-equal fixture done was not accepted'
+  advance_main
+  # Rebuild the same change as two commits with different messages.
+  git -C "$WT" reset -q --hard main
+  printf 'approved' > "$WT/approved.txt"
+  git -C "$WT" add approved.txt
+  git -C "$WT" commit -q -m 'first half'
+  printf 'approved X\n' > "$WT/approved.txt"
+  git -C "$WT" commit -q -am 'second half'
+  [ -z "$(git -C "$WT" diff "$X" HEAD -- approved.txt)" ] || fail 'rebuilt change differs from X'
+  assert_landed_tip 'content equal'
+  pass 'a branch rebuilt with different history but the same content as the recorded change lands'
+}
+
+test_differing_tree_refuses_after_main_moves() {
+  make_case differing
+  record_done || fail 'differing fixture done was not accepted'
+  advance_main
+  git -C "$WT" -c advice.skippedCherryPicks=false rebase -q main
+  printf 'unapproved\n' > "$WT/extra.txt"
+  git -C "$WT" add extra.txt
+  git -C "$WT" commit -q -m extra
+  assert_moved_main_refused 'differing tree'
+  assert_contains "$LAST_OUT" 'content differs from the recorded local done head' 'differing tree refusal reason'
+  [ ! -e "$PROJ/extra.txt" ] || fail 'differing tree left unapproved files behind'
+  [ ! -e "$PROJ/approved.txt" ] || fail 'differing tree left approved files behind'
+  pass 'a rebased branch whose content differs from the recorded change refuses'
+}
+
+test_conflicting_change_refuses_after_main_moves() {
+  make_case conflict
+  record_done || fail 'conflict fixture done was not accepted'
+  printf 'main version\n' > "$PROJ/approved.txt"
+  git -C "$PROJ" add approved.txt
+  git -C "$PROJ" commit -q -m 'main edits the same file'
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+  # A worker's resolution that keeps X's text is still new, unreviewed content.
+  git -C "$WT" reset -q --hard main
+  printf 'approved X\n' > "$WT/approved.txt"
+  git -C "$WT" commit -q -am resolved
+  assert_moved_main_refused 'conflict'
+  assert_contains "$LAST_OUT" 'conflicts with the current main' 'conflict refusal reason'
+  [ "$(cat "$PROJ/approved.txt")" = 'main version' ] || fail 'conflict refusal changed main content'
+  pass 'a recorded change that conflicts with the moved main refuses even after a resolution'
+}
+
+test_uncommitted_work_refuses_after_main_moves() {
+  local kind
+  for kind in tracked untracked; do
+    make_case "dirty-$kind"
+    record_done || fail 'dirty fixture done was not accepted'
+    advance_main
+    git -C "$WT" -c advice.skippedCherryPicks=false rebase -q main
+    if [ "$kind" = tracked ]; then
+      printf 'local edit\n' >> "$PROJ/other.txt"
+    else
+      printf 'stray\n' > "$PROJ/stray.txt"
+    fi
+    assert_moved_main_refused "uncommitted $kind"
+    assert_contains "$LAST_OUT" 'dirty working tree' "uncommitted $kind refusal reason"
+    [ ! -e "$PROJ/approved.txt" ] || fail "uncommitted $kind left approved files behind"
+  done
+  pass 'uncommitted work in the project checkout refuses a content-equal landing'
+}
+
+test_already_landed_content_not_landed_twice() {
+  local twin mode
+  for mode in recorded rebased; do
+    make_case "landed-$mode"
+    record_done || fail 'already-landed fixture done was not accepted'
+    # Another task already landed the same content under a different commit.
+    twin=$(printf 'twin task\n' | git -C "$PROJ" commit-tree "$X^{tree}" -p "$(git -C "$PROJ" rev-parse main)")
+    git -C "$PROJ" merge -q --ff-only "$twin"
+    BASE=$twin
+    [ "$mode" = recorded ] || git -C "$WT" -c advice.skippedCherryPicks=false rebase -q main
+    assert_moved_main_refused "already landed ($mode)"
+    assert_contains "$LAST_OUT" 'already on main; nothing to land' "already landed ($mode) refusal reason"
+    [ "$(cat "$PROJ/approved.txt")" = 'approved X' ] || fail "already landed ($mode) changed main content"
+  done
+  pass 'content already on main is refused rather than landed a second time'
+}
+
+test_merge_history_refuses_after_main_moves() {
+  make_case merge-history
+  record_done || fail 'merge-history fixture done was not accepted'
+  advance_main
+  git -C "$WT" merge -q --no-edit main
+  [ "$(git -C "$WT" rev-parse 'HEAD^{tree}')" = "$(git -C "$PROJ" merge-tree --write-tree main "$X" | head -1)" ] \
+    || fail 'merge fixture does not carry the recorded change'
+  assert_moved_main_refused 'merge history'
+  assert_contains "$LAST_OUT" 'merge commits above main' 'merge history refusal reason'
+  pass 'a branch that merged main instead of rebasing refuses even with matching content'
+}
+
+test_missing_recorded_commit_refuses() {
+  make_case missing-commit
+  printf 'local_done_head=%s\n' "$(printf '%040d' 0 | tr 0 a)" >> "$META"
+  assert_refused
+  pass 'a well-formed recorded head that names no commit refuses'
+}
+
 fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
   test_missing_and_malformed_head_refuse test_change_after_hold_check_refuses \
   test_diverged_default_refuses test_change_during_approval_check_refuses \
   test_snapshot_cannot_pin_a_replacement_task test_done_recording_preserves_caller_locks \
-  test_rebased_same_change_replaces_recorded_head test_rebased_revision_or_unbranched_head_refuses
+  test_rebased_same_change_replaces_recorded_head test_rebased_revision_or_unbranched_head_refuses \
+  test_stale_commit_name_lands_rebased_branch test_content_equal_branch_lands \
+  test_differing_tree_refuses_after_main_moves test_conflicting_change_refuses_after_main_moves \
+  test_uncommitted_work_refuses_after_main_moves test_already_landed_content_not_landed_twice \
+  test_merge_history_refuses_after_main_moves test_missing_recorded_commit_refuses
