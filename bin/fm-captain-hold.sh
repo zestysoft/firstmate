@@ -31,6 +31,7 @@
 #   fm-captain-hold.sh unbind <source-id>
 #   fm-captain-hold.sh binding <source-id>
 #   fm-captain-hold.sh complete <origin-id> (--none | <task-id>...)
+#   fm-captain-hold.sh complete --none   (origin from the launched task's FM_TASK_ID)
 #   fm-captain-hold.sh verify <origin-id>
 #   fm-captain-hold.sh open <task-id> [--identity] [--distinguish-absent]
 #   fm-captain-hold.sh diverged
@@ -147,7 +148,10 @@
 # captain-held tasks that carry the origin's unresolved captain calls.
 # `--none` is an explicit semantic attestation that the just-reviewed surface
 # has no unresolved captain call, and is refused while the origin still has an
-# open keyed status decision. With a non-empty inventory, every listed task is
+# open keyed status decision. A bare `complete --none` names no origin; inside a
+# ship or scout launched by fm-spawn.sh it attests that worker's own task, read
+# from the FM_TASK_ID marker, and with no marker it is the same usage error as
+# any other missing argument. With a non-empty inventory, every listed task is
 # verified durable (docs/captain-hold-lifecycle.md owns the inventory checks),
 # is never the origin itself, and, when `hold --origin` recorded one, was held
 # for this origin; a hold with no recorded origin is accepted on durability
@@ -2097,6 +2101,9 @@ reconcile_note() {
 }
 
 command_complete() {
+  if [ "$#" -eq 1 ] && [ "$1" = --none ] && [ -n "${FM_TASK_ID:-}" ]; then
+    set -- "$FM_TASK_ID" --none
+  fi
   local origin=${1:-} meta previous='' supplied='' keys='' entry key status_file open has_meta=0 transfer_rc transfers=() resolved
   local resolved_how attested_by_prefix='' origin_state unrecorded_origin='' tmp
   [ "$#" -ge 2 ] || { usage >&2; exit 2; }

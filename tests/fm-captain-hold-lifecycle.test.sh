@@ -1438,6 +1438,60 @@ test_completion_replaces_a_pair_recorded_after_pr() {
   pass "completion replaces a completion pair recorded after pr= by the previous writer"
 }
 
+# A scout attests its own empty inventory with the bare `complete --none` its
+# brief names: the launched task's FM_TASK_ID supplies the origin. Every
+# missing-argument form keeps the usage error, and open calls still refuse.
+test_bare_none_attests_the_launched_task() {
+  local home id open_id rc usage
+  home=$(make_home bare-none)
+  id=sample-bare-none
+  open_id=sample-bare-none-open
+  mkdir -p "$home/data/$id" "$home/data/$open_id"
+  tasks_in "$home" add "$id" "Review a sample with no captain call" --kind scout --repo sample --start >/dev/null
+  tasks_in "$home" add "$open_id" "Review a sample with a captain call" --kind scout --repo sample --start >/dev/null
+  write_origin_meta "$home" "$id"
+  write_origin_meta "$home" "$open_id"
+  printf 'working: report drafted\n' > "$home/state/$id.status"
+  printf '# Sample review\n\nNo unresolved captain choice remains.\n' > "$home/data/$id/report.md"
+  usage=$(run_captain "$home" --help)
+
+  FM_TASK_ID=$id run_captain "$home" complete --none > "$home/bare.out" 2> "$home/bare.err" \
+    || fail "bare --none in the launched scout refused: $(cat "$home/bare.err")"
+  assert_equals "complete: $id captain-call inventory reviewed" "$(cat "$home/bare.out")" \
+    "bare --none did not attest the launched task"
+  assert_equals 1 "$(grep -cx "decisions_reviewed=1" "$home/state/$id.meta")" "bare --none recorded no completion"
+  assert_equals 1 "$(grep -cx "decision_keys=" "$home/state/$id.meta")" "bare --none recorded a non-empty inventory"
+  run_captain "$home" verify "$id" >/dev/null || fail "the cleanup gate rejected the bare --none attestation"
+  assert_no_regex "^decisions_reviewed=" "$home/state/$open_id.meta" "bare --none attested another task"
+
+  rc=0
+  (unset FM_TASK_ID; run_captain "$home" complete --none) > "$home/nomarker.out" 2> "$home/nomarker.err" || rc=$?
+  assert_equals 2 "$rc" "bare --none with no launched task did not exit with the usage status"
+  assert_equals "$usage" "$(cat "$home/nomarker.err")" "bare --none with no launched task changed the usage message"
+  rc=0
+  FM_TASK_ID=$open_id run_captain "$home" complete "$open_id" > "$home/noattest.out" 2> "$home/noattest.err" || rc=$?
+  assert_equals 2 "$rc" "an origin with neither --none nor task ids did not exit with the usage status"
+  assert_equals "$usage" "$(cat "$home/noattest.err")" "an origin with no attestation changed the usage message"
+  rc=0
+  FM_TASK_ID=$open_id run_captain "$home" complete > "$home/noargs.out" 2> "$home/noargs.err" || rc=$?
+  assert_equals 2 "$rc" "complete with no arguments did not exit with the usage status"
+  assert_equals "$usage" "$(cat "$home/noargs.err")" "complete with no arguments changed the usage message"
+  assert_no_regex "^decisions_reviewed=" "$home/state/$open_id.meta" "a usage error recorded a completion"
+
+  printf 'working: report drafted\nneeds-decision [key=route]: choose route north or route south\n' \
+    > "$home/state/$open_id.status"
+  if FM_TASK_ID=$open_id run_captain "$home" complete --none > "$home/open.out" 2> "$home/open.err"; then
+    fail "bare --none attested while a captain call was still open"
+  fi
+  assert_grep "still has open captain decisions" "$home/open.err" "bare --none refused for the wrong reason"
+  assert_no_regex "^decisions_reviewed=" "$home/state/$open_id.meta" "a refused bare --none recorded a completion"
+  printf 'resolved [key=route]: route north\n' >> "$home/state/$open_id.status"
+  FM_TASK_ID=$open_id run_captain "$home" complete --none >/dev/null 2> "$home/answered.err" \
+    || fail "bare --none still refused after the captain call was answered: $(cat "$home/answered.err")"
+  run_captain "$home" verify "$open_id" >/dev/null || fail "the answered bare --none attestation did not verify"
+  pass "bare complete --none attests the launched task and keeps every refusal"
+}
+
 test_terminal_single_owner_status_decision_does_not_block_empty_inventory() {
   local home id open secondmate
   home=$(make_home stale-terminal-decision)
@@ -5139,6 +5193,7 @@ test_visual_review_uses_shared_completion_owner
 test_none_inventory_and_resolved_prose_do_not_create_holds
 test_completion_keeps_an_armed_pr_identity_last
 test_completion_replaces_a_pair_recorded_after_pr
+test_bare_none_attests_the_launched_task
 test_terminal_single_owner_status_decision_does_not_block_empty_inventory
 test_secondmate_hold_stays_in_authoritative_home
 test_secondmate_home_publishes_holds_and_answers
