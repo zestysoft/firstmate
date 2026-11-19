@@ -17,6 +17,12 @@
 # refuse; a resolved conflict is new content that needs a new readiness record.
 # A merge result equal to the default branch's own tree means the change is
 # already there, so it refuses rather than landing the same content twice.
+# Either way, a landing that would remove any path the default branch has
+# refuses and names those paths. Git history cannot tell a deliberate deletion
+# from a commit whose content came from an older base and so drops files a
+# landed commit added, so the operator states it: retry with one
+# --confirm-deletion <path> for every named path. Confirmations must name
+# exactly the paths the landing removes; a missing or extra one refuses.
 #
 # This is firstmate's merge gate-action (the captain's merge authority applied
 # locally instead of via a GitHub PR). It is the one sanctioned exception to hard
@@ -36,8 +42,8 @@
 # A per-checkout lock in the project's Git directory serializes different
 # tasks across the checks, checkout update, ref transaction, and rollback.
 # tests/fm-merge-local.test.sh covers pinned-head landing, content-equal
-# landing after the default branch moved, and race refusals.
-# Usage: fm-merge-local.sh <task-id>
+# landing after the default branch moved, deletion refusals, and race refusals.
+# Usage: fm-merge-local.sh <task-id> [--confirm-deletion <path>]...
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -50,11 +56,29 @@ STATE="${FM_STATE_OVERRIDE:-$FM_HOME/state}"
 . "$SCRIPT_DIR/fm-backlog-transition-lib.sh"
 # shellcheck source=bin/fm-dod-lib.sh
 . "$SCRIPT_DIR/fm-dod-lib.sh"
-if [ "$#" -ne 1 ] || ! fm_pr_task_id_valid "$1"; then
+if [ "$#" -lt 1 ] || ! fm_pr_task_id_valid "$1"; then
   echo "error: invalid local merge request" >&2
   exit 2
 fi
 ID=$1
+shift
+CONFIRMED_DELETIONS=()
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --confirm-deletion)
+      if [ "$#" -lt 2 ] || [ -z "$2" ]; then
+        echo "error: --confirm-deletion needs a path" >&2
+        exit 2
+      fi
+      CONFIRMED_DELETIONS+=("$2")
+      shift 2
+      ;;
+    *)
+      echo "error: invalid local merge request" >&2
+      exit 2
+      ;;
+  esac
+done
 fm_backlog_directory_present "$STATE" "state directory" || {
   echo "error: local merge refused: $FM_BACKLOG_TRANSITION_ERROR" >&2
   exit 1
@@ -89,7 +113,9 @@ MERGE_EXPECTED_HEAD=$(fm_dod_local_done_head "$META") || {
 MERGE_CONTROL_LOCK=
 MERGE_META_LOCK=
 MERGE_PROJECT_LOCK=
+MERGE_DELETIONS_TMP=
 merge_control_cleanup() {
+  [ -z "$MERGE_DELETIONS_TMP" ] || rm -f -- "$MERGE_DELETIONS_TMP"
   [ -z "$MERGE_PROJECT_LOCK" ] || fm_lock_release "$MERGE_PROJECT_LOCK" || true
   [ -z "$MERGE_META_LOCK" ] || fm_lock_release "$MERGE_META_LOCK" || true
   [ -z "$MERGE_CONTROL_LOCK" ] || fm_lock_release "$MERGE_CONTROL_LOCK" || true
@@ -215,6 +241,53 @@ case "$ancestor_status" in
     ;;
 esac
 
+# Every path the default branch has and the landed commit lacks must be
+# confirmed by name (see the header); the operator states it, nothing infers it.
+REMOVED_PATHS=()
+path_listed() {  # <path> <list...>
+  local want=$1 have
+  shift
+  for have in "$@"; do
+    [ "$have" != "$want" ] || return 0
+  done
+  return 1
+}
+refuse_unconfirmed_deletions() {
+  local path unconfirmed=0 extra=() retry
+  MERGE_DELETIONS_TMP=$(mktemp "${TMPDIR:-/tmp}/fm-merge-local-deletions.XXXXXX") || exit 1
+  git -C "$PROJ" diff-tree -r -z --no-renames --diff-filter=D --name-only "$before" "$MERGE_LAND" \
+    > "$MERGE_DELETIONS_TMP" || {
+    echo "error: could not list the paths landing $BRANCH would remove from $DEFAULT; refusing" >&2
+    exit 1
+  }
+  while IFS= read -r -d '' path; do
+    REMOVED_PATHS+=("$path")
+    path_listed "$path" ${CONFIRMED_DELETIONS[@]+"${CONFIRMED_DELETIONS[@]}"} || unconfirmed=1
+  done < "$MERGE_DELETIONS_TMP"
+  rm -f -- "$MERGE_DELETIONS_TMP"
+  MERGE_DELETIONS_TMP=
+  for path in ${CONFIRMED_DELETIONS[@]+"${CONFIRMED_DELETIONS[@]}"}; do
+    path_listed "$path" ${REMOVED_PATHS[@]+"${REMOVED_PATHS[@]}"} || extra+=("$path")
+  done
+  if [ "${#extra[@]}" -gt 0 ]; then
+    echo "error: --confirm-deletion names paths landing $BRANCH does not remove from $DEFAULT; refusing:" >&2
+    printf '  %q\n' "${extra[@]}" >&2
+    exit 1
+  fi
+  [ "$unconfirmed" -eq 1 ] || return 0
+  echo "REFUSED: landing $BRANCH would delete ${#REMOVED_PATHS[@]} path(s) that $DEFAULT has:" >&2
+  printf '  %q\n' "${REMOVED_PATHS[@]}" >&2
+  echo "If the branch's content came from an older base, these may be files a commit already on $DEFAULT added; have the crewmate restore them and report ready again." >&2
+  retry="$SCRIPT_DIR/fm-merge-local.sh $ID"
+  for path in "${REMOVED_PATHS[@]}"; do
+    retry="$retry --confirm-deletion $(printf '%q' "$path")"
+  done
+  echo "If the branch deleted them on purpose, state that by retrying with:" >&2
+  echo "  $retry" >&2
+  exit 1
+}
+refuse_unconfirmed_deletions
+
 hold_status=0
 FM_HOME="$FM_HOME" FM_STATE_OVERRIDE="$STATE" \
   "$SCRIPT_DIR/fm-captain-hold.sh" open "$ID" --distinguish-absent || hold_status=$?
@@ -264,6 +337,8 @@ fm_lock_release "$MERGE_PROJECT_LOCK" || true
 MERGE_PROJECT_LOCK=
 # Opt-in fleet activity ledger (docs/fleet-ledger.md); off costs one file test.
 [ ! -e "${FM_CONFIG_OVERRIDE:-$FM_HOME/config}/fleet-ledger" ] || FM_HOME=$FM_HOME FM_STATE_OVERRIDE=$STATE "$SCRIPT_DIR/fm-fleet-ledger.sh" merged "$ID" local || true
+[ "${#REMOVED_PATHS[@]}" -eq 0 ] \
+  || echo "note: landing deleted ${#REMOVED_PATHS[@]} path(s) the operator confirmed as deliberate" >&2
 [ "$MERGE_LAND" = "$MERGE_HEAD" ] \
   || echo "note: landed $BRANCH at $MERGE_LAND, whose tree equals recorded done head $MERGE_HEAD applied to $DEFAULT" >&2
 echo "merged $BRANCH into local $DEFAULT ($before -> $after) in $PROJ"

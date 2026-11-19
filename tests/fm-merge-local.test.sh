@@ -2,6 +2,7 @@
 # Local-only landing must use the durable done head, including across races.
 # Once main moves past that head, a branch tip lands only when its content
 # equals the recorded change applied to the current main.
+# A landing that removes paths main has refuses unless each is confirmed.
 set -u
 # shellcheck source=tests/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -9,6 +10,17 @@ set -u
 . "$ROOT/bin/fm-dod-lib.sh"
 
 TMP_ROOT=$(fm_test_tmproot fm-merge-local)
+
+# fm-merge-local.sh deliberately refuses the supervision branch actor, because
+# local-only landing is main-owned, so an ambient FM_SUPERVISION_ACTOR=branch
+# would turn every landing case red. Pin the main actor for the whole suite and
+# say so; the branch-actor case below sets the actor per call, so every case
+# still runs under the actor it is about.
+if [ -n "${FM_SUPERVISION_ACTOR:-}" ]; then
+  printf '# note: ambient FM_SUPERVISION_ACTOR=%s ignored; landing cases pin the main actor, the branch-actor case sets it per call\n' \
+    "$FM_SUPERVISION_ACTOR"
+  unset FM_SUPERVISION_ACTOR
+fi
 fm_git_identity fmtest fmtest@example.invalid
 
 make_case() {
@@ -498,6 +510,140 @@ test_missing_recorded_commit_refuses() {
   pass 'a well-formed recorded head that names no commit refuses'
 }
 
+land_confirming() {
+  FM_ROOT_OVERRIDE="$HOME_DIR" FM_HOME="$HOME_DIR" FM_STATE_OVERRIDE="$HOME_DIR/state" \
+    bash "$ROOT/bin/fm-merge-local.sh" local-task "$@"
+}
+
+# Main gains files after the worker started, as an earlier landing would.
+main_adds_files() {
+  local path
+  for path in "$@"; do
+    printf 'landed %s\n' "$path" > "$PROJ/$path"
+    git -C "$PROJ" add -- "$path"
+  done
+  git -C "$PROJ" commit -q -m 'earlier landing adds files'
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+}
+
+assert_deletion_refused() {
+  local label=$1 out rc=0
+  shift
+  out=$(land_confirming "$@" 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail "$label: landing unexpectedly succeeded: $out"
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail "$label: refusal moved main"
+  [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail "$label: refusal left a dirty checkout"
+  [ ! -e "$PROJ/approved.txt" ] || fail "$label: refusal left approved files behind"
+  LAST_OUT=$out
+}
+
+test_landing_that_drops_landed_files_refuses_by_name() {
+  local stale tip
+  make_case drops-landed
+  main_adds_files kept.txt 'lost two.txt'
+  # The worker's commit sits on main but its content came from the older base.
+  stale=$(printf 'stale content\n' | git -C "$PROJ" commit-tree "$X^{tree}" -p "$BASE")
+  git -C "$WT" reset -q --hard "$stale"
+  record_done || fail 'stale-content fixture done was not accepted'
+  assert_deletion_refused 'unconfirmed'
+  assert_contains "$LAST_OUT" 'would delete 2 path(s) that main has' 'refusal did not count the paths'
+  assert_contains "$LAST_OUT" '  kept.txt' 'refusal did not name kept.txt'
+  assert_contains "$LAST_OUT" '  lost\ two.txt' 'refusal did not name lost two.txt'
+  assert_contains "$LAST_OUT" "--confirm-deletion kept.txt --confirm-deletion lost\\ two.txt" \
+    'refusal did not show how to confirm a deliberate deletion'
+  [ "$(cat "$PROJ/lost two.txt")" = 'landed lost two.txt' ] || fail 'refusal lost the landed file'
+  assert_deletion_refused 'partly confirmed' --confirm-deletion kept.txt
+  assert_contains "$LAST_OUT" 'would delete 2 path(s)' 'a partial confirmation was accepted'
+  assert_deletion_refused 'extra confirmation' --confirm-deletion kept.txt \
+    --confirm-deletion 'lost two.txt' --confirm-deletion approved.txt
+  assert_contains "$LAST_OUT" 'does not remove from main' 'an extra confirmation was accepted'
+  assert_contains "$LAST_OUT" '  approved.txt' 'the extra confirmation was not named'
+
+  make_case carries-landed
+  main_adds_files kept.txt 'lost two.txt'
+  git -C "$WT" -c advice.skippedCherryPicks=false rebase -q main
+  tip=$(git -C "$WT" rev-parse HEAD)
+  record_done || fail 'carrying fixture done was not accepted'
+  land_confirming >/dev/null 2>&1 || fail 'a branch that carries the landed files was refused'
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$tip" ] || fail 'the carrying branch did not land'
+  [ "$(cat "$PROJ/lost two.txt")" = 'landed lost two.txt' ] || fail 'the carrying landing lost a file'
+  [ "$(cat "$PROJ/approved.txt")" = 'approved X' ] || fail 'the carrying landing lost the change'
+  pass 'a landing that drops files main has refuses by name, and lands once the branch carries them'
+}
+
+test_deliberate_deletion_lands_when_confirmed() {
+  local tip out
+  make_case deliberate
+  main_adds_files doomed.txt
+  git -C "$WT" reset -q --hard main
+  git -C "$WT" rm -q doomed.txt
+  printf 'approved X\n' > "$WT/approved.txt"
+  git -C "$WT" add approved.txt
+  git -C "$WT" commit -q -m 'X deletes doomed.txt'
+  tip=$(git -C "$WT" rev-parse HEAD)
+  record_done || fail 'deliberate-deletion fixture done was not accepted'
+  assert_deletion_refused 'unconfirmed deliberate deletion'
+  assert_contains "$LAST_OUT" '--confirm-deletion doomed.txt' 'refusal did not offer the confirmation'
+  out=$(land_confirming --confirm-deletion doomed.txt 2>&1) || fail "confirmed deletion refused: $out"
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$tip" ] || fail 'confirmed deletion did not land the branch'
+  [ ! -e "$PROJ/doomed.txt" ] || fail 'confirmed deletion left the deleted file'
+  [ "$(cat "$PROJ/approved.txt")" = 'approved X' ] || fail 'confirmed deletion lost the change'
+  [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail 'confirmed deletion left a dirty checkout'
+  assert_contains "$out" 'deleted 1 path(s) the operator confirmed' 'landing did not report the deletion'
+  pass 'a branch that deliberately deletes a file lands once the operator confirms it by name'
+}
+
+test_content_equal_rebase_with_deletion_needs_confirmation() {
+  make_case content-equal-delete
+  main_adds_files doomed.txt
+  git -C "$WT" reset -q --hard main
+  git -C "$WT" rm -q doomed.txt
+  git -C "$WT" commit -q -m 'X deletes doomed.txt'
+  X=$(git -C "$WT" rev-parse HEAD)
+  record_done || fail 'content-equal deletion fixture done was not accepted'
+  advance_main
+  git -C "$WT" -c advice.skippedCherryPicks=false rebase -q main
+  assert_moved_main_refused 'unconfirmed rebased deletion'
+  assert_contains "$LAST_OUT" '  doomed.txt' 'rebased deletion refusal did not name the path'
+  land_confirming --confirm-deletion doomed.txt >/dev/null 2>&1 || fail 'confirmed rebased deletion refused'
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$(git -C "$WT" rev-parse HEAD)" ] || fail 'rebased deletion did not land'
+  [ ! -e "$PROJ/doomed.txt" ] || fail 'rebased deletion kept the file'
+  [ "$(cat "$PROJ/other.txt")" = 'other work' ] || fail "rebased deletion lost main's newer content"
+  pass 'a content-equal rebase that deletes a file needs the same confirmation, then lands'
+}
+
+test_branch_actor_is_refused_by_the_tool() {
+  local out rc=0
+  make_case branch-actor
+  record_done || fail 'branch-actor fixture done was not accepted'
+  out=$(FM_SUPERVISION_ACTOR=branch land 2>&1) || rc=$?
+  [ "$rc" -eq 6 ] || fail "the branch actor was not refused by the tool: $rc $out"
+  assert_contains "$out" 'local-only landing (fm-merge-local) refused - the supervision branch never performs this action' \
+    'the branch-actor refusal did not name the role partition'
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'the branch-actor refusal moved main'
+  [ ! -e "$PROJ/approved.txt" ] || fail 'the branch-actor refusal left approved files behind'
+  FM_SUPERVISION_ACTOR=main land >/dev/null 2>&1 || fail 'the main actor could not land after the branch refusal'
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$X" ] || fail 'the main actor did not land the recorded head'
+  pass 'the supervision branch actor is refused by the landing tool itself, and main then lands'
+}
+
+test_bad_confirmation_arguments_refuse() {
+  local out rc args
+  make_case bad-args
+  record_done || fail 'bad-args fixture done was not accepted'
+  for args in '--confirm-deletion' '--confirm-deletion=' '--unknown'; do
+    rc=0
+    # shellcheck disable=SC2086 # Each case is one deliberately unquoted word.
+    out=$(land_confirming $args 2>&1) || rc=$?
+    [ "$rc" -eq 2 ] || fail "'$args' did not refuse as a usage error: $rc $out"
+  done
+  rc=0
+  out=$(land_confirming --confirm-deletion '' 2>&1) || rc=$?
+  [ "$rc" -eq 2 ] || fail "an empty confirmation did not refuse as a usage error: $rc $out"
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'a usage error moved main'
+  pass 'malformed confirmation arguments refuse without landing'
+}
+
 fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
   test_missing_and_malformed_head_refuse test_change_after_hold_check_refuses \
   test_diverged_default_refuses test_change_during_approval_check_refuses \
@@ -506,4 +652,7 @@ fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_d
   test_stale_commit_name_lands_rebased_branch test_content_equal_branch_lands \
   test_differing_tree_refuses_after_main_moves test_conflicting_change_refuses_after_main_moves \
   test_uncommitted_work_refuses_after_main_moves test_already_landed_content_not_landed_twice \
-  test_merge_history_refuses_after_main_moves test_missing_recorded_commit_refuses
+  test_merge_history_refuses_after_main_moves test_missing_recorded_commit_refuses \
+  test_landing_that_drops_landed_files_refuses_by_name test_deliberate_deletion_lands_when_confirmed \
+  test_content_equal_rebase_with_deletion_needs_confirmation test_bad_confirmation_arguments_refuse \
+  test_branch_actor_is_refused_by_the_tool
