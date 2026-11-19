@@ -13,8 +13,10 @@
 # For local-only tasks, the first accepted done head is latched as exactly one
 # local_done_head= full commit id in the live task metadata. Observing done again
 # moves that identity only to the same change rebased onto a newer default
-# branch, at the head the ship branch points at (fm_dod_local_done_head_rebased).
-# Any other revised work needs a new task/approval record.
+# branch, at the head the ship branch points at (fm_dod_local_done_head_rebased),
+# or to a newer ready report's head whose branch still carries the recorded
+# content (fm_dod_local_done_head_continues). Any other revised work needs a new
+# task/approval record.
 # The optional third argument is the task's full ship-branch name (a project's
 # registered prefix may replace the legacy `fm/` one); it defaults to `fm/<task-id>`
 # and is the immutable task branch rendered in every delivery contract.
@@ -697,7 +699,7 @@ $(fm_dod_commit_first)
 $(fm_dod_unverified_results)
 A \`done:\` is accepted when the named head is on this project's shared local branch, not only on a detached copy; the check tests that head, not merely that a branch moved.
 Keep your branch a clean fast-forward onto the current default branch - if \`main\` has advanced, rebase onto it so the eventual merge stays a fast-forward.
-After a rebase, report \`done\` again; the new head replaces the one you reported only when it carries the same change.
+After a rebase or a further commit, report \`done\` again with a new stamp; the new head replaces the one you reported only when your branch still holds that reported change unaltered, with any new commits on top of it.
 When it is implemented and committed, append \`done [at=<epoch>]: ready in branch $branch\` to the status file and stop.
 The configured merge authority approves the ready branch, then firstmate merges it into local \`main\` through the guarded fast-forward path.
 EOF
@@ -947,14 +949,80 @@ fm_dod_local_done_head_rebased() {  # <meta> <id> <old> <new>
   [ -n "$old_id" ] && [ "$old_id" = "$new_id" ]
 }
 
+# The recorded local_done_at= stamp: the at= epoch of the newest ready report
+# bound to local_done_head=. Absent, duplicated, or non-numeric fails.
+fm_dod_local_done_at() {  # <meta>
+  local value count
+  count=$(awk -F= '$1 == "local_done_at" { n++ } END { print n+0 }' "$1") || return 1
+  [ "$count" = 1 ] || return 1
+  value=$(fm_dod_meta_value "$1" local_done_at) || return 1
+  case "$value" in ''|*[!0-9]*) return 1 ;; esac
+  printf '%s\n' "$value"
+}
+
+# 0 when the branch at <new> still carries the recorded <old> head's content, in
+# tree terms. Let T be the recorded change on <new>'s own base: <old>'s tree
+# when both share a fork point from the default branch, otherwise a clean
+# three-way merge of <old>'s change (from its fork point) onto <new>'s newer one
+# (git merge-tree --merge-base, Git 2.40 or newer). <new> carries it when the
+# ship branch points at <new>, the history above <new>'s fork point is linear
+# and contains a commit whose tree is exactly T, and every path the recorded
+# change touched still differs from that fork point at <new>. So the branch held
+# precisely the recorded content and then only went forward. An amended or
+# rewritten recorded change, a conflict, an older fork point, merge commits, a
+# recorded path put back to its base version, or an empty change refuses.
+fm_dod_local_done_head_continues() {  # <meta> <id> <old> <new>
+  local meta=$1 id=$2 old=$3 new=$4 project branch default tip old_base new_base target base_tree commit tree path found=0
+  project=$(fm_dod_meta_value "$meta" project)
+  [ -n "$project" ] && [ -d "$project" ] || return 1
+  branch=$(fm_dod_meta_value "$meta" branch)
+  [ -n "$branch" ] || branch="fm/$id"
+  git check-ref-format --branch "$branch" >/dev/null 2>&1 || return 1
+  [ "$(git -C "$project" rev-parse --verify --quiet "refs/heads/$branch^{commit}")" = "$new" ] || return 1
+  git -C "$project" cat-file -e "$old^{commit}" 2>/dev/null || return 1
+  default=$(fm_dod_project_default_branch "$project") || return 1
+  tip=$(git -C "$project" rev-parse --verify --quiet "refs/heads/$default^{commit}") || return 1
+  old_base=$(git -C "$project" merge-base "$old" "$tip" 2>/dev/null) || return 1
+  new_base=$(git -C "$project" merge-base "$new" "$tip" 2>/dev/null) || return 1
+  git -C "$project" merge-base --is-ancestor "$old_base" "$new_base" || return 1
+  [ "$(git -C "$project" rev-parse "$old^{tree}")" != "$(git -C "$project" rev-parse "$old_base^{tree}")" ] || return 1
+  if [ "$old_base" = "$new_base" ]; then
+    target=$(git -C "$project" rev-parse "$old^{tree}") || return 1
+  else
+    target=$(git -C "$project" merge-tree --write-tree --merge-base="$old_base" "$new_base" "$old" 2>/dev/null) || return 1
+    target=$(printf '%s\n' "$target" | head -1)
+  fi
+  base_tree=$(git -C "$project" rev-parse "$new_base^{tree}") || return 1
+  [ -n "$target" ] && [ "$target" != "$base_tree" ] || return 1
+  [ -z "$(git -C "$project" rev-list --min-parents=2 "$new_base..$new")" ] || return 1
+  while read -r commit tree; do
+    [ "$tree" != "$target" ] || { found=1; break; }
+  done <<EOF
+$(git -C "$project" log --format='%H %T' "$new_base..$new")
+EOF
+  [ "$found" = 1 ] || return 1
+  while IFS= read -r path; do
+    [ -n "$path" ] || continue
+    [ "$(git -C "$project" rev-parse --verify --quiet "$new:$path" 2>/dev/null)" \
+      != "$(git -C "$project" rev-parse --verify --quiet "$new_base:$path" 2>/dev/null)" ] || return 1
+  done <<EOF
+$(git -C "$project" diff --name-only --no-renames "$base_tree" "$target")
+EOF
+  return 0
+}
+
 # Latch the head before reporting readiness, not at landing time. Snapshot
 # callers may supply captured meta; compare it with the live record under the
 # existing control/meta locks before publishing to the live owner only. A caller
 # already holding the live meta lock passes meta-locked and retains its locks.
 # A head that differs from the latched one replaces it only when
-# fm_dod_local_done_head_rebased accepts it; otherwise the latch stands.
-fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> [meta-locked]
-  local state=$1 id=$2 meta=$3 sha=$4 captured=$5 script_dir live control='' lock='' tmp='' pinned
+# fm_dod_local_done_head_rebased accepts it, or when <report-at> is strictly newer
+# than the recorded local_done_at= and fm_dod_local_done_head_continues accepts
+# it; otherwise the latch stands. local_done_at= is the newest accepted report's
+# at= stamp, so re-reading an already-bound report never moves the head to work
+# the worker committed after it. An empty <report-at> records no stamp.
+fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> <report-at> [meta-locked]
+  local state=$1 id=$2 meta=$3 sha=$4 captured=$5 at=$6 script_dir live control='' lock='' tmp='' pinned recorded_at newer=0
   script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
   # These lazy imports are canonical lint roots. Keep their subshell-local
   # initializers out of ShellCheck's analysis of the sourcing caller's globals.
@@ -963,7 +1031,8 @@ fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> [met
   # shellcheck source=/dev/null
   . "$script_dir/fm-backlog-transition-lib.sh"
   live="$state/$id.meta"
-  if [ "${6:-}" != meta-locked ]; then
+  case "$at" in *[!0-9]*) at= ;; esac
+  if [ "${7:-}" != meta-locked ]; then
     control="$state/.control-$id.lock"
     lock=$(fm_meta_lock_path "$live") || return 1
     fm_lock_try_acquire "$control" || return 1
@@ -976,14 +1045,28 @@ fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> [met
   [ "$(cat "$live")" = "$captured" ] || return 1
   if grep -q '^local_done_head=' "$live"; then
     pinned=$(fm_dod_local_done_head "$live") || return 1
-    [ "$pinned" != "$sha" ] || return 0
-    fm_dod_local_done_head_rebased "$live" "$id" "$pinned" "$sha" || return 1
+    if recorded_at=$(fm_dod_local_done_at "$live"); then
+      [ -z "$at" ] || [ "$at" -le "$recorded_at" ] || newer=1
+    elif ! grep -q '^local_done_at=' "$live"; then
+      # A record written before stamps were kept may adopt one only for the
+      # head it already names, never to move.
+      [ -z "$at" ] || [ "$pinned" != "$sha" ] || newer=1
+    fi
+    if [ "$pinned" = "$sha" ]; then
+      [ "$newer" = 1 ] || return 0
+    elif ! fm_dod_local_done_head_rebased "$live" "$id" "$pinned" "$sha"; then
+      [ "$newer" = 1 ] && [ -n "$recorded_at" ] || return 1
+      fm_dod_local_done_head_continues "$live" "$id" "$pinned" "$sha" || return 1
+    fi
     tmp=$(mktemp "$state/.local-done-$id.XXXXXX") || return 1
-    awk -F= -v sha="$sha" '$1 == "local_done_head" { print "local_done_head=" sha; next } { print }' \
-      "$live" > "$tmp" || return 1
+    awk -F= -v sha="$sha" -v at="$at" -v newer="$newer" '
+      $1 == "local_done_head" { print "local_done_head=" sha; if (newer == 1) print "local_done_at=" at; next }
+      $1 == "local_done_at" { if (newer == 1) next }
+      { print }' "$live" > "$tmp" || return 1
   else
     tmp=$(mktemp "$state/.local-done-$id.XXXXXX") || return 1
-    { cat "$live" && printf '\nlocal_done_head=%s\n' "$sha"; } > "$tmp" || return 1
+    { cat "$live" && printf '\nlocal_done_head=%s\n' "$sha" \
+      && { [ -z "$at" ] || printf 'local_done_at=%s\n' "$at"; }; } > "$tmp" || return 1
   fi
   fm_backlog_record_publish "$tmp" "$live" 'local readiness metadata' "$state"
 )
@@ -1252,8 +1335,9 @@ fm_dod_accept_ship_done() {  # <kind> <mode> <worktree> <project> <line> [<state
   if fm_dod_named_head_reachable_outside_worktree "$wt" "$project" "$mode" "$sha"; then
     if [ "$mode" = local-only ] && [ -n "$meta" ]; then
       if [ -z "$state" ] || [ -z "$id" ] \
-        || ! fm_dod_pin_local_done_head "$state" "$id" "$meta" "$sha" "$captured" "${9:-}"; then
-        printf '%s\n' "local-only done head could not be recorded, or differs from the recorded head by more than a rebase of the same change onto a newer default branch at the ship branch head; revised work requires a new task/approval record"
+        || ! fm_dod_pin_local_done_head "$state" "$id" "$meta" "$sha" "$captured" \
+          "$(status_line_at_epoch "$line" 2>/dev/null || true)" "${9:-}"; then
+        printf '%s\n' "local-only done head could not be recorded, or differs from the recorded head by more than a rebase of the same change or, on a newer stamped report, further commits above the unchanged recorded content at the ship branch head; revised work requires a new task/approval record"
         return 1
       fi
     fi

@@ -43,10 +43,17 @@ make_case() {
     "$PROJ" "$WT" > "$META"
 }
 
+# record_done [<at-epoch>|-]: report ready at that stamp (default 1790000000);
+# "-" sends a report with no at= stamp.
 record_done() {
+  local line='done [at=1790000000]: ready in branch fm/local-task'
+  case "${1:-}" in
+    '') ;;
+    -) line='done: ready in branch fm/local-task' ;;
+    *) line="done [at=$1]: ready in branch fm/local-task" ;;
+  esac
   FM_HOME="$HOME_DIR" fm_dod_accept_ship_done ship local-only "$WT" "$PROJ" \
-    'done [at=1790000000]: ready in branch fm/local-task' \
-    "$HOME_DIR/state" local-task "$META"
+    "$line" "$HOME_DIR/state" local-task "$META"
 }
 
 land() {
@@ -644,6 +651,175 @@ test_bad_confirmation_arguments_refuse() {
   pass 'malformed confirmation arguments refuse without landing'
 }
 
+# A follow-up commit on top of the reported X: it adds a file and edits the line
+# X added, the shape of a second commit that finishes a two-commit change.
+commit_follow_up() {
+  printf 'approved X\nfollow-up\n' > "$WT/approved.txt"
+  printf 'second half\n' > "$WT/second.txt"
+  git -C "$WT" add approved.txt second.txt
+  git -C "$WT" commit -q -m 'second half of the change'
+  Y=$(git -C "$WT" rev-parse HEAD)
+}
+
+assert_head_kept() {  # <label>
+  [ "$(fm_dod_local_done_head "$META")" = "$X" ] || fail "$1: the recorded head moved"
+}
+
+assert_landed_whole() {  # <label> <head>
+  land >/dev/null 2>&1 || fail "$1: the newer reported head did not land"
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$2" ] || fail "$1: landing did not use the newer reported head"
+  [ "$(cat "$PROJ/second.txt")" = 'second half' ] || fail "$1: landing lost the second commit"
+  [ "$(cat "$PROJ/approved.txt")" = "$(printf 'approved X\nfollow-up')" ] || fail "$1: landing lost the follow-up edit"
+  [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail "$1: landing left a dirty checkout"
+}
+
+test_newer_report_of_continued_branch_replaces_head() {
+  make_case continued
+  record_done 1790000100 || fail 'first ready report was not accepted'
+  commit_follow_up
+  record_done 1790000200 || fail 'a newer ready report whose branch carries X was refused'
+  [ "$(fm_dod_local_done_head "$META")" = "$Y" ] || fail 'the record still names the first reported head'
+  [ "$(fm_dod_local_done_at "$META")" = 1790000200 ] || fail 'the record did not bind the newer report'
+  assert_landed_whole continued "$Y"
+
+  make_case continued-rebased
+  record_done 1790000100 || fail 'first ready report was not accepted'
+  commit_follow_up
+  move_main_and_rebase
+  record_done 1790000200 || fail 'a newer report of the rebased two-commit branch was refused'
+  [ "$(fm_dod_local_done_head "$META")" = "$Y" ] || fail 'the record still names the pre-rebase head'
+  assert_landed_whole continued-rebased "$Y"
+  [ "$(cat "$PROJ/other.txt")" = 'other' ] || fail 'landing lost the newer main'
+  pass 'a newer ready report whose branch passed through the recorded tree and went forward replaces the head and lands whole'
+}
+
+test_two_commit_change_is_never_half_landed() {
+  make_case half
+  record_done 1790000100 || fail 'first ready report was not accepted'
+  commit_follow_up
+  # No newer report: the record keeps X, and neither X nor Y lands.
+  assert_refused
+  move_main_and_rebase
+  assert_refused
+  assert_head_kept 'unreported second commit'
+  [ ! -e "$PROJ/second.txt" ] || fail 'a refusal left the second commit behind'
+  record_done 1790000200 || fail 'the newer report of the whole change was refused'
+  assert_landed_whole half "$Y"
+  pass 'a branch carrying a second, unreported commit refuses rather than landing half, and lands whole once reported'
+}
+
+test_rereading_a_bound_report_cannot_take_later_work() {
+  make_case reread
+  record_done 1790000100 || fail 'first ready report was not accepted'
+  record_done 1790000200 || fail 'a newer report of the same head was refused'
+  [ "$(fm_dod_local_done_at "$META")" = 1790000200 ] || fail 'the newer report of the same head was not bound'
+  commit_follow_up
+  record_done 1790000200 >/dev/null 2>&1 && fail 're-reading the bound report moved the head to unreported work'
+  record_done 1790000100 >/dev/null 2>&1 && fail 'an older report moved the head'
+  record_done - >/dev/null 2>&1 && fail 'an unstamped report moved the head'
+  assert_head_kept reread
+  assert_refused
+  pass 'a report already bound, an older one, or an unstamped one never moves the head to later work'
+}
+
+test_newer_report_with_changed_tree_refuses() {
+  local label
+  for label in amended rewritten reverted conflict-resolved; do
+    make_case "changed-$label"
+    record_done 1790000100 || fail "$label: first ready report was not accepted"
+    case "$label" in
+      amended)
+        printf 'approved X, revised\n' > "$WT/approved.txt"
+        git -C "$WT" commit -q -a --amend -m 'X revised'
+        ;;
+      rewritten)
+        # The idle-fleet shape: the same base, a replacement commit, not a continuation.
+        git -C "$WT" reset -q --hard "$BASE"
+        printf 'approved X\nmore\n' > "$WT/approved.txt"
+        git -C "$WT" add approved.txt
+        git -C "$WT" commit -q -m 'X rewritten'
+        ;;
+      reverted)
+        commit_follow_up
+        git -C "$WT" rm -q approved.txt
+        git -C "$WT" commit -q -m 'drop the recorded file again'
+        ;;
+      conflict-resolved)
+        printf 'main version\n' > "$PROJ/approved.txt"
+        git -C "$PROJ" add approved.txt
+        git -C "$PROJ" commit -q -m 'main edits the same file'
+        BASE=$(git -C "$PROJ" rev-parse HEAD)
+        git -C "$WT" reset -q --hard main
+        printf 'approved X\n' > "$WT/approved.txt"
+        git -C "$WT" commit -q -am resolved
+        ;;
+    esac
+    record_done 1790000200 >/dev/null 2>&1 && fail "$label: a newer report with a changed tree replaced the record"
+    assert_head_kept "$label"
+    if [ "$label" = conflict-resolved ]; then
+      local out rc=0
+      out=$(land 2>&1) || rc=$?
+      [ "$rc" -ne 0 ] || fail "conflict-resolved: landing succeeded: $out"
+      [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'conflict-resolved: refusal moved main'
+    else
+      assert_refused
+    fi
+  done
+  pass 'an amended, rewritten, partly reverted, or conflict-resolved change keeps the recorded head even on a newer report'
+}
+
+test_newer_report_off_fast_forward_refuses() {
+  local older
+  make_case merge-commit
+  record_done 1790000100 || fail 'first ready report was not accepted'
+  commit_follow_up
+  printf 'other\n' > "$PROJ/other.txt"
+  git -C "$PROJ" add other.txt
+  git -C "$PROJ" commit -q -m 'main moves'
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+  git -C "$WT" merge -q --no-edit main
+  record_done 1790000200 >/dev/null 2>&1 && fail 'a newer report over merge history replaced the record'
+  assert_head_kept merge-commit
+
+  make_case older-base
+  older=$BASE
+  move_main_and_rebase
+  record_done 1790000100 || fail 'first ready report was not accepted'
+  X=$(git -C "$WT" rev-parse HEAD)
+  # The newer head forks from the older main: not a fast-forward of the record's base.
+  git -C "$WT" reset -q --hard "$older"
+  printf 'approved X\n' > "$WT/approved.txt"
+  git -C "$WT" add approved.txt
+  git -C "$WT" commit -q -m 'X on the older main'
+  commit_follow_up
+  record_done 1790000200 >/dev/null 2>&1 && fail 'a newer report from an older fork point replaced the record'
+  assert_head_kept older-base
+  pass 'a newer report over merge history or from an older fork point keeps the recorded head'
+}
+
+test_missing_record_or_report_refuses() {
+  make_case legacy
+  # A record kept before stamps: it may adopt a stamp for its own head only.
+  printf 'local_done_head=%s\n' "$X" >> "$META"
+  commit_follow_up
+  record_done 1790000200 >/dev/null 2>&1 && fail 'a stampless record moved to a newer head'
+  assert_head_kept legacy
+  git -C "$WT" reset -q --hard "$X"
+  record_done 1790000200 || fail 'a stampless record refused its own head'
+  [ "$(fm_dod_local_done_at "$META")" = 1790000200 ] || fail 'the stampless record did not adopt the stamp'
+
+  make_case no-report
+  commit_follow_up
+  assert_refused
+
+  make_case no-record
+  rm -f "$META"
+  record_done 1790000200 >/dev/null 2>&1 && fail 'a task with no record accepted a report'
+  [ ! -e "$META" ] || fail 'a report created a task record'
+  assert_refused
+  pass 'a stampless record never moves, and a task with no report or no record refuses'
+}
+
 fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
   test_missing_and_malformed_head_refuse test_change_after_hold_check_refuses \
   test_diverged_default_refuses test_change_during_approval_check_refuses \
@@ -655,4 +831,7 @@ fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_d
   test_merge_history_refuses_after_main_moves test_missing_recorded_commit_refuses \
   test_landing_that_drops_landed_files_refuses_by_name test_deliberate_deletion_lands_when_confirmed \
   test_content_equal_rebase_with_deletion_needs_confirmation test_bad_confirmation_arguments_refuse \
-  test_branch_actor_is_refused_by_the_tool
+  test_branch_actor_is_refused_by_the_tool \
+  test_newer_report_of_continued_branch_replaces_head test_two_commit_change_is_never_half_landed \
+  test_rereading_a_bound_report_cannot_take_later_work test_newer_report_with_changed_tree_refuses \
+  test_newer_report_off_fast_forward_refuses test_missing_record_or_report_refuses

@@ -30,8 +30,9 @@
 # runs for mode=local-only tasks, only after the captain approves (or yolo=on
 # auto-approves), and only as a clean fast-forward. A diverged branch needs a
 # rebase onto the default branch before landing. A fresh ready report may then
-# re-record the head when it is the same change on a newer default branch
-# (bin/fm-dod-lib.sh); without it, the content check above lands a rebase whose
+# re-record the head when it is the same change on a newer default branch, or
+# when a newer report's branch still carries the recorded content with further
+# commits on top (bin/fm-dod-lib.sh); without it, the content check above lands a rebase whose
 # tree matches. Revised work needs a new task/approval record. See AGENTS.md prime directives,
 # project management, and task lifecycle.
 # The task's existing per-task control lock serializes the captain-hold check
