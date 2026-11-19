@@ -29,6 +29,11 @@
 #   7. A fire-and-forget record stays outside the ladder, but one whose first
 #      ring did not land gets exactly one retry ring and never escalates. The
 #      retry waits while the worker has an open decision of its own.
+#   8. A busy worker inside its own declared timeout (`paused: ... until <t>`)
+#      still gets its due doorbell, recorded as a delivery attempt, with only
+#      Enter pressed and no stuck-busy alarm; a spent ladder waits quietly for
+#      <t>. Past <t>, or without a declared time, the busy deferral and its
+#      stuck-busy escalation are unchanged.
 set -u
 
 # shellcheck source=tests/wake-helpers.sh
@@ -81,6 +86,9 @@ case "${1:-}" in
         *) break ;;
       esac
     done
+    # Named keys (Enter, Escape, C-c) go to their own log, so a case can
+    # prove delivery pressed nothing that would interrupt a running turn.
+    [ "$literal" = 1 ] || printf '%s\n' "$*" >> "${FM_KEY_LOG:-/dev/null}"
     if [ "$literal" = 1 ]; then
       printf '%s\n' "${1:-}" >> "${FM_SEND_LOG:-/dev/null}"
       if [ -n "${FM_ACK_RECORD:-}" ] && [ -f "$FM_ACK_RECORD" ]; then
@@ -940,6 +948,76 @@ test_watcher_busy_budget_resets_on_ring_and_ack() {
   pass "watcher: delivery and acknowledgement reset the durable busy budget"
 }
 
+# A busy case whose worker declared its own wait with the given status line.
+declared_busy_case() {  # <name> <status-line>
+  local dir
+  dir=$(busy_case "$1")
+  printf '%s\n' "$2" > "$dir/state/t1.status"
+  : > "$dir/send.log"
+  : > "$dir/keys.log"
+  printf '%s' "$dir"
+}
+
+test_watcher_rings_busy_run_inside_declared_timeout() {
+  local dir rings
+  dir=$(declared_busy_case busy-declared \
+    'paused [at=1795000000]: running the watcher suite until 2099-01-01T00:00Z')
+  FM_KEY_LOG="$dir/keys.log" busy_steer_check "$dir"
+  FM_KEY_LOG="$dir/keys.log" busy_steer_check "$dir"
+  [ ! -s "$dir/state/.wake-queue" ] \
+    || fail "a busy run inside its declared timeout raised an alarm:"$'\n'"$(cat "$dir/state/.wake-queue")"
+  rings=$(grep -cF 'Firstmate instruction waiting' "$dir/send.log" || true)
+  [ "$rings" -ge 1 ] || fail "a busy run inside its declared timeout never received the doorbell"
+  [ "$(cut -f2 "$dir/state/t1.inbox/.ring-state")" = "$rings" ] \
+    || fail "each doorbell into the declared run should be recorded as a delivery attempt"
+  [ ! -e "$dir/state/t1.inbox/.busy-state" ] || fail "a declared run spent the stuck-busy budget"
+  [ -s "$dir/keys.log" ] || fail "the doorbell was never submitted"
+  ! grep -qv '^Enter$' "$dir/keys.log" \
+    || fail "delivery into a running turn pressed a key other than Enter:"$'\n'"$(cat "$dir/keys.log")"
+  mv "$dir/state/t1.inbox/001.msg" "$dir/state/t1.inbox/handled/"
+  : > "$dir/send.log"
+  busy_steer_check "$dir"
+  [ ! -s "$dir/send.log" ] || fail "the watcher rang again after the worker acknowledged"
+  [ ! -s "$dir/state/.wake-queue" ] || fail "an acknowledged instruction raised an alarm"
+  pass "watcher: a busy run inside its declared timeout receives the doorbell, presses only Enter, and stays quiet"
+}
+
+test_watcher_spent_ladder_waits_for_declared_time() {
+  local dir
+  dir=$(declared_busy_case busy-declared-spent \
+    'paused [at=1795000000]: running the watcher suite until 2099-01-01T00:00Z')
+  FM_TASK_INBOX_RING_MAX=1 busy_steer_check "$dir"
+  FM_TASK_INBOX_RING_MAX=1 busy_steer_check "$dir"
+  FM_TASK_INBOX_RING_MAX=1 busy_steer_check "$dir"
+  [ "$(grep -cF 'Firstmate instruction waiting' "$dir/send.log")" = 1 ] \
+    || fail "a spent ladder kept ringing inside the declared timeout"
+  [ ! -s "$dir/state/.wake-queue" ] \
+    || fail "a spent ladder escalated inside the declared timeout:"$'\n'"$(cat "$dir/state/.wake-queue")"
+  printf 'paused [at=1795000000]: running the watcher suite until 2020-01-01T00:00Z\n' > "$dir/state/t1.status"
+  FM_TASK_INBOX_RING_MAX=1 busy_steer_check "$dir"
+  FM_TASK_INBOX_RING_MAX=1 busy_steer_check "$dir"
+  grep -q 'stuck-busy after 2 consecutive' "$dir/state/.wake-queue" \
+    || fail "a worker still busy past its declared time did not escalate as before"
+  [ "$(grep -cF 'Firstmate instruction waiting' "$dir/send.log")" = 1 ] \
+    || fail "a busy worker past its declared time was typed into"
+  pass "watcher: a spent ladder waits quietly for the declared time, then a still-busy worker escalates as before"
+}
+
+test_watcher_busy_without_declared_time_defers() {
+  local mode=$1 line dir
+  case "$mode" in
+    untimed) line='paused [at=1795000000]: running the watcher suite' ;;
+    working) line='working [at=1795000000]: fix implemented' ;;
+  esac
+  dir=$(declared_busy_case "busy-$mode" "$line")
+  busy_steer_check "$dir"
+  busy_steer_check "$dir"
+  grep -q 'stuck-busy after 2 consecutive' "$dir/state/.wake-queue" \
+    || fail "a busy $mode worker did not escalate as before"
+  [ ! -s "$dir/send.log" ] || fail "a busy $mode worker was typed into"
+  pass "watcher: a busy $mode worker keeps the busy deferral and its stuck-busy escalation"
+}
+
 test_watcher_busy_bookkeeping_failure_surfaces() {
   local dir
   dir=$(busy_case busy-unwritable)
@@ -1394,6 +1472,10 @@ test_ring_ladder_policy
 test_watcher_rerings_idle_pane_quietly
 test_watcher_waits_on_busy_pane
 test_watcher_busy_budget_resets_on_ring_and_ack
+test_watcher_rings_busy_run_inside_declared_timeout
+test_watcher_spent_ladder_waits_for_declared_time
+test_watcher_busy_without_declared_time_defers untimed
+test_watcher_busy_without_declared_time_defers working
 test_watcher_busy_bookkeeping_failure_surfaces
 test_watcher_successor_busy_reset_failure_surfaces idle
 test_watcher_successor_busy_reset_failure_surfaces busy

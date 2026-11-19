@@ -58,7 +58,9 @@
 # by the caller's delivery guard consume a separate durable consecutive-poll budget,
 # FM_TASK_INBOX_BUSY_MAX. At that bound the same escalation path surfaces a
 # stuck-busy reason without submission. An allowed due check or acknowledgement
-# resets this budget. fm-busy-lib.sh owns the backend-specific delivery guard.
+# resets this budget. fm-busy-lib.sh owns the backend-specific delivery guard;
+# a busy turn inside the worker's own declared timeout is not deferred and
+# spends no budget (bin/fm-watch.sh inbox_steer_declared_run).
 # Fire-and-forget retries remain outside escalation. A positively
 # dead or missing endpoint skips delivery and the ladder and escalates directly.
 # This library owns the schedule, durable budgets, and escalation marker.

@@ -662,15 +662,35 @@ inbox_steer_busy() {  # <window> <backend> <task> <tail40>
   fi
 }
 
+# inbox_steer_declared_run: 0 while the worker's latest declared wait is its own
+# `paused: ... until <t>` (status_declared_wait_line, status_paused_until) and
+# <t> has not passed - a busy turn running inside the timeout the worker
+# declared for it, such as a long foreground test suite. The same declaration
+# already absorbs the pane-staleness alarm until <t> (handle_paused_stale).
+# Inside that window a busy verdict is not a reason to hold a due doorbell: the
+# ring types the same constant line fm-send already types into a busy pane at
+# enqueue, which the harness queues rather than treating as an interrupt, and
+# the stuck-busy budget is not spent. A declaration without a time, a
+# captain-held line, or a passed time keeps the ordinary busy deferral. T3 Code
+# is excluded: its doorbell starts a new turn, so it keeps waiting for proven idle.
+inbox_steer_declared_run() {  # <backend> <task>
+  local until
+  [ "$1" != t3code ] || return 1
+  until=$(status_paused_until "$(status_declared_wait_line "$STATE/$2.status")") || return 1
+  [ "$(date +%s)" -lt "$until" ]
+}
+
 # Steering-inbox loss detection, one cheap check per recorded window per poll.
 # bin/fm-task-inbox-lib.sh owns delivery, busy-deferral, retry, and escalation policy.
 # Endpoint and busy checks precede delivery so recovery never types into a busy,
-# dead, or missing worker; the ring helper protects pending composer text.
+# dead, or missing worker, except a busy turn inside its own declared timeout
+# (inbox_steer_declared_run), where a due ring proceeds and a spent ladder waits
+# quietly for the declared time; the ring helper protects pending composer text.
 # Normal retries keep the watcher blocking rather than waking firstmate.
 # Runs for secondmates too: their pane-staleness exemption is about quiet panes
 # being healthy, while an unacknowledged instruction can still be a stuck steer.
 inbox_steer_check() {  # <window> <task>
-  local w=$1 task=$2 action verb rec count tail40 reason='' ring_rc backend agent_state
+  local w=$1 task=$2 action verb rec count tail40 reason='' ring_rc backend agent_state busy=0
   action=$(fm_task_inbox_due_action "$STATE" "$task") || return 0
   verb=${action%% *}
   [ "$verb" != quiet ] || return 0
@@ -700,7 +720,14 @@ inbox_steer_check() {  # <window> <task>
   watcher_capture "$backend" "$w" 40 "$(window_label "$w")" || WATCHER_CAPTURE=
   tail40=$WATCHER_CAPTURE
   if inbox_steer_busy "$w" "$backend" "$task" "$tail40"; then
+    busy=1
     [ "$verb" != retry ] || return 0
+    if inbox_steer_declared_run "$backend" "$task"; then
+      [ "$verb" = ring ] || return 0
+      busy=0
+    fi
+  fi
+  if [ "$busy" = 1 ]; then
     if ! count=$(fm_task_inbox_record_busy "$STATE" "$task" "$rec"); then
       [ -f "$rec" ] || return 0
       reason="stale: $w (steering-inbox busy bookkeeping unwritable: ${rec%/*}/.busy-state cannot be written while $rec stays unhandled; inspect the inbox directory)"
