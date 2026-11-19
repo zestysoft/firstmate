@@ -137,17 +137,52 @@ pass() {
 # separately maintained numeral. The names given are the names run.
 # bin/fm-test-tap-verify.sh is the completeness checker the stock macOS Bash
 # job uses against that plan and marker.
+# A plan that shrinks silently is not a result: if anything exits the suite's
+# shell with status 0 before every planned function has run (a capability skip
+# that exits the file, an early `exit 0`), the EXIT guard below turns that exit
+# into a loud `not ok` naming how many of the planned tests ran, on every
+# runner, not only where fm-test-tap-verify.sh is wired. A suite's own EXIT trap
+# set before this call still runs after the guard.
+_FM_TEST_PLAN_TOTAL=
+_FM_TEST_PLAN_STARTED=0
+_FM_TEST_PLAN_CURRENT=
+_FM_TEST_PLAN_DONE=0
+_FM_TEST_PREV_EXIT=
+_fm_test_take_trap_command() { _FM_TEST_PREV_EXIT=${1-}; }
+_fm_test_run_exit_guard() {
+  local status=$?
+  if [ "$status" -eq 0 ] && [ "$_FM_TEST_PLAN_DONE" -eq 0 ]; then
+    printf 'not ok - fm_test_run: the suite exited after starting %s of %s planned tests (last: %s) without finishing its plan; a skipped or shortened run is not a pass\n' \
+      "$_FM_TEST_PLAN_STARTED" "$_FM_TEST_PLAN_TOTAL" "${_FM_TEST_PLAN_CURRENT:-none}" >&2
+    status=1
+  fi
+  if [ -n "$_FM_TEST_PREV_EXIT" ]; then
+    eval "$_FM_TEST_PREV_EXIT"
+  fi
+  exit "$status"
+}
 fm_test_run() {
-  local name kind
+  local name kind prev
   [ "$#" -gt 0 ] || fail "fm_test_run: no tests registered"
+  prev=$(trap -p EXIT)
+  if [ -n "$prev" ]; then
+    eval "_fm_test_take_trap_command ${prev#trap -- }"
+  fi
+  _FM_TEST_PLAN_TOTAL=$#
+  _FM_TEST_PLAN_STARTED=0
+  _FM_TEST_PLAN_DONE=0
+  trap _fm_test_run_exit_guard EXIT
   printf '1..%s\n' "$#"
   while [ "$#" -gt 0 ]; do
     name=$1
     shift
     kind=$(type -t "$name" 2>/dev/null || true)
     [ "$kind" = function ] || fail "fm_test_run: $name is not a function"
+    _FM_TEST_PLAN_STARTED=$(( _FM_TEST_PLAN_STARTED + 1 ))
+    _FM_TEST_PLAN_CURRENT=$name
     "$name"
   done
+  _FM_TEST_PLAN_DONE=1
   printf 'FM_TEST_COMPLETE\n'
 }
 

@@ -138,9 +138,56 @@ fm_test_run test_alpha test_beta
 EOF
   out=$(run_verify "$suite") || rc=$?
   [ "$rc" -ne 0 ] || fail "a test function that exits 0 early must fail completeness: $out"
-  assert_contains "$out" "without a single FM_TEST_COMPLETE" \
-    "early function exit must name the missing completion marker: $out"
+  assert_contains "$out" "complete 0" \
+    "early function exit must report the missing completion marker: $out"
+  assert_contains "$out" "without finishing its plan" \
+    "early function exit must be named by fm_test_run's own plan guard: $out"
   pass "a test function that exits 0 before later tests fail completeness"
+}
+
+# The plan guard lives in fm_test_run itself, so a suite run directly - by the
+# ordinary runner or by hand, under any environment - fails loudly when it exits
+# before its plan ran, instead of reporting 1 of 6 tests as a pass. A suite's
+# own EXIT trap set before the plan still runs, and a full run still passes.
+test_fm_test_run_fails_a_shrunken_plan_on_its_own() {
+  local suite out rc=0 marker
+  marker="$TMP_ROOT/own-trap-ran"
+  suite="$TMP_ROOT/lib-shrunk.sh"
+  cat > "$suite" <<EOF
+#!/usr/bin/env bash
+set -u
+# shellcheck disable=SC1091
+. "$ROOT/tests/lib.sh"
+trap 'printf ran > "$marker"' EXIT
+test_one() { pass "one"; command -v no-such-capability-tool >/dev/null 2>&1 || exit 0; }
+test_two() { pass "two"; }
+test_three() { pass "three"; }
+test_four() { pass "four"; }
+test_five() { pass "five"; }
+test_six() { pass "six"; }
+fm_test_run test_one test_two test_three test_four test_five test_six
+EOF
+  out=$("$BASH" "$suite" 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail "a suite that ran 1 of its 6 planned tests exited 0: $out"
+  assert_contains "$out" "not ok - fm_test_run: the suite exited after starting 1 of 6 planned tests (last: test_one)" \
+    "the shrunken plan was not named: $out"
+  [ "$(cat "$marker" 2>/dev/null)" = ran ] || fail "the guard dropped the suite's own EXIT trap"
+
+  suite="$TMP_ROOT/lib-full.sh"
+  cat > "$suite" <<EOF
+#!/usr/bin/env bash
+set -u
+# shellcheck disable=SC1091
+. "$ROOT/tests/lib.sh"
+test_one() { pass "one"; }
+test_two() { pass "two"; }
+fm_test_run test_one test_two
+EOF
+  rc=0
+  out=$("$BASH" "$suite" 2>&1) || rc=$?
+  [ "$rc" -eq 0 ] || fail "a complete plan stopped passing under the guard: $out"
+  assert_not_contains "$out" "not ok" "a complete plan printed a failure: $out"
+  pass "fm_test_run fails a suite whose plan shrank, keeps its own EXIT trap, and still passes a full run"
 }
 
 test_failure_prints_error_annotation() {
@@ -162,4 +209,5 @@ test_nonzero_exit_fails
 test_ok_count_mismatch_fails
 test_fm_test_run_declares_plan_from_names
 test_fm_test_run_early_function_exit_fails
+test_fm_test_run_fails_a_shrunken_plan_on_its_own
 test_failure_prints_error_annotation
