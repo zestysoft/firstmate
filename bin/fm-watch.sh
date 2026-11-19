@@ -176,6 +176,13 @@
 #   check: inactive-outcome bounded poll-loop reconciliation found a suspicious
 #                          inactive terminal outcome that still lacks its durable
 #                          upstream receipt
+#   check: idle fleet with queued work: <n> ready backlog item(s) and no task lane for <s>s - ...
+#                          no task lane exists and the backlog lists ready work,
+#                          sustained past FM_IDLE_QUEUE_GRACE_SECS (default 1800)
+#                          and repeated at most once per
+#                          FM_IDLE_QUEUE_RESURFACE_SECS (default 14400); silent
+#                          while any lane exists or state/.afk does
+#                          (idle_queue_tick)
 #   check: secondmate wake-loop stalled: mate=<id> row=<seq> idle=<seconds>s
 #                          an actionable row in an endpoint-recorded local
 #                          secondmate home's durable wake queue did not advance
@@ -313,6 +320,10 @@ WATCH_HOME_EXISTED=0
 # and wake emission (secondmate_liveness_tick below).
 # shellcheck source=/dev/null # Analyzed separately as a canonical lint root.
 . "$SCRIPT_DIR/fm-secondmate-liveness-lib.sh"
+# Idle-fleet readiness is the supervision-need owner's predicate, so the wake
+# below and the arm decision that keeps this cycle running read one answer.
+# shellcheck source=bin/fm-supervision-lib.sh
+. "$SCRIPT_DIR/fm-supervision-lib.sh"
 
 WATCH_LOCK="$STATE/.watch.lock"
 WATCH_PATH="$SCRIPT_DIR/fm-watch.sh"
@@ -477,6 +488,15 @@ SECONDMATE_LIVENESS_MAX_ATTEMPTS=${FM_SECONDMATE_LIVENESS_MAX_ATTEMPTS:-}
 case "$SECONDMATE_LIVENESS_MAX_ATTEMPTS" in ''|*[!0-9]*|0) SECONDMATE_LIVENESS_MAX_ATTEMPTS=3 ;; esac
 SECONDMATE_LIVENESS_WINDOW_SECS=${FM_SECONDMATE_LIVENESS_WINDOW_SECS:-}
 case "$SECONDMATE_LIVENESS_WINDOW_SECS" in ''|*[!0-9]*|0) SECONDMATE_LIVENESS_WINDOW_SECS=3600 ;; esac
+# Idle fleet with queued work (idle_queue_tick below): how often the backlog is
+# read while no task lane exists, how long that state must persist before the
+# first wake, and the long cadence that bounds every repeat.
+IDLE_QUEUE_CHECK_SECS=${FM_IDLE_QUEUE_CHECK_SECS:-}
+case "$IDLE_QUEUE_CHECK_SECS" in ''|*[!0-9]*|0) IDLE_QUEUE_CHECK_SECS=300 ;; esac
+IDLE_QUEUE_GRACE_SECS=${FM_IDLE_QUEUE_GRACE_SECS:-}
+case "$IDLE_QUEUE_GRACE_SECS" in ''|*[!0-9]*) IDLE_QUEUE_GRACE_SECS=1800 ;; esac
+IDLE_QUEUE_RESURFACE_SECS=${FM_IDLE_QUEUE_RESURFACE_SECS:-}
+case "$IDLE_QUEUE_RESURFACE_SECS" in ''|*[!0-9]*|0) IDLE_QUEUE_RESURFACE_SECS=$FM_PAUSE_RESURFACE_SECS_DEFAULT ;; esac
 # A crew that declared a pause is idling on a known external wait, so its stale
 # pane is absorbed rather than wedge-escalated.
 # A captain-held or paused crew whose agent has confidently exited uses the same
@@ -1267,6 +1287,44 @@ secondmate_liveness_tick() {
   done
   [ -z "$first_reason" ] || wake "$first_reason"
   [ "$failed" -eq 0 ]
+}
+
+# Idle fleet with queued work. With no task lane at all (secondmates do not
+# count) and at least one ready backlog item, nothing else in this loop can
+# wake firstmate: no status log grows and the heartbeat absorbs an unchanged
+# fleet. fm_idle_fleet_ready_count (bin/fm-supervision-lib.sh) owns what idle
+# and ready mean, including silence for any lane - live or parked holding a
+# finished result - and for the away and quiet postures. The backlog is read at
+# most every IDLE_QUEUE_CHECK_SECS. The episode starts at the first idle-and-
+# ready read (state/.idle-queue-since) and wakes once IDLE_QUEUE_GRACE_SECS
+# later, so the ordinary gap between one teardown and the next dispatch stays
+# quiet, then at most once per IDLE_QUEUE_RESURFACE_SECS
+# (state/.idle-queue-woken) while it lasts. Any read that is not idle-and-ready
+# ends the episode. Every marker is an mtime, so the cadence survives the exit
+# each wake causes. A marker that cannot be written skips this cycle rather than
+# failing the watcher or waking without its bound: the woken stamp is written
+# before the row, and a state directory torn down mid-cycle reaches the loop's
+# own home-gone exit on the next poll.
+idle_queue_tick() {
+  local tick="$STATE/.idle-queue-tick" since="$STATE/.idle-queue-since" woken="$STATE/.idle-queue-woken"
+  local ready idle reason
+  [ "$(age_of "$tick")" -ge "$IDLE_QUEUE_CHECK_SECS" ] || return 0
+  touch "$tick" 2>/dev/null || return 0
+  ready=$(fm_idle_fleet_ready_count "$STATE")
+  if [ "$ready" -eq 0 ]; then
+    rm -f "$since" "$woken"
+    return 0
+  fi
+  [ -e "$since" ] || touch "$since" 2>/dev/null || return 0
+  idle=$(age_of "$since")
+  [ "$idle" -ge "$IDLE_QUEUE_GRACE_SECS" ] || return 0
+  [ "$(age_of "$woken")" -ge "$IDLE_QUEUE_RESURFACE_SECS" ] || return 0
+  reason="check: idle fleet with queued work: $ready ready backlog item(s) and no task lane for ${idle}s - dispatch them, or hold what should wait"
+  touch "$woken" 2>/dev/null || return 0
+  if ! fm_wake_queued_keys check | grep -Fx idle-queue >/dev/null 2>&1; then
+    fm_wake_append check idle-queue "$reason" || return 1
+  fi
+  wake "$reason"
 }
 
 # Consecutive wedge-escalation count for a window past FM_WEDGE_DEMAND_INSPECT_COUNT
@@ -4434,6 +4492,13 @@ while :; do
   else
     triage_log "inactive-outcome reconciliation unavailable"
   fi
+
+  # An idle fleet with ready queued work has no lane to signal it; wake on its
+  # own bounded cadence (idle_queue_tick above).
+  idle_queue_tick || {
+    echo "watcher: idle-fleet queue check failed" >&2
+    exit 1
+  }
 
   # Slow per-task checks (firstmate writes these, e.g. a merged-PR poll).
   # Time-based via .last-check mtime so the cadence survives watcher restarts.

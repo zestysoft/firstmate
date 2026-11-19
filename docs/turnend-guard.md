@@ -35,7 +35,7 @@ The turn-end guard closes the remaining gap at the primary's own turn boundary.
 
 The guard acts at that boundary when both of these hold:
 
-- Work, a process-event source, a registered custom check, or Relay polling needs supervision.
+- Work, a process-event source, a registered custom check, Relay polling, or an idle fleet with ready queued work needs supervision.
 - No identity-matched watcher has a fresh beacon.
 
 The beacon is `state/.last-watcher-beat`, which `bin/fm-watch.sh` touches every cycle, as [Guard grace and the poll cadence](#guard-grace-and-the-poll-cadence) describes.
@@ -79,6 +79,8 @@ These sources also count toward supervision need:
 - Registered `state/procevent/*.source` records require supervision even though they have no task metadata.
 - Every mode treats `state/x-watch.check.sh` as supervision need, so Relay polling remains guarded without an in-flight task.
 - A custom check registered with `bin/fm-check-register.sh` counts the same way, so an operator's home-level poll keeps running after the last task is torn down.
+- An idle fleet with ready queued work counts too: no task lane other than a persistent secondmate, no `state/.afk` in either posture, and at least one item `tasks-axi ready` lists.
+  It keeps the one watcher cycle armed so its bounded `check: idle fleet with queued work` wake can report work nobody dispatched; `fm_idle_fleet_ready_count` in `bin/fm-supervision-lib.sh` owns the condition and `idle_queue_tick` in `bin/fm-watch.sh` owns the cadence.
 
 The default cross-harness mode exits silently with no supervision need.
 

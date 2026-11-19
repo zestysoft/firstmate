@@ -451,6 +451,8 @@ autoarm_alarm_banner() {
     need_desc="$FM_SUP_SOURCES process-event source(s) registered"
   elif [ "${FM_SUP_CHECKS:-0}" -gt 0 ]; then
     need_desc="$FM_SUP_CHECKS registered custom check(s)"
+  elif [ "${FM_SUP_READY_QUEUED:-0}" -gt 0 ]; then
+    need_desc="$FM_SUP_READY_QUEUED ready queued item(s) with no task lane"
   else
     need_desc="X-mode relay polling active"
   fi

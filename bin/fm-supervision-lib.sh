@@ -12,6 +12,8 @@
 # live watcher process means per supervision model. The status fields here retain
 # the beacon-age details used in their messages.
 
+FM_SUPERVISION_LIB_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
 # Portable mtime; Linux stat lacks -f, macOS stat lacks -c.
 fm_sup_stat_mtime() {
   if [ "$(uname)" = Darwin ]; then
@@ -35,10 +37,14 @@ fm_sup_stat_mtime() {
 #                         sweep's call at execution time, and a home whose check
 #                         no longer validates needs the watcher precisely so the
 #                         sweep can report the rejection instead of going quiet.
+#   FM_SUP_READY_QUEUED   fm_idle_fleet_ready_count below, read only when
+#                         nothing else needs supervision (0 otherwise)
 #   FM_SUP_NEEDED         true/false - in-flight work, an X-mode relay poll, a
 #                         registered event source (a source is a wait on an
 #                         external process, not a task, so it has no metadata),
-#                         or a registered custom check
+#                         a registered custom check, or an idle fleet with
+#                         ready queued work (FM_SUP_READY_QUEUED above 0), so
+#                         the one watcher cycle stays armed to report it
 #   FM_SUP_WATCHER_FRESH  true/false - a watcher beacon within the grace window
 #   FM_SUP_BEACON_DESC    human-readable beacon age, for banners ("never" if absent)
 #   FM_SUP_QUEUE_PENDING  true/false - state/.wake-queue has unread records
@@ -78,6 +84,11 @@ fm_supervision_status() {
     || [ "$FM_SUP_CHECKS" -gt 0 ]; then
     FM_SUP_NEEDED=true
   fi
+  FM_SUP_READY_QUEUED=0
+  if [ "$FM_SUP_NEEDED" = false ]; then
+    FM_SUP_READY_QUEUED=$(fm_idle_fleet_ready_count "$state")
+    [ "$FM_SUP_READY_QUEUED" -eq 0 ] || FM_SUP_NEEDED=true
+  fi
 
   beat="$state/.last-watcher-beat"
   if [ -e "$beat" ]; then
@@ -95,6 +106,50 @@ fm_supervision_status() {
   # shellcheck disable=SC2034 # Read by callers (fm-guard.sh) after sourcing.
   [ -s "$state/.wake-queue" ] && FM_SUP_QUEUE_PENDING=true
   return 0
+}
+
+# fm_idle_fleet_ready_count <state-dir>
+# Prints how many backlog items `tasks-axi ready` lists as dispatchable now
+# when the fleet is idle, and 0 otherwise. Idle means no task lane: no
+# state/*.meta other than a persistent secondmate's. A lane, live or parked
+# holding a finished result, already has its own supervision or is a state
+# firstmate chose, so it is never a stall here. An away or quiet record
+# (state/.afk, either posture) also prints 0, leaving those postures unchanged.
+# The backlog is the one this home's layout names: data/ beside <state-dir>, or
+# FM_DATA_OVERRIDE, with config/backlog-backend from FM_CONFIG_OVERRIDE or
+# config/ beside it, read through bin/fm-tasks-axi.sh under a
+# FM_IDLE_QUEUE_READ_TIMEOUT bound (default 10s). A manual backend, a missing
+# tasks-axi, a missing data directory, or a read that fails or times out prints
+# 0: those homes keep today's behavior, and backlog health has other owners.
+fm_idle_fleet_ready_count() {
+  local state=$1 meta home data out count bound=${FM_IDLE_QUEUE_READ_TIMEOUT:-10}
+  case "$bound" in ''|*[!0-9]*|0) bound=10 ;; esac
+  if [ -e "$state/.afk" ]; then
+    echo 0
+    return 0
+  fi
+  for meta in "$state"/*.meta; do
+    [ -e "$meta" ] || continue
+    grep -qx 'kind=secondmate' "$meta" 2>/dev/null && continue
+    echo 0
+    return 0
+  done
+  home=$(cd "$state/.." 2>/dev/null && pwd) || { echo 0; return 0; }
+  data=${FM_DATA_OVERRIDE:-$home/data}
+  if [ ! -d "$data" ] || ! command -v tasks-axi >/dev/null 2>&1 \
+    || [ "$(tr -d '[:space:]' 2>/dev/null < "${FM_CONFIG_OVERRIDE:-$home/config}/backlog-backend")" = manual ]; then
+    echo 0
+    return 0
+  fi
+  if ! command -v fm_run_timed >/dev/null 2>&1; then
+    # shellcheck source=bin/fm-timeout-lib.sh
+    . "$FM_SUPERVISION_LIB_DIR/fm-timeout-lib.sh"
+  fi
+  out=$(FM_HOME=$home FM_DATA_OVERRIDE=$data \
+    fm_run_timed "$bound" "$FM_SUPERVISION_LIB_DIR/fm-tasks-axi.sh" ready 2>/dev/null </dev/null) \
+    || { echo 0; return 0; }
+  count=$(printf '%s\n' "$out" | sed -n 's/^count: \([0-9][0-9]*\)$/\1/p' | head -1)
+  echo "${count:-0}"
 }
 
 # fm_supervision_needed <state-dir> [grace-seconds]
