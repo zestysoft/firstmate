@@ -250,6 +250,36 @@ test_dead_secondmate_gets_no_action() {
   pass "T3d an already-stopped secondmate is left to startup recovery"
 }
 
+# --- T3f: a remote host that cannot move names its own refusal ---------------
+# The host echoes its update log before its error line, so the parent must report
+# the host's verdict (the commit its source dropped), not the log's first line.
+test_remote_refusal_names_dropped_commit() {
+  local w err fake_ssh
+  w=$(new_world t3f)
+  fake_ssh="$w/fakebin/fake-ssh"
+  cat > "$fake_ssh" <<'SH'
+#!/usr/bin/env bash
+set -u
+cat > /dev/null
+printf 'self-update source: origin carry (config/self-update-source)\n'
+printf 'firstmate: skipped: diverged from refs/remotes/origin/carry: refs/remotes/origin/carry lacks 1 commit(s) this copy runs, newest abc1234\n'
+printf 'error: remote code root did not move: skipped: diverged from refs/remotes/origin/carry: refs/remotes/origin/carry lacks 1 commit(s) this copy runs, newest abc1234\n' >&2
+exit 1
+SH
+  chmod +x "$fake_ssh"
+  printf -- '- sm1 - remote domain (host: remote-mac; root: /srv/fm; home: /srv/sm1; scope: things; projects: p; added 2026-09-03)\n' \
+    > "$w/home/data/secondmates.md"
+
+  err=$(PATH="$w/fakebin:$PATH" FM_FAKE_DIR="$w/fake" FM_SSH_BIN="$fake_ssh" \
+    FM_ROOT_OVERRIDE="$w/main" FM_HOME="$w/home" "$UPDATE" 2>&1 >/dev/null)
+
+  assert_contains "$err" "remote secondmate sm1: skipped on remote-mac: error: remote code root did not move: skipped: diverged from refs/remotes/origin/carry: refs/remotes/origin/carry lacks 1 commit(s) this copy runs, newest abc1234" \
+    "the parent did not report the host's named refusal"
+  assert_not_contains "$err" "skipped on remote-mac: self-update source" \
+    "the parent reported the host's log announcement instead of its refusal"
+  pass "T3f a remote host that cannot move reports the commit its source dropped"
+}
+
 # --- T3e: a legacy remote advance still restarts ---------------------------
 # The host's instr= suffix is reporting detail; the parent no longer routes on it,
 # so an older host that cannot report a diff can no longer suppress the restart.
@@ -684,7 +714,8 @@ test_self_update_source_rewrite_is_skipped() {
 
   out=$(run_update "$w")
 
-  assert_contains "$out" "firstmate: skipped: diverged from refs/remotes/fork/carry" "a rewritten branch must be skipped"
+  assert_contains "$out" "firstmate: skipped: diverged from refs/remotes/fork/carry: refs/remotes/fork/carry lacks 1 commit(s) this copy runs, newest $(git -C "$w/main" rev-parse --short "$carry")" \
+    "a rewritten branch must be skipped, naming the commit the source dropped"
   assert_equals "$(git -C "$w/main" rev-parse HEAD)" "$carry" "the primary was moved off its commit"
   assert_not_equals "$(git -C "$w/main" rev-parse HEAD)" "$other" "the primary was forced to the rewritten branch"
   assert_contains "$out" "secondmate sm1: already current" "a secondmate stays on the primary's unchanged commit"
@@ -697,6 +728,7 @@ test_bin_only_advance_restarts
 test_unprovable_runtime_gets_fallback_nudge
 test_dead_secondmate_gets_no_action
 test_legacy_remote_advance_restarts
+test_remote_refusal_names_dropped_commit
 test_dirty_secondmate_skipped
 test_diverged_secondmate_skipped
 test_squash_merged_divergence_reconciles

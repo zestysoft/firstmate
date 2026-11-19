@@ -583,7 +583,12 @@ cmd_update() {
     'firstmate: updated '*|'firstmate: already current'*) ;;
     *)
       [ -z "$update_out" ] || printf '%s\n' "$update_out" >&2
-      die "remote code root did not complete a safe origin update"
+      # Carry the root's own verdict, so a source that dropped this host's
+      # commit is named here rather than collapsed into a generic refusal.
+      if [ -n "$root_status" ]; then
+        die "remote code root did not move: ${root_status#firstmate: }"
+      fi
+      die "remote code root did not complete a safe update"
       ;;
   esac
   cmd_sync "$id"

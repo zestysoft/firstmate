@@ -240,6 +240,17 @@ changed_instr() {
   printf '%s' "$out"
 }
 
+# Name what a divergence would drop: the commits this checkout runs that <base>
+# does not hold, newest first, so a refusal says which commit went missing
+# upstream instead of only that the two lines parted.
+divergence_detail() { # <dir> <base>
+  local n newest
+  n=$(git -C "$1" rev-list --count "$2..HEAD" 2>/dev/null) || n=""
+  newest=$(git -C "$1" rev-parse --short HEAD 2>/dev/null) || newest=""
+  [ -n "$n" ] && [ -n "$newest" ] || return 0
+  printf ': %s lacks %s commit(s) this copy runs, newest %s' "$2" "$n" "$newest"
+}
+
 # Translate one remote home sync leg's failure into an operator-actionable
 # reason. The remote leg refuses a command shape it does not recognize with this
 # status, which on this leg can only mean that host's Firstmate copy predates the
@@ -254,12 +265,13 @@ remote_sync_failure_reason() { # <exit-status> <output>
   first_line "$2"
 }
 
-# Translate a remote inheritance push's combined output into an operator-
-# actionable reason. The push prints one "unchanged: <item>" line per item that
-# already matched before failing on the item that stopped it, so the plain
-# first line usually names an unrelated unchanged item rather than the error;
-# prefer the push's own "error: ..." line and fall back to the first line only
-# when it emitted none (an interrupted or unrecognized-shape failure).
+# Translate a remote inheritance push's, or a remote update's, combined output
+# into an operator-actionable reason. Both print progress lines before the line
+# that stopped them (the push one "unchanged: <item>" per matched item, the
+# update its host's own update log), so the plain first line usually names
+# something unrelated rather than the error; prefer the leg's own "error: ..."
+# line and fall back to the first line only when it emitted none (an
+# interrupted or unrecognized-shape failure).
 remote_inherit_failure_reason() { # <output>
   local err
   err=$(printf '%s\n' "$1" | grep -m1 '^error:') || true
@@ -488,12 +500,12 @@ ff_target() {
     if [ -n "$secondmate_id" ] && [ -n "$reconciliation_state" ]; then
       local marker
       if marker=$(secondmate_update_reconcile_record "$reconciliation_state" "$secondmate_id" "$local_rev" "$base_rev" "$base"); then
-        echo "$label: skipped: diverged from $base; reconciliation required (record: $marker)"
+        echo "$label: skipped: diverged from $base$(divergence_detail "$dir" "$base"); reconciliation required (record: $marker)"
       else
-        echo "$label: skipped: diverged from $base; reconciliation required, but its durable record could not be written"
+        echo "$label: skipped: diverged from $base$(divergence_detail "$dir" "$base"); reconciliation required, but its durable record could not be written"
       fi
     else
-      echo "$label: skipped: diverged from $base"
+      echo "$label: skipped: diverged from $base$(divergence_detail "$dir" "$base")"
     fi
     return 0
   fi

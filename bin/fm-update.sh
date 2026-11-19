@@ -325,7 +325,9 @@ if [ -f "$SECONDMATES_MD" ]; then
           *) echo "remote secondmate $id: skipped on $SECONDMATE_REGISTRY_HOST: malformed update result" >&2 ;;
         esac
       else
-        echo "remote secondmate $id: skipped on $SECONDMATE_REGISTRY_HOST: ${remote_out%%$'\n'*}" >&2
+        # The host echoes its own update log before its refusal, so its first
+        # line is often an announcement; prefer the host's "error:" verdict.
+        echo "remote secondmate $id: skipped on $SECONDMATE_REGISTRY_HOST: $(remote_inherit_failure_reason "$remote_out")" >&2
       fi
     elif [ -n "$secondmate_base" ]; then
       process_secondmate "$id" "$home" "" "$secondmate_base" yes

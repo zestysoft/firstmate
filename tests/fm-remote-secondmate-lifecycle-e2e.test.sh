@@ -1259,6 +1259,30 @@ assert_contains "$UPDATE_OUT" 'synced:' "remote update did not report a host-loc
 assert_present "$REMOTE_HOME/REMOTE_UPDATE_PROBE" "remote update did not materialize the code-root commit"
 pass "remote update imports and fast-forwards the persistent home on its configured host"
 
+# When the host's update source drops the commit the host runs (a rewritten
+# branch), the update refuses rather than forcing, names that commit, and leaves
+# both the code root and the persistent home - and the running mate - as they were.
+DROPPED_ROOT_HEAD=$(git -C "$REMOTE_ROOT" rev-parse HEAD)
+DROPPED_HOME_HEAD=$(git -C "$REMOTE_HOME" rev-parse HEAD)
+git -C "$REMOTE_SEED" reset -q --hard HEAD~1
+printf 'rewritten line\n' > "$REMOTE_SEED/REMOTE_REWRITE_PROBE"
+git -C "$REMOTE_SEED" add REMOTE_REWRITE_PROBE
+git -C "$REMOTE_SEED" commit -qm 'rewrite the update source'
+git -C "$REMOTE_SEED" push -q -f origin main
+DROPPED_OUT=$(remote_env "$ROOT/bin/fm-on.sh" ios fm-remote-secondmate-control.sh update ios 2>&1) \
+  && fail "an update source that dropped the host's commit should refuse"
+assert_contains "$DROPPED_OUT" "error: remote code root did not move: skipped: diverged from origin/main: origin/main lacks 1 commit(s) this copy runs, newest $(git -C "$REMOTE_ROOT" rev-parse --short HEAD)" \
+  "the refusal did not name the commit the update source dropped"
+[ "$(git -C "$REMOTE_ROOT" rev-parse HEAD)" = "$DROPPED_ROOT_HEAD" ] \
+  || fail "a refused update moved the remote code root"
+[ "$(git -C "$REMOTE_HOME" rev-parse HEAD)" = "$DROPPED_HOME_HEAD" ] \
+  || fail "a refused update moved the persistent home"
+[ "$(remote_env "$ROOT/bin/fm-on.sh" ios fm-remote-secondmate-control.sh state ios)" = alive ] \
+  || fail "a refused update must leave the running mate untouched"
+git -C "$REMOTE_SEED" reset -q --hard "$DROPPED_ROOT_HEAD"
+git -C "$REMOTE_SEED" push -q -f origin main
+pass "remote update names a commit its source dropped and moves nothing"
+
 # The remote restart verb is not a second implementation: its host-local leg runs
 # the ORDINARY control plane against a record that is plain and local on that
 # host. These two refusals can only come from that plane's own pre-stop
