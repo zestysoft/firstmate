@@ -334,8 +334,8 @@ test_local_done_head_is_pinned_before_parent_delivery() {
   pass 'inactive reconciliation pins local readiness under its existing lock before one parent delivery'
 }
 
-# A ready report after main moved and the worker rebased the same change is
-# delivered and re-records the head instead of being dropped.
+# A newer stamped ready report after main moved and the worker rebased the same
+# change is delivered and re-records the head instead of being dropped.
 test_rebased_local_done_head_is_repinned_and_delivered() {
   local project worker sha rebased
   make_world local-done-rebase
@@ -350,14 +350,14 @@ test_rebased_local_done_head_is_repinned_and_delivered() {
   fm_write_meta "$MATE/state/child.meta" \
     "window=firstmate:fm-child" "worktree=$worker" "project=$project" \
     'harness=codex' 'kind=ship' 'mode=local-only' 'yolo=off' 'branch=fm/child' 'spawn_gen=local-one'
-  printf 'done: ready in branch fm/child\n' > "$MATE/state/child.status"
+  printf 'done [at=1790000100]: ready in branch fm/child\n' > "$MATE/state/child.status"
   FM_FAKE_CREW_STATE=busy run_reconcile "$MATE"
   [ "$(sed -n 's/^local_done_head=//p' "$MATE/state/child.meta")" = "$sha" ] \
     || fail 'the first ready report was not pinned'
   git -C "$project" commit -q --allow-empty -m 'main moves'
   git -C "$worker" rebase -q main
   rebased=$(git -C "$worker" rev-parse HEAD)
-  printf 'done: rebased; ready in branch fm/child\n' >> "$MATE/state/child.status"
+  printf 'done [at=1790000200]: rebased; ready in branch fm/child\n' >> "$MATE/state/child.status"
   FM_FAKE_CREW_STATE=busy run_reconcile "$MATE"
   [ "$(sed -n 's/^local_done_head=//p' "$MATE/state/child.meta")" = "$rebased" ] \
     || fail 'the rebased ready report was dropped and the record kept the old head'

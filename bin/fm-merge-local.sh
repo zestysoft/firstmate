@@ -29,11 +29,11 @@
 # rule #1 "never run state-changing git in projects/", and it is narrow: it only
 # runs for mode=local-only tasks, only after the captain approves (or yolo=on
 # auto-approves), and only as a clean fast-forward. A diverged branch needs a
-# rebase onto the default branch before landing. A fresh ready report may then
+# rebase onto the default branch before landing. A newer ready report may then
 # re-record the head when it is the same change on a newer default branch, or
-# when a newer report's branch still carries the recorded content with further
-# commits on top (bin/fm-dod-lib.sh); without it, the content check above lands a rebase whose
-# tree matches. Revised work needs a new task/approval record. See AGENTS.md prime directives,
+# when its branch still carries the recorded content with further commits on
+# top (bin/fm-dod-lib.sh); without it, the content check above lands a rebase
+# whose tree matches. Every refusal here leaves the task record untouched. Revised work needs a new task/approval record. See AGENTS.md prime directives,
 # project management, and task lifecycle.
 # The task's existing per-task control lock serializes the captain-hold check
 # through that fast-forward. A still-held or unreadable row refuses before the

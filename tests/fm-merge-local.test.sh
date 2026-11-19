@@ -25,6 +25,7 @@ fm_git_identity fmtest fmtest@example.invalid
 
 make_case() {
   local name=$1
+  assert_no_record_violation
   CASE="$TMP_ROOT/$name"
   PROJ="$CASE/project"
   WT="$CASE/worker"
@@ -56,17 +57,46 @@ record_done() {
     "$line" "$HOME_DIR/state" local-task "$META"
 }
 
-land() {
-  local task=local-task
-  [ "$#" -eq 0 ] || task=$1
+# run_landing <task> [args...]: one landing attempt. Whatever the reason, a
+# refused landing must leave the task record byte-identical (or still absent);
+# only a fixture that writes the record itself mid-landing sets
+# FIXTURE_WRITES_RECORD=1. Callers often run this in a command substitution,
+# where fail cannot end the suite, so a violation is also written to
+# $RECORD_VIOLATIONS and checked by assert_no_record_violation.
+RECORD_VIOLATIONS="$TMP_ROOT/record-violations"
+record_violation() {
+  printf '%s: %s\n' "${CASE##*/}" "$1" >> "$RECORD_VIOLATIONS"
+  fail "$1"
+}
+assert_no_record_violation() {
+  [ ! -s "$RECORD_VIOLATIONS" ] || fail "a refused landing changed its task record: $(cat "$RECORD_VIOLATIONS")"
+}
+run_landing() {
+  local task=$1 meta="$HOME_DIR/state/$1.meta" before="$CASE/record-before-landing" rc=0
+  shift
+  rm -f -- "$before"
+  [ ! -e "$meta" ] || cp -p -- "$meta" "$before"
   FM_ROOT_OVERRIDE="$HOME_DIR" FM_HOME="$HOME_DIR" FM_STATE_OVERRIDE="$HOME_DIR/state" \
-    bash "${MERGE_SCRIPT:-$ROOT/bin/fm-merge-local.sh}" "$task"
+    bash "${MERGE_SCRIPT:-$ROOT/bin/fm-merge-local.sh}" "$task" "$@" || rc=$?
+  if [ "$rc" -ne 0 ] && [ "${FIXTURE_WRITES_RECORD:-0}" != 1 ]; then
+    if [ -e "$before" ]; then
+      cmp -s -- "$before" "$meta" || record_violation "a refused landing (exit $rc) changed the task record"
+    else
+      [ ! -e "$meta" ] || record_violation "a refused landing (exit $rc) created a task record"
+    fi
+  fi
+  return "$rc"
+}
+
+land() {
+  run_landing "${1:-local-task}"
 }
 
 assert_refused() {
   local out rc=0
   out=$(land 2>&1) || rc=$?
   [ "$rc" -ne 0 ] || fail "landing unexpectedly succeeded: $out"
+  assert_no_record_violation
   [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'refusal moved main'
   [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail 'refusal left a dirty checkout'
   [ ! -e "$PROJ/approved.txt" ] || fail 'refusal left approved files behind'
@@ -99,15 +129,36 @@ move_main_and_rebase() {
 
 test_rebased_same_change_replaces_recorded_head() {
   make_case rebased
-  record_done || fail 'first ready report was not accepted'
+  record_done 1790000100 || fail 'first ready report was not accepted'
   move_main_and_rebase
-  record_done || fail 'ready report after a rebase of the same change was refused'
+  record_done 1790000200 || fail 'ready report after a rebase of the same change was refused'
   [ "$(fm_dod_local_done_head "$META")" = "$Y" ] || fail 'the record still names the pre-rebase head'
+  [ "$(fm_dod_local_done_at "$META")" = 1790000200 ] || fail 'the record did not take the newer stamp'
   land >/dev/null || fail 'the rebased head did not land'
   [ "$(git -C "$PROJ" rev-parse HEAD)" = "$Y" ] || fail 'landing did not use the rebased head'
   [ "$(cat "$PROJ/approved.txt")" = 'approved X' ] || fail 'landing did not bring the change'
   [ "$(cat "$PROJ/other.txt")" = 'other' ] || fail 'landing lost the newer main'
   pass 'a ready report after rebasing the same change re-records the head and lands it'
+}
+
+# Ready at X, then main moves and the worker rebases without reporting again.
+# Re-reading the bound report, or an unstamped one, must not move the record to
+# the rebased head; the content check still lands the rebase as approved X.
+test_rereading_a_bound_report_cannot_take_a_rebase() {
+  local line
+  make_case rebased-reread
+  record_done 1790000100 || fail 'first ready report was not accepted'
+  move_main_and_rebase
+  cp -p -- "$META" "$CASE/record-before-reread"
+  for line in 1790000100 1790000050 -; do
+    record_done "$line" >/dev/null 2>&1 && fail "re-reading report $line moved the record to the rebase"
+    cmp -s -- "$CASE/record-before-reread" "$META" || fail "refused report $line changed the task record"
+  done
+  [ "$(fm_dod_local_done_head "$META")" = "$X" ] || fail 'the record no longer names the reported head'
+  land >/dev/null 2>&1 || fail 'the content check did not land the rebase of the recorded change'
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$Y" ] || fail 'landing did not use the rebased branch tip'
+  cmp -s -- "$CASE/record-before-reread" "$META" || fail 'landing rewrote the task record'
+  pass 'a re-read or unstamped report never moves the record to an unreported rebase'
 }
 
 test_rebased_revision_or_unbranched_head_refuses() {
@@ -210,7 +261,7 @@ fi
 exit 3
 SH
     rc=0
-    out=$(MERGE_SCRIPT="$CASE/toolbin/fm-merge-local.sh" RACE_MODE="$mode" \
+    out=$(MERGE_SCRIPT="$CASE/toolbin/fm-merge-local.sh" RACE_MODE="$mode" FIXTURE_WRITES_RECORD=1 \
       RACE_PROJ="$PROJ" RACE_Y="$Y" RACE_META="$META" land 2>&1) || rc=$?
     [ "$rc" -ne 0 ] || fail "approval race succeeded: $out"
     [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'approval race moved main'
@@ -386,6 +437,7 @@ assert_moved_main_refused() {
   local out rc=0 label=$1
   out=$(land 2>&1) || rc=$?
   [ "$rc" -ne 0 ] || fail "$label: landing unexpectedly succeeded: $out"
+  assert_no_record_violation
   [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail "$label: refusal moved main"
   [ "$(git -C "$PROJ" rev-parse "refs/heads/fm/local-task")" = "$(git -C "$WT" rev-parse HEAD)" ] \
     || fail "$label: refusal moved the ship branch"
@@ -518,8 +570,7 @@ test_missing_recorded_commit_refuses() {
 }
 
 land_confirming() {
-  FM_ROOT_OVERRIDE="$HOME_DIR" FM_HOME="$HOME_DIR" FM_STATE_OVERRIDE="$HOME_DIR/state" \
-    bash "$ROOT/bin/fm-merge-local.sh" local-task "$@"
+  MERGE_SCRIPT='' run_landing local-task "$@"
 }
 
 # Main gains files after the worker started, as an earlier landing would.
@@ -538,6 +589,7 @@ assert_deletion_refused() {
   shift
   out=$(land_confirming "$@" 2>&1) || rc=$?
   [ "$rc" -ne 0 ] || fail "$label: landing unexpectedly succeeded: $out"
+  assert_no_record_violation
   [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail "$label: refusal moved main"
   [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail "$label: refusal left a dirty checkout"
   [ ! -e "$PROJ/approved.txt" ] || fail "$label: refusal left approved files behind"
@@ -820,11 +872,18 @@ test_missing_record_or_report_refuses() {
   pass 'a stampless record never moves, and a task with no report or no record refuses'
 }
 
+# Runs last: every refused landing above left its task record byte-identical.
+test_no_refused_landing_changed_its_record() {
+  assert_no_record_violation
+  pass 'every refused landing in this suite left its task record byte-identical'
+}
+
 fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
   test_missing_and_malformed_head_refuse test_change_after_hold_check_refuses \
   test_diverged_default_refuses test_change_during_approval_check_refuses \
   test_snapshot_cannot_pin_a_replacement_task test_done_recording_preserves_caller_locks \
-  test_rebased_same_change_replaces_recorded_head test_rebased_revision_or_unbranched_head_refuses \
+  test_rebased_same_change_replaces_recorded_head test_rereading_a_bound_report_cannot_take_a_rebase \
+  test_rebased_revision_or_unbranched_head_refuses \
   test_stale_commit_name_lands_rebased_branch test_content_equal_branch_lands \
   test_differing_tree_refuses_after_main_moves test_conflicting_change_refuses_after_main_moves \
   test_uncommitted_work_refuses_after_main_moves test_already_landed_content_not_landed_twice \
@@ -834,4 +893,5 @@ fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_d
   test_branch_actor_is_refused_by_the_tool \
   test_newer_report_of_continued_branch_replaces_head test_two_commit_change_is_never_half_landed \
   test_rereading_a_bound_report_cannot_take_later_work test_newer_report_with_changed_tree_refuses \
-  test_newer_report_off_fast_forward_refuses test_missing_record_or_report_refuses
+  test_newer_report_off_fast_forward_refuses test_missing_record_or_report_refuses \
+  test_no_refused_landing_changed_its_record

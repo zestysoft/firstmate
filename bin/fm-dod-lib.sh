@@ -11,12 +11,12 @@
 # mode; an unknown mode is refused rather than silently rendered as the pipeline
 # contract.
 # For local-only tasks, the first accepted done head is latched as exactly one
-# local_done_head= full commit id in the live task metadata. Observing done again
-# moves that identity only to the same change rebased onto a newer default
-# branch, at the head the ship branch points at (fm_dod_local_done_head_rebased),
-# or to a newer ready report's head whose branch still carries the recorded
-# content (fm_dod_local_done_head_continues). Any other revised work needs a new
-# task/approval record.
+# local_done_head= full commit id in the live task metadata. Only a newer ready
+# report moves that identity, and only to the same change rebased onto a newer
+# default branch, at the head the ship branch points at
+# (fm_dod_local_done_head_rebased), or to a head whose branch still carries the
+# recorded content (fm_dod_local_done_head_continues). Any other revised work
+# needs a new task/approval record.
 # The optional third argument is the task's full ship-branch name (a project's
 # registered prefix may replace the legacy `fm/` one); it defaults to `fm/<task-id>`
 # and is the immutable task branch rendered in every delivery contract.
@@ -1015,12 +1015,13 @@ EOF
 # callers may supply captured meta; compare it with the live record under the
 # existing control/meta locks before publishing to the live owner only. A caller
 # already holding the live meta lock passes meta-locked and retains its locks.
-# A head that differs from the latched one replaces it only when
-# fm_dod_local_done_head_rebased accepts it, or when <report-at> is strictly newer
-# than the recorded local_done_at= and fm_dod_local_done_head_continues accepts
-# it; otherwise the latch stands. local_done_at= is the newest accepted report's
-# at= stamp, so re-reading an already-bound report never moves the head to work
-# the worker committed after it. An empty <report-at> records no stamp.
+# A head that differs from the latched one replaces it only when <report-at> is
+# strictly newer than the recorded local_done_at= and
+# fm_dod_local_done_head_rebased or fm_dod_local_done_head_continues accepts it;
+# otherwise the latch stands. local_done_at= is the newest accepted report's at=
+# stamp, so re-reading an already-bound report never moves the head, neither to
+# a rebase nor to work the worker committed after it. An empty <report-at>
+# records no stamp.
 fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> <report-at> [meta-locked]
   local state=$1 id=$2 meta=$3 sha=$4 captured=$5 at=$6 script_dir live control='' lock='' tmp='' pinned recorded_at newer=0
   script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -1054,9 +1055,10 @@ fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> <rep
     fi
     if [ "$pinned" = "$sha" ]; then
       [ "$newer" = 1 ] || return 0
-    elif ! fm_dod_local_done_head_rebased "$live" "$id" "$pinned" "$sha"; then
+    else
       [ "$newer" = 1 ] && [ -n "$recorded_at" ] || return 1
-      fm_dod_local_done_head_continues "$live" "$id" "$pinned" "$sha" || return 1
+      fm_dod_local_done_head_rebased "$live" "$id" "$pinned" "$sha" \
+        || fm_dod_local_done_head_continues "$live" "$id" "$pinned" "$sha" || return 1
     fi
     tmp=$(mktemp "$state/.local-done-$id.XXXXXX") || return 1
     awk -F= -v sha="$sha" -v at="$at" -v newer="$newer" '
@@ -1337,7 +1339,7 @@ fm_dod_accept_ship_done() {  # <kind> <mode> <worktree> <project> <line> [<state
       if [ -z "$state" ] || [ -z "$id" ] \
         || ! fm_dod_pin_local_done_head "$state" "$id" "$meta" "$sha" "$captured" \
           "$(status_line_at_epoch "$line" 2>/dev/null || true)" "${9:-}"; then
-        printf '%s\n' "local-only done head could not be recorded, or differs from the recorded head by more than a rebase of the same change or, on a newer stamped report, further commits above the unchanged recorded content at the ship branch head; revised work requires a new task/approval record"
+        printf '%s\n' "local-only done head could not be recorded, or differs from the recorded head by more than, on a newer stamped report, a rebase of the same change or further commits above the unchanged recorded content at the ship branch head; revised work requires a new task/approval record"
         return 1
       fi
     fi
