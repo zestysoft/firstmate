@@ -3186,6 +3186,114 @@ test_no_run_idle_pane_paused() {
   pass "no run + idle pane on a paused: status reports state: paused with its reason"
 }
 
+# A launch counts as started only once its status log holds a line. A worker
+# whose own lifecycle record shows a whole turn ended with no status line ever
+# written is a silent no-op launch, so it reads blocked with a named reason
+# instead of falling to the generic unknown that hides it as under way.
+test_no_run_idle_pane_never_reported_reads_blocked() {
+  reset_fakes
+  local d out
+  d=$(new_case never-started)
+  make_repo_on_branch "$d/wt" fm/feat-silent
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-silent.meta" "window=fm:fm-feat-silent" "worktree=$d/wt" "kind=ship" "harness=claude"
+  FM_FAKE_AXI_STATUS=""
+  FM_FAKE_BUSY=0
+  arm_idle_record "$d/state" feat-silent
+  out=$(run_crew_state "$d" feat-silent)
+  assert_contains "$out" "state: blocked" "an ended turn with no status file reads blocked"
+  assert_contains "$out" "launched but never started" "the blocked reading names the silent launch"
+  assert_contains "$out" "claude-hook" "the reading names the record that proved the turn ended"
+  printf '\n  \n' > "$d/state/feat-silent.status"
+  out=$(run_crew_state "$d" feat-silent)
+  assert_contains "$out" "launched but never started" "a status file holding only blank lines is still no status line"
+  pass "a worker that ended its first turn without a status line reads blocked, not under way"
+}
+
+# The same idle record over a log holding any status line is the ordinary
+# status-log fallback, so a worker that reported and then stopped is unchanged.
+test_no_run_idle_pane_with_status_line_is_not_never_started() {
+  reset_fakes
+  local d out
+  d=$(new_case reported-then-idle)
+  make_repo_on_branch "$d/wt" fm/feat-reported
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-reported.meta" "window=fm:fm-feat-reported" "worktree=$d/wt" "kind=ship" "harness=claude"
+  printf 'working: setup complete\n' > "$d/state/feat-reported.status"
+  FM_FAKE_AXI_STATUS=""
+  FM_FAKE_BUSY=0
+  arm_idle_record "$d/state" feat-reported
+  out=$(run_crew_state "$d" feat-reported)
+  assert_not_contains "$out" "never started" "a worker that wrote a status line is not a silent launch"
+  assert_contains "$out" "source: status-log" "a reported worker keeps the status-log fallback"
+  pass "an idle worker with a status line keeps its ordinary reading"
+}
+
+# A healthy launch and a slow-to-speak worker are both still inside their first
+# turn: the record is fm-spawn's busy seed or a real busy hook event, so they
+# read working with no status line yet, for as long as that turn runs.
+test_no_run_first_turn_without_status_line_reads_working() {
+  reset_fakes
+  local d out gen
+  d=$(new_case first-turn-quiet)
+  make_repo_on_branch "$d/wt" fm/feat-quiet
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-quiet.meta" "window=fm:fm-feat-quiet" "worktree=$d/wt" "kind=ship" "harness=claude"
+  FM_FAKE_AXI_STATUS=""
+  FM_FAKE_BUSY=0
+  gen=$("$ROOT/bin/fm-busy-event.sh" arm "$d/state" feat-quiet)
+  out=$(run_crew_state "$d" feat-quiet)
+  assert_contains "$out" "state: working" "a just-launched worker on fm-spawn's seed reads working"
+  assert_contains "$out" "fm-spawn" "the working reading is the launch seed"
+  "$ROOT/bin/fm-busy-event.sh" apply "$d/state" feat-quiet busy --gen "$gen" \
+    --source claude-hook --event user-prompt-submit
+  out=$(run_crew_state "$d" feat-quiet)
+  assert_contains "$out" "state: working" "a slow-to-speak worker mid-turn reads working before its first status line"
+  assert_not_contains "$out" "never started" "a worker still in its first turn is not a silent launch"
+  printf 'working: setup complete\n' > "$d/state/feat-quiet.status"
+  out=$(run_crew_state "$d" feat-quiet)
+  assert_contains "$out" "state: working" "a normal launch that reported reads working"
+  assert_contains "$out" "source: pane" "a normal launch keeps the pane source"
+  pass "a launch still in its first turn reads working whether or not it has spoken yet"
+}
+
+# Where the pane state cannot be verified, the reading stays unknown, but a
+# worker with no status line says so rather than leaving the gap unnamed.
+test_no_run_unverified_pane_without_status_line_is_named() {
+  reset_fakes
+  local d out
+  d=$(new_case unverified-quiet)
+  make_repo_on_branch "$d/wt" fm/feat-unverified
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/feat-unverified.meta" "window=fm:fm-feat-unverified" "worktree=$d/wt" "kind=ship" "harness=codex"
+  FM_FAKE_AXI_STATUS=""
+  FM_FAKE_BUSY=0
+  out=$(run_crew_state "$d" feat-unverified)
+  assert_contains "$out" "state: unknown" "an unverifiable pane stays unknown"
+  assert_contains "$out" "not counted as started" "an unverifiable worker with no status line is named as not started"
+  printf 'working: setup complete\n' > "$d/state/feat-unverified.status"
+  out=$(run_crew_state "$d" feat-unverified)
+  assert_contains "$out" "state: unknown" "an unverifiable pane with a status line stays unknown"
+  assert_not_contains "$out" "not counted as started" "a worker that reported is not named as unstarted"
+  pass "an unverifiable worker with no status line is named, never reported healthy"
+}
+
+# A secondmate's idle endpoint is healthy by design and never takes the
+# launch reading.
+test_secondmate_idle_without_status_line_is_not_never_started() {
+  reset_fakes
+  local d out
+  d=$(new_case mate-quiet)
+  mkdir -p "$d/wt"
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/mate-quiet.meta" "window=fm:fm-mate-quiet" "worktree=$d/wt" "kind=secondmate" "harness=claude"
+  arm_idle_record "$d/state" mate-quiet
+  out=$(run_crew_state "$d" mate-quiet)
+  assert_not_contains "$out" "never started" "an idle secondmate is never a silent launch"
+  assert_not_contains "$out" "state: blocked" "an idle secondmate does not read blocked"
+  pass "an idle secondmate with no status line keeps its ordinary reading"
+}
+
 test_secondmate_open_block_survives_unrelated_append() {
   reset_fakes
   local d out suffix gen
@@ -6947,6 +7055,11 @@ test_no_run_herdr_idle_agent_status_and_idle_record_stays_idle
 test_no_run_idle_pane_uses_log
 test_no_run_idle_pane_uses_keyed_log
 test_no_run_idle_pane_paused
+test_no_run_idle_pane_never_reported_reads_blocked
+test_no_run_idle_pane_with_status_line_is_not_never_started
+test_no_run_first_turn_without_status_line_reads_working
+test_no_run_unverified_pane_without_status_line_is_named
+test_secondmate_idle_without_status_line_is_not_never_started
 test_no_run_idle_pane_custom_paused_verb
 test_no_run_idle_secondmate_resolved_event_not_state
 test_dead_window_ignores_stale_status_log

@@ -213,7 +213,11 @@
 #      when its verb maps to a recognized run-state. Decision-only events such as
 #      `resolved` never become current state or detail. A Codex pane, which is
 #      unverified by design, stays unknown except that a ship `done:` the
-#      named-head gate accepts reads done from the status log.
+#      named-head gate accepts reads done from the status log. A crew whose
+#      status log is still empty is never counted as started: once its own
+#      lifecycle record reads idle (a whole turn ended with no status line) it
+#      reads blocked as a launch that never started, and an unverifiable pane
+#      says it has not reported yet.
 #   5. Missing meta or torn-down worktree: report unknown · none. If no run is
 #      attributed to this crew, a dead endpoint also reports unknown · none rather
 #      than trusting a stale status log. On tmux, herdr, and rex, which own a
@@ -1608,11 +1612,24 @@ fi
 # Only an exact busy verdict reports working here, and only an exact idle
 # verdict permits the status-log fallback below. Missing, malformed, stale, or
 # unverified semantic state remains unknown.
+# A crew whose status log holds no line at all has never reported starting its
+# brief, so it is never read as started. When its own lifecycle record has
+# moved off fm-spawn's busy seed to an exact idle, a whole turn ended without a
+# status line: that silent no-op launch reads blocked so it surfaces for
+# attention. The turn end itself is the trigger, so a worker still inside its
+# first turn keeps reading working however long that turn takes, and no clock
+# or poll is consulted.
 if [ "$KIND" != secondmate ]; then
+  NEVER_REPORTED=0
+  grep -q '[^[:space:]]' "$LOG" 2>/dev/null || NEVER_REPORTED=1
   BUSY_VERDICT=$(crew_busy_verdict "$BACKEND_TARGET")
   case "${BUSY_VERDICT%% *}" in
     busy) emit working pane "harness busy (${BUSY_VERDICT#* })" ;;
-    idle) ;;
+    idle)
+      if [ "$NEVER_REPORTED" = 1 ] && [ -f "$(fm_busy_record_path "$STATE" "$ID")" ]; then
+        emit blocked pane "launched but never started: its turn ended (${BUSY_VERDICT#* }) with no status line written; read its window and steer it once"
+      fi
+      ;;
     *)
       # Codex is unclassified by design (bin/fm-busy-lib.sh's Codex
       # negotiation), so its pane can never read idle. A ship done: needs no
@@ -1626,6 +1643,8 @@ if [ "$KIND" != secondmate ]; then
         fi
         emit unknown pane "harness state unavailable ($BUSY_VERDICT)${SEP}done claim refused: $DONE_REFUSAL"
       fi
+      [ "$NEVER_REPORTED" = 0 ] ||
+        emit unknown pane "harness state unavailable ($BUSY_VERDICT); no status line written yet, so not counted as started"
       emit unknown pane "harness state unavailable ($BUSY_VERDICT)"
       ;;
   esac
