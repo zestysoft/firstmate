@@ -236,9 +236,34 @@ worker_acquire_lock() { # <account-home> <identity>
     fi
     [ ! -L "$WORKER_LOCK/pid" ] && [ ! -L "$WORKER_LOCK/start" ] && [ ! -L "$WORKER_LOCK/command" ] || return 1
     rm -f -- "$WORKER_LOCK/pid" "$WORKER_LOCK/start" "$WORKER_LOCK/command" || return 1
-    rmdir "$WORKER_LOCK" || return 1
+    worker_clear_dead_owner_publication || return 1
+    rmdir "$WORKER_LOCK" 2>/dev/null || { worker_report_lock_leftovers; return 1; }
   done
   return 1
+}
+
+# An owner killed inside worker_publish_lock_owner, after its mktemp calls and
+# before its renames, leaves its own .pid./.start./.command. temporaries in the
+# lock. They belong to the same dead owner the caller just proved gone, so the
+# reclaim removes them too; without that, rmdir fails on every launch and the
+# worker never runs again. Anything else in the lock is not ours to remove.
+worker_clear_dead_owner_publication() {
+  local entry
+  for entry in "$WORKER_LOCK"/.pid.?* "$WORKER_LOCK"/.start.?* "$WORKER_LOCK"/.command.?*; do
+    [ -e "$entry" ] || [ -L "$entry" ] || continue
+    [ -f "$entry" ] && [ ! -L "$entry" ] || return 1
+    rm -f -- "$entry" || return 1
+  done
+}
+
+worker_report_lock_leftovers() {
+  local entry names=
+  for entry in "$WORKER_LOCK"/* "$WORKER_LOCK"/.[!.]* "$WORKER_LOCK"/..?*; do
+    [ -e "$entry" ] || [ -L "$entry" ] || continue
+    names="$names ${entry##*/}"
+  done
+  [ -n "$names" ] || return 0
+  printf 'remote-job-worker: stale worker lock %s still holds entries it does not own:%s\n' "$WORKER_LOCK" "$names" >&2
 }
 
 # Open the lock directory this process still owns and remember a path that

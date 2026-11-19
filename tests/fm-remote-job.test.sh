@@ -814,6 +814,61 @@ kill "$QUARANTINED_PROCESS_PID" 2>/dev/null || true
 wait "$QUARANTINED_PROCESS_PID" 2>/dev/null || true
 pass "quarantine recovery refuses unverifiable supervisors and ignores reused pids"
 
+# An owner killed between its lock-publication mktemp calls and their renames
+# leaves only its empty temporaries in worker.lock - the shape a code-root
+# replacement under a running worker left on a real host, after which every
+# relaunch refused ownership forever. A later worker must reclaim that dead
+# lock, and a lock holding something no owner wrote must still refuse by name.
+ORPHAN_HOME="$TMP_ROOT/orphan-account"
+ORPHAN_STATE="$TMP_ROOT/orphan-jobs"
+mkdir -p "$ORPHAN_HOME" "$ORPHAN_STATE/jobs" "$ORPHAN_STATE/logs" "$ORPHAN_STATE/worker.lock"
+chmod 700 "$ORPHAN_HOME" "$ORPHAN_STATE" "$ORPHAN_STATE/jobs" "$ORPHAN_STATE/logs" "$ORPHAN_STATE/worker.lock"
+: > "$ORPHAN_STATE/worker.lock/.pid.KfVU2a"
+: > "$ORPHAN_STATE/worker.lock/.start.ZRPc7W"
+chmod 600 "$ORPHAN_STATE/worker.lock/.pid.KfVU2a" "$ORPHAN_STATE/worker.lock/.start.ZRPc7W"
+touch -t 200001010000 "$ORPHAN_STATE/worker.lock"
+HOME="$ORPHAN_HOME" FM_ROOT_OVERRIDE="$REMOTE_ROOT" FM_REMOTE_JOB_STATE_ROOT="$ORPHAN_STATE" \
+  FM_REMOTE_JOB_PLATFORM_OVERRIDE=Linux "$REMOTE_ROOT/bin/fm-remote-job-worker.sh" \
+  > "$TMP_ROOT/orphan-worker.out" 2> "$TMP_ROOT/orphan-worker.err" &
+RECOVERY_WORKER_PID=$!
+for _ in $(seq 1 300); do
+  [ -f "$ORPHAN_STATE/worker.ready" ] && break
+  kill -0 "$RECOVERY_WORKER_PID" 2>/dev/null || break
+  sleep 0.05
+done
+assert_present "$ORPHAN_STATE/worker.ready" \
+  "a lock left with only a dead owner's publication temporaries was never reclaimed: $(cat "$TMP_ROOT/orphan-worker.err")"
+ORPHAN_OWNER=$(cat "$ORPHAN_STATE/worker.lock/pid" 2>/dev/null || true)
+if [ -z "$ORPHAN_OWNER" ] || ! kill -0 "$ORPHAN_OWNER" 2>/dev/null; then
+  fail "the reclaimed worker lock does not name a live owner"
+fi
+assert_absent "$ORPHAN_STATE/worker.lock/.pid.KfVU2a" "the dead owner's pid temporary survived the reclaim"
+assert_absent "$ORPHAN_STATE/worker.lock/.start.ZRPc7W" "the dead owner's start temporary survived the reclaim"
+fm_remote_job_stop_worker_tree "$(cat "$ORPHAN_STATE/worker.pid")" || true
+kill -TERM "$RECOVERY_WORKER_PID" 2>/dev/null || true
+wait "$RECOVERY_WORKER_PID" 2>/dev/null || true
+RECOVERY_WORKER_PID=
+pass "a lock abandoned mid-publication is reclaimed by the next worker"
+
+FOREIGN_STATE="$TMP_ROOT/foreign-jobs"
+mkdir -p "$FOREIGN_STATE/jobs" "$FOREIGN_STATE/logs" "$FOREIGN_STATE/worker.lock"
+chmod 700 "$FOREIGN_STATE" "$FOREIGN_STATE/jobs" "$FOREIGN_STATE/logs" "$FOREIGN_STATE/worker.lock"
+: > "$FOREIGN_STATE/worker.lock/.pid.Ab12Cd"
+printf 'not written by a worker\n' > "$FOREIGN_STATE/worker.lock/foreign"
+chmod 600 "$FOREIGN_STATE/worker.lock/.pid.Ab12Cd" "$FOREIGN_STATE/worker.lock/foreign"
+touch -t 200001010000 "$FOREIGN_STATE/worker.lock"
+set +e
+HOME="$ORPHAN_HOME" FM_ROOT_OVERRIDE="$REMOTE_ROOT" FM_REMOTE_JOB_STATE_ROOT="$FOREIGN_STATE" \
+  FM_REMOTE_JOB_PLATFORM_OVERRIDE=Linux "$REMOTE_ROOT/bin/fm-remote-job-worker.sh" \
+  > "$TMP_ROOT/foreign-worker.out" 2> "$TMP_ROOT/foreign-worker.err"
+FOREIGN_RC=$?
+set -e
+[ "$FOREIGN_RC" -ne 0 ] || fail "a worker took ownership of a lock holding an entry no owner wrote"
+assert_present "$FOREIGN_STATE/worker.lock/foreign" "the reclaim removed an entry it does not own"
+grep -F 'still holds entries it does not own: foreign' "$TMP_ROOT/foreign-worker.err" >/dev/null \
+  || fail "the refusal did not name the entry blocking the reclaim: $(cat "$TMP_ROOT/foreign-worker.err")"
+pass "a lock holding an unknown entry still refuses and names it"
+
 # A replacement stops a Linux worker by signalling its whole isolated group, and
 # the supervisor in that group forwards a second stop signal to the same serving
 # child, so the serving child is always signalled more than once. Signal a small
