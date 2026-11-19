@@ -5642,6 +5642,167 @@ EOF
   pass "punctuation, percent escapes and Unicode have distinct stable filename keys"
 }
 
+# --- dropped-turn re-drive ----------------------------------------------------
+# A Claude worker whose model connection drops mid-turn gets a StopFailure, not a
+# Stop: its own hook records `idle` with event=stop-failure and the pane parks at
+# an empty prompt with the work still in flight. These cases drive a real watcher
+# at that first-sight stale and pin both directions: the dropped turn is resumed
+# through the steering inbox instead of waking a supervisor, while a finished
+# lane, a declared wait, an ordinary turn end, and a lane whose resume budget is
+# spent keep surfacing exactly as before.
+
+# A stable first-sight Claude lane on a fake tmux that also accepts send-keys and
+# logs them, so a case can see the doorbell the re-drive rang. <event> is the
+# busy record's closing event; <status-log> is the whole task log.
+prime_redrive_lane() {  # <dir> <event> <status-log>
+  local dir=$1 event=$2 log=$3 state statusf window gen
+  state="$dir/state"; window="test:fm-redrive"; statusf="$state/redrive.status"
+  printf 'idle at an empty prompt after a cut-off reply' > "$dir/pane.txt"
+  printf 'window=%s\nkind=ship\nharness=claude\nbackend=tmux\n' "$window" > "$state/redrive.meta"
+  printf '%s\n' "$log" > "$statusf"
+  printf '%s' "$(seen_sig "$statusf")" > "$state/.seen-redrive_status"
+  gen=g1.1.1
+  printf '%s\n' "$gen" > "$state/redrive.busy-gen"
+  printf 'v1 gen=%s seq=3 state=idle source=claude-hook event=%s ts=%s\n' \
+    "$gen" "$event" "$(date +%s)" > "$state/redrive.busy-state"
+  printf '%s' "$(hash_text "$(cat "$dir/pane.txt")")" > "$state/.hash-$(watch_window_key "$window")"
+  printf '1\n' > "$state/.count-$(watch_window_key "$window")"
+  cat > "$dir/fakebin/tmux" <<'SH'
+#!/usr/bin/env bash
+set -u
+case "${1:-}" in
+  list-windows) printf '%s\n' "${FM_FAKE_TMUX_WINDOW#*:}"; exit 0 ;;
+  capture-pane) cat "$FM_FAKE_TMUX_CAPTURE"; exit 0 ;;
+  send-keys) printf '%s\n' "$*" >> "$FM_FAKE_TMUX_SENT"; exit 0 ;;
+  display-message)
+    case "$*" in *pane_current_command*) printf 'claude\n'; exit 0 ;; esac ;;
+esac
+exit 1
+SH
+  chmod +x "$dir/fakebin/tmux"
+}
+
+# One watcher run against a primed lane. <mode> `exit` requires a surfaced wake,
+# `absorb` requires three whole poll cycles with no exit.
+redrive_round() {  # <dir> <exit|absorb> [extra env assignments...]
+  local dir=$1 mode=$2 pid cycles=0
+  shift 2
+  env PATH="$dir/fakebin:$PATH" FM_FAKE_TMUX_WINDOW=test:fm-redrive FM_FAKE_TMUX_CAPTURE="$dir/pane.txt" \
+    FM_FAKE_TMUX_SENT="$dir/sent.log" FM_CONFIG_OVERRIDE="$dir/config" \
+    FM_FAKE_CREW_STATE='state: unknown · source: none · no current-state source available' \
+    FM_STATE_OVERRIDE="$dir/state" FM_CREW_STATE_BIN="$dir/fakebin/fm-crew-state.sh" \
+    FM_STALE_ESCALATE_SECS=999 FM_POLL=1 FM_SIGNAL_GRACE=1 FM_CHECK_INTERVAL=999999 \
+    FM_HEARTBEAT=999999 FM_SECONDMATE_LIVENESS_SECS=99999999 "$@" "$WATCH" >> "$dir/watch.out" &
+  pid=$!
+  if [ "$mode" = exit ]; then
+    wait_for_exit "$pid" 100 || { reap "$pid"; return 1; }
+    return 0
+  fi
+  while [ "$cycles" -lt 3 ]; do
+    wait_poll_cycle "$dir/state" "$pid" 300 || { reap "$pid"; return 1; }
+    cycles=$((cycles + 1))
+  done
+  reap "$pid"
+}
+
+redrive_inbox_count() {  # <state>
+  find "$1/redrive.inbox" -maxdepth 1 -name '*.msg' 2>/dev/null | wc -l | tr -d '[:space:]'
+}
+
+test_dropped_turn_with_work_in_flight_is_redriven() {
+  local dir state key msg
+  dir=$(make_case redrive-in-flight); state="$dir/state"; mkdir -p "$dir/config"
+  prime_redrive_lane "$dir" stop-failure 'working [at=1]: setup done, reading the records'
+  key=$(watch_window_key test:fm-redrive)
+  redrive_round "$dir" absorb \
+    || fail "a dropped turn with work in flight woke a supervisor instead of resuming: $(cat "$dir/watch.out")"
+  [ "$(wedge_stale_wakes "$state" test:fm-redrive)" -eq 0 ] \
+    || fail "a re-driven lane still queued a stale wake: $(cat "$state/.wake-queue")"
+  [ "$(redrive_inbox_count "$state")" -eq 1 ] \
+    || fail "the re-drive did not write exactly one steer: $(ls -la "$state/redrive.inbox" 2>&1)"
+  msg=$(find "$state/redrive.inbox" -maxdepth 1 -name '*.msg' | head -1)
+  grep -F 'model connection dropped' "$msg" >/dev/null || fail "the resume steer does not say why: $(cat "$msg")"
+  grep -F 'do not re-run checks that already passed' "$msg" >/dev/null \
+    || fail "the resume steer does not keep the worker from restarting: $(cat "$msg")"
+  grep -F 'commit it on your branch before you write any record' "$msg" >/dev/null \
+    || fail "the resume steer does not carry the commit-first finish order: $(cat "$msg")"
+  grep -F 'send-keys' "$dir/sent.log" >/dev/null 2>&1 \
+    || fail "the re-drive never rang the worker's doorbell"
+  [ "$(grep -c . "$state/.redrive-$key")" -eq 1 ] || fail "the re-drive did not record its one attempt"
+  [ "$(cat "$state/.stale-$key")" = "$(hash_text "$(cat "$dir/pane.txt")")" ] \
+    || fail "the re-driven hash was not recorded as classified"
+  pass "a dropped turn with work in flight is resumed through the inbox, not surfaced"
+}
+
+test_dropped_turn_on_a_finished_lane_is_not_redriven() {
+  local dir state
+  dir=$(make_case redrive-finished); state="$dir/state"; mkdir -p "$dir/config"
+  prime_redrive_lane "$dir" stop-failure \
+    "$(printf 'working [at=1]: setup done\ndone [at=2]: ready in branch fm/redrive')"
+  redrive_round "$dir" exit || fail "a finished lane whose turn dropped was not surfaced: $(cat "$dir/watch.out")"
+  grep -F 'stale: test:fm-redrive' "$dir/watch.out" >/dev/null || fail "the finished lane did not surface as stale: $(cat "$dir/watch.out")"
+  [ "$(redrive_inbox_count "$state")" -eq 0 ] || fail "a finished lane was re-driven"
+  [ ! -e "$state/.redrive-$(watch_window_key test:fm-redrive)" ] || fail "a finished lane spent re-drive budget"
+  pass "a finished ready lane whose last turn dropped surfaces as before and is never re-driven"
+}
+
+test_dropped_turn_in_a_declared_wait_is_not_redriven() {
+  local dir state future
+  dir=$(make_case redrive-paused); state="$dir/state"; mkdir -p "$dir/config"
+  future=$(iso_utc_at "$(( $(date +%s) + 7200 ))")
+  prime_redrive_lane "$dir" stop-failure "paused [at=1]: own validation round; resumes when it exits until $future"
+  redrive_round "$dir" absorb FM_PAUSE_RESURFACE_SECS=999 \
+    || fail "a declared wait whose turn dropped woke a supervisor inside its declared time: $(cat "$dir/watch.out")"
+  [ "$(redrive_inbox_count "$state")" -eq 0 ] || fail "a declared wait was re-driven: $(cat "$dir/watch.out")"
+  [ ! -e "$state/.redrive-$(watch_window_key test:fm-redrive)" ] || fail "a declared wait spent re-drive budget"
+  pass "a declared paused wait is left to its own cadence, never re-driven"
+}
+
+test_ordinary_turn_end_keeps_the_plain_stale() {
+  local dir state
+  dir=$(make_case redrive-plain-stop); state="$dir/state"; mkdir -p "$dir/config"
+  prime_redrive_lane "$dir" stop 'working [at=1]: setup done, reading the records'
+  redrive_round "$dir" exit || fail "an ordinary turn end with work in flight was not surfaced: $(cat "$dir/watch.out")"
+  grep -Fx 'stale: test:fm-redrive' "$dir/watch.out" >/dev/null \
+    || fail "an ordinary turn end lost its unchanged stale reason: $(cat "$dir/watch.out")"
+  [ "$(redrive_inbox_count "$state")" -eq 0 ] || fail "an ordinary turn end was re-driven"
+
+  dir=$(make_case redrive-off); state="$dir/state"; mkdir -p "$dir/config"
+  prime_redrive_lane "$dir" stop-failure 'working [at=1]: setup done, reading the records'
+  redrive_round "$dir" exit FM_REDRIVE_MAX=0 || fail "a disabled re-drive did not surface: $(cat "$dir/watch.out")"
+  grep -Fx 'stale: test:fm-redrive' "$dir/watch.out" >/dev/null \
+    || fail "a disabled re-drive changed the stale reason: $(cat "$dir/watch.out")"
+  [ "$(redrive_inbox_count "$state")" -eq 0 ] || fail "FM_REDRIVE_MAX=0 still re-drove"
+  pass "an ordinary turn end, and any lane with the re-drive off, surfaces exactly as before"
+}
+
+test_repeated_drops_stop_redriving_and_surface_once() {
+  local dir state key now
+  dir=$(make_case redrive-exhausted); state="$dir/state"; mkdir -p "$dir/config"
+  prime_redrive_lane "$dir" stop-failure 'working [at=1]: setup done, reading the records'
+  key=$(watch_window_key test:fm-redrive)
+  now=$(date +%s)
+  printf '%s\n%s\n' "$(( now - 300 ))" "$(( now - 60 ))" > "$state/.redrive-$key"
+  redrive_round "$dir" exit || fail "a lane past its re-drive budget did not surface: $(cat "$dir/watch.out")"
+  grep -F 'stale: test:fm-redrive (model connection dropped again after 2 automatic resumes' "$dir/watch.out" >/dev/null \
+    || fail "the exhausted surface does not name the spent resumes: $(cat "$dir/watch.out")"
+  [ "$(redrive_inbox_count "$state")" -eq 0 ] || fail "a lane past its budget was re-driven again"
+  [ "$(grep -c . "$state/.redrive-$key")" -eq 2 ] || fail "an exhausted lane grew its re-drive ledger"
+  ack_stopped_cycle "$state" || fail "could not acknowledge the exhausted surface"
+  : > "$dir/watch.out"
+  redrive_round "$dir" absorb || fail "the same exhausted pane surfaced a second time: $(cat "$dir/watch.out")"
+  [ "$(wedge_stale_wakes "$state" test:fm-redrive)" -eq 0 ] \
+    || fail "the exhausted pane queued another wake: $(cat "$state/.wake-queue")"
+
+  # Resumes older than the window no longer count, so a later drop is resumed.
+  dir=$(make_case redrive-window); state="$dir/state"; mkdir -p "$dir/config"
+  prime_redrive_lane "$dir" stop-failure 'working [at=1]: setup done, reading the records'
+  printf '%s\n%s\n' "$(( now - 7300 ))" "$(( now - 7200 ))" > "$state/.redrive-$key"
+  redrive_round "$dir" absorb || fail "resumes outside the window still blocked a new one: $(cat "$dir/watch.out")"
+  [ "$(redrive_inbox_count "$state")" -eq 1 ] || fail "a drop after the window passed was not resumed"
+  pass "repeated drops stop re-driving at the bound and surface once, while an aged-out budget resets"
+}
+
 # CI's stock macOS Bash lane sets FM_TEST_STOCK_BASH=1 to run just the bash-3.2
 # churn-deferral regression. The rest of this file is not a 3.2 snapshot suite.
 # Adding another stock-bash case means adding it to this list, not to ci.yml.
@@ -5787,4 +5948,9 @@ fm_test_run \
   test_exit_picker_wedge_keeps_climbing \
   test_quoted_exit_picker_stays_ordinary_stale \
   test_secondmate_exit_picker_stays_quiet \
+  test_dropped_turn_with_work_in_flight_is_redriven \
+  test_dropped_turn_on_a_finished_lane_is_not_redriven \
+  test_dropped_turn_in_a_declared_wait_is_not_redriven \
+  test_ordinary_turn_end_keeps_the_plain_stale \
+  test_repeated_drops_stop_redriving_and_surface_once \
   test_closed_exit_picker_drops_saved_dialog_name

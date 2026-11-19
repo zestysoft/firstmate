@@ -808,6 +808,34 @@ test_external_review_done_without_backup_is_accepted_on_the_url() {
   pass "external review done: accepted on a canonical URL alone without a backup; PR, non-https, query, fragment, forge, and pattern mismatches refused"
 }
 
+# Every ship Definition of done orders the finish so a finished change is
+# committed before the worker writes records or its status line about it: a
+# dropped model connection ends the turn wherever it lands, and the gap between
+# passing checks and the commit is the only place that stop can cost a finished
+# unit. Each delivery variant must render the rule, and must render it before
+# its own done instruction, or a worker reading top to bottom meets the done
+# step first.
+test_every_ship_dod_commits_before_records() {
+  local variant mode forge pr out rule_line done_line
+  local rule='Commit each finished change on your branch as soon as its checks pass, before you write any record, handoff note, report, or status line about it'
+  for variant in no-mistakes:none:auto direct-PR:none:auto local-only:none:auto \
+    no-mistakes:none:manual direct-PR:gerrit:auto no-mistakes:gerrit:auto \
+    direct-PR:forgejo:auto no-mistakes:forgejo:auto; do
+    IFS=: read -r mode forge pr <<< "$variant"
+    out="$TMP_ROOT/dod-commit-first-${mode}-${forge}-${pr}.md"
+    fm_dod_block "$mode" dod-commit-first fm/dod-commit-first "$forge" '' '' "$pr" > "$out" \
+      || fail "$variant: Definition of done did not render"
+    rule_line=$(grep -nF "$rule" "$out" | head -1 | cut -d: -f1)
+    [ -n "$rule_line" ] || fail "$variant: Definition of done lost the commit-before-records rule: $(cat "$out")"
+    [ "$(grep -cF "$rule" "$out")" -eq 1 ] || fail "$variant: the commit-before-records rule rendered more than once"
+    done_line=$(grep -n 'append `done' "$out" | head -1 | cut -d: -f1)
+    [ -n "$done_line" ] || fail "$variant: Definition of done has no done instruction to order against"
+    [ "$rule_line" -lt "$done_line" ] \
+      || fail "$variant: the commit-before-records rule (line $rule_line) comes after the done instruction (line $done_line)"
+  done
+  pass "every ship Definition of done orders the commit before records and the done line"
+}
+
 test_external_review_done_with_backup_needs_the_copy() {
   local reason sha
   external_fixture ext-backup backup
@@ -824,6 +852,7 @@ test_external_review_done_with_backup_needs_the_copy() {
   pass "external review done with a backup: refused until HEAD is under refs/remotes/backup/backup/, then accepted"
 }
 
+test_every_ship_dod_commits_before_records
 test_external_forge_is_direct_pr_only
 test_external_rule_one_forbids_every_task_push
 test_external_dod_renders_the_adapter

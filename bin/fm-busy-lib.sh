@@ -418,6 +418,25 @@ fm_busy_record_read() {  # <state-dir> <id>
   printf '%s %s %s %s' "$r_state" "$r_source" "$r_event" "$r_seq"
 }
 
+# fm_busy_turn_ended_on_error: succeeds only when the task's current record is
+# a valid idle close that its own adapter wrote for a turn the HARNESS ended on
+# a provider error, not one the agent finished. This is the one owner of which
+# recorded events mean that; today only Claude's StopFailure hook reports it
+# (claude-hook event=stop-failure, fired for the API-error turn end that skips
+# Stop). Every other harness, a missing, malformed, stale-gen, or untrusted
+# record, and any other event answer no, so callers keep their existing path.
+fm_busy_turn_ended_on_error() {  # <state-dir> <id> <harness>
+  local parsed r_state r_source r_event _seq
+  parsed=$(fm_busy_record_read "$1" "$2") || return 1
+  read -r r_state r_source r_event _seq <<< "$parsed"
+  [ "$r_state" = idle ] || return 1
+  fm_busy_source_trusted "$3" "$r_source" || return 1
+  case "$r_source:$r_event" in
+    claude-hook:stop-failure) return 0 ;;
+  esac
+  return 1
+}
+
 # ---------------------------------------------------------------------------
 # muse session-log busy source
 #
