@@ -440,8 +440,9 @@ The primary then takes these steps:
 
 1. It resolves the verified secondmate harness and optional model and effort.
 2. It runs the same readiness gate the seed runs, gated on the selected backend.
-3. It transfers the inherited-material allowlist.
-4. It asks the remote host to launch on that backend.
+3. It compares the harness version on the host with this home's and names the older side when they differ.
+4. It transfers the inherited-material allowlist.
+5. It asks the remote host to launch on that backend.
 
 A new route defaults to Herdr; pass `--backend rex` to select Rex.
 Without an explicit backend, a later launch or liveness recovery preserves the parent's recorded `remote_backend`; legacy records without that field use Herdr.
@@ -457,6 +458,8 @@ Placement is per backend:
 - An existing remote endpoint recorded outside its backend's contract - a Herdr session other than its code root's remote session, or a Rex route whose recorded server is not a local `unix://` endpoint - is classified as unverified and left untouched.
   Launch, liveness recovery, control, and retirement refuse it until an operator explicitly migrates it, instead of attempting a live cutover.
 - A launch after a host has drifted out of readiness fails with the doctor's own gap text instead of leaving a half-created endpoint.
+- Readiness proves the host can hold an endpoint, not that its harness can load this home's extensions, so the host holds every launch for a few seconds and fails one whose agent has already exited with the first line the agent printed, keeping the endpoint for inspection.
+  When the host's harness is older than this home's, the refusal names both versions and the upgrade that clears it, and every later launch or liveness recovery of that mate refuses by name before respawning until the host reports a different version; [`bin/fm-remote-readiness-lib.sh`](../bin/fm-remote-readiness-lib.sh) owns that record.
 - Raw launch commands are not accepted for remote secondmates.
 - Backends that already refuse secondmate launch, currently Orca, cmux, and paseo, remain unsupported on the remote host.
 

@@ -25,6 +25,12 @@
 # Every invocation is appended verbatim to <log-file>, so a test reads back what
 # the remote pane received. Creating <send-fail-flag> makes every pane write
 # fail, which is how a test simulates an endpoint that cannot be reached.
+#
+# Writing text to <state-file>.exits makes the next submitted launch behave like
+# a harness that refuses to start: the pane prints that text after the typed
+# command, its agent registration and foreground harness disappear, and only a
+# shell remains. Removing the file makes later launches healthy again. That
+# shell is the long-lived process whose pid <state-file>.shellpid names.
 
 install_remote_herdr_fixture() { # <remote-root> <state> <log> <send-fail> <socket>
   local remote_root=$1 state=$2 log=$3 send_fail=$4 socket=$5 script="$1/bin/herdr"
@@ -36,6 +42,7 @@ STATE='$state'
 LOG='$log'
 SEND_FAIL='$send_fail'
 SOCKET='$socket'
+EXITS='$state.exits'
 SH
   cat >> "$script" <<'SH'
 printf '%s\n' "$*" >> "$LOG"
@@ -93,17 +100,39 @@ case "${1:-} ${2:-}" in
        | .working |= with_entries(select(.key != $p))' | save ;;
   "pane send-text")
     [ ! -f "$SEND_FAIL" ] || exit 1
-    jq_state --arg p "${3:-}" '.typed[$p] = true' | save ;;
+    jq_state --arg p "${3:-}" --arg t "${4:-}" '.typed[$p] = true | .lines[$p] += ["$ " + $t]' | save ;;
   "pane send-keys")
     [ ! -f "$SEND_FAIL" ] || exit 1
-    jq_state --arg p "${3:-}" '.typed[$p] = true | .working[$p] = true' | save ;;
-  "pane read") printf '\n' ;;
+    if [ -f "$EXITS" ]; then
+      jq_state --arg p "${3:-}" --rawfile out "$EXITS" \
+        '.typed[$p] = true | .exited[$p] = true
+         | .lines[$p] += (($out | rtrimstr("\n") | split("\n")) + ["$ "])' | save
+    else
+      jq_state --arg p "${3:-}" '.typed[$p] = true | .working[$p] = true' | save
+    fi
+    ;;
+  "pane read")
+    if [ "$(jq_state -r --arg p "${3:-}" '.exited[$p] // false')" = true ]; then
+      jq_state -r --arg p "${3:-}" '.lines[$p][]'
+    else
+      printf '\n'
+    fi
+    ;;
   "pane process-info")
-    printf '{"result":{"type":"pane_process_info","process_info":{"pane_id":"%s","shell_pid":%s,"foreground_process_group_id":%s,"foreground_processes":[{"pid":%s,"name":"codex","argv0":"codex","argv":["codex"],"cmdline":"codex"}]}}}\n' \
-      "$pane" "$$" "$$" "$$" ;;
+    fg=codex shell=$$
+    if [ "$(jq_state -r --arg p "$pane" '.exited[$p] // false')" = true ]; then
+      # The shell-only proof reads the shell pid back from the process table,
+      # so an exited pane names a process that outlives this call.
+      fg=bash
+      shell=$(cat "$STATE.shellpid" 2>/dev/null || printf '%s' "$$")
+    fi
+    printf '{"result":{"type":"pane_process_info","process_info":{"pane_id":"%s","shell_pid":%s,"foreground_process_group_id":%s,"foreground_processes":[{"pid":%s,"name":"%s","argv0":"%s","argv":["%s"],"cmdline":"%s"}]}}}\n' \
+      "$pane" "$shell" "$shell" "$shell" "$fg" "$fg" "$fg" "$fg" ;;
   "agent get")
     pane=${3:-}
-    if [ "$(jq_state -r --arg p "$pane" '.working[$p] // false')" = true ]; then
+    if [ "$(jq_state -r --arg p "$pane" '.exited[$p] // false')" = true ]; then
+      printf '{"error":{"code":"agent_not_found","message":"%s"}}\n' "$pane"
+    elif [ "$(jq_state -r --arg p "$pane" '.working[$p] // false')" = true ]; then
       jq_state --arg p "$pane" '.working |= with_entries(select(.key != $p))' | save
       printf '{"result":{"agent":{"agent_status":"working"}}}\n'
     elif [ "$(jq_state -r --arg p "$pane" '.typed[$p] // false')" = true ]; then

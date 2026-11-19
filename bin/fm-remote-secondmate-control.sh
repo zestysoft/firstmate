@@ -6,6 +6,7 @@
 #   fm-remote-secondmate-control.sh relaunch <id> <harness> <model|default|-> <effort|default|->
 #   fm-remote-secondmate-control.sh state <id>
 #   fm-remote-secondmate-control.sh route <id>
+#   fm-remote-secondmate-control.sh runtime-version <id> <harness>
 #   fm-remote-secondmate-control.sh send <id> <message> [fire-and-forget]
 #   fm-remote-secondmate-control.sh send-stdin <id> [fire-and-forget]  # message on stdin
 #   fm-remote-secondmate-control.sh key <id> <key>
@@ -69,7 +70,7 @@ REMOTE_HERDR_SESSION=
 export FM_BACKEND_REX_NO_AUTOSTART=1
 
 die() { printf 'error: %s\n' "$1" >&2; exit 1; }
-usage() { sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
+usage() { sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 validate_id() { case "$1" in ''|*[!A-Za-z0-9._-]*) die "invalid secondmate id: $1" ;; esac; }
 
 # Sourcing fm-wake-lib.sh through the libraries below creates "$FM_HOME/state",
@@ -93,6 +94,8 @@ fi
 . "$SCRIPT_DIR/fm-task-inbox-lib.sh"
 # shellcheck source=bin/fm-remote-herdr-identity-lib.sh
 . "$SCRIPT_DIR/fm-remote-herdr-identity-lib.sh"
+# shellcheck source=bin/fm-runtime-version-lib.sh
+. "$SCRIPT_DIR/fm-runtime-version-lib.sh"
 
 # The Herdr session this code root's remote mates live in, resolved by the same
 # owner the readiness doctor prepares the service under.
@@ -317,7 +320,65 @@ cmd_launch() {
   # verification: this root's Herdr session plus target, or rex's id trio and a
   # local unix:// server endpoint.
   remote_endpoint_require "$id"
+  launch_settle_check "$id" "$harness"
   print_route "$id"
+}
+
+# A harness that refuses to start - most often a runtime on this host too old
+# for the extensions the launch loads - exits within seconds and leaves only a
+# shell, which the parent would otherwise first learn about as a bare dead
+# endpoint. So hold the launch for LAUNCH_SETTLE_SECS and read the endpoint
+# twice at the end: two agent-free reads fail the launch with the first line
+# the harness printed and this host's runtime version, and leave the endpoint
+# in place so its pane stays readable. On Herdr an agent-free read also needs
+# a shell-only pane, because a harness that is still starting has no Herdr
+# registration yet but already owns the foreground. Any other read lets the
+# launch stand, so an unreadable host never fails a launch here.
+LAUNCH_SETTLE_SECS=5
+launch_agent_exited() { # <backend> <target> <meta>
+  [ "$(remote_agent_state "$1" "$2" "$3")" = dead ] || return 1
+  [ "$1" = herdr ] || return 0
+  fm_backend_source herdr >/dev/null 2>&1 || return 1
+  fm_backend_herdr_parse_target "$2" || return 1
+  [ "$(fm_backend_herdr_pane_process_state "$FM_BACKEND_HERDR_SESSION" "$FM_BACKEND_HERDR_PANE")" = shell ]
+}
+
+# The first non-blank line the pane shows after the last launch command
+# bin/fm-spawn.sh typed (`. '<launch dir>/launch.<generation>.sh'`), which is
+# where a harness that refuses to start prints its reason. Prints nothing when
+# the capture holds no such line or nothing after it.
+launch_exit_line() { # <backend> <target> <id>
+  fm_backend_capture "$1" "$2" 100 "fm-$3" 2>/dev/null | awk '
+    /launch\.[^ \/]*\.sh/ { seen = 1; line = ""; next }
+    seen && line == "" && $0 ~ /[^[:space:]]/ { line = $0 }
+    END { if (line != "") print line }' \
+    | sed 's/[[:space:]]\{1,\}/ /g; s/^ //; s/ $//' | cut -c1-400
+}
+
+launch_settle_check() { # <id> <harness>
+  local id=$1 harness=$2 line version
+  sleep "$LAUNCH_SETTLE_SECS"
+  launch_agent_exited "$REMOTE_ENDPOINT_BACKEND" "$REMOTE_ENDPOINT_TARGET" "$REMOTE_ENDPOINT_META" || return 0
+  sleep 1
+  launch_agent_exited "$REMOTE_ENDPOINT_BACKEND" "$REMOTE_ENDPOINT_TARGET" "$REMOTE_ENDPOINT_META" || return 0
+  line=$(launch_exit_line "$REMOTE_ENDPOINT_BACKEND" "$REMOTE_ENDPOINT_TARGET" "$id")
+  version=$(fm_runtime_version "$harness")
+  printf 'launch_refusal=%s\n' "$line"
+  printf 'runtime_version=%s\n' "$version"
+  die "the $harness agent for remote secondmate $id exited within ${LAUNCH_SETTLE_SECS}s of launch on this host${version:+ ($harness $version)}: ${line:-it printed nothing after the launch command}"
+}
+
+# This host's version of <harness>, read the way the launch resolves it, so a
+# parent can compare it with its own before it launches (bin/fm-remote-readiness-lib.sh).
+cmd_runtime_version() { # <id> <harness>
+  local id=$1 harness=$2
+  validate_id "$id"
+  validate_home "$id"
+  case "$harness" in
+    claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|omp) ;;
+    *) die "unverified remote secondmate harness: $harness" ;;
+  esac
+  printf 'runtime_version=%s\n' "$(fm_runtime_version "$harness")"
 }
 
 # Restart the second-mate agent this host runs, by executing the ORDINARY local
@@ -561,6 +622,7 @@ case "${1:-}" in
   relaunch) shift; [ "$#" -eq 4 ] || usage; cmd_relaunch "$@" ;;
   state) shift; [ "$#" -eq 1 ] || usage; validate_id "$1"; validate_home "$1"; state_value "$1" ;;
   route) shift; [ "$#" -eq 1 ] || usage; cmd_route "$1" ;;
+  runtime-version) shift; [ "$#" -eq 2 ] || usage; cmd_runtime_version "$@" ;;
   send) shift; [ "$#" -ge 2 ] && [ "$#" -le 3 ] || usage; cmd_send "$@" ;;
   send-stdin) shift; [ "$#" -ge 1 ] && [ "$#" -le 2 ] || usage; cmd_send_stdin "$@" ;;
   key) shift; [ "$#" -eq 2 ] || usage; cmd_key "$@" ;;

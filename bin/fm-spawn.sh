@@ -1347,7 +1347,7 @@ spawn_remote_secondmate() {
   local id=$1 remote host root home harness positional model effort backend out rc meta tmp
   local remote_backend remote_target remote_harness remote_herdr_session registry_lock remote_lock remote_generation
   local remote_rex_session_id remote_rex_server remote_rex_ok
-  local remote_traceparent remote_recorded_traceparent sm_primary_head sync_out sync_rc account_config
+  local remote_traceparent remote_recorded_traceparent sm_primary_head sync_out sync_rc account_config remote_exit_line remote_runtime
   local -a launch_args
   id=${POS[0]:-}
   fm_task_id_creation_valid "$id" || {
@@ -1509,6 +1509,18 @@ spawn_remote_secondmate() {
   else
     echo "warning: remote secondmate $id sync skipped before launch: primary default-branch commit cannot be resolved" >&2
   fi
+  # The readiness gate above cannot see a worker runtime too old for this
+  # home's extensions; compare it after the sync gave the host the verb that
+  # reports it, and refuse only a host whose last launch already exited on that
+  # same older runtime, before anything is transferred or respawned
+  # (bin/fm-remote-readiness-lib.sh "worker runtime version gap").
+  if ! fm_remote_runtime_gate "$SCRIPT_DIR" "$STATE" "$id" "$host" "$harness"; then
+    fm_lock_release "$registry_lock" || true
+    fm_lock_release "$SPAWN_TASK_LOCK" || true
+    echo "error: $FM_REMOTE_RUNTIME_REFUSAL" >&2
+    return 1
+  fi
+  [ -z "$FM_REMOTE_RUNTIME_LINE" ] || echo "notice: remote secondmate $id: $FM_REMOTE_RUNTIME_LINE" >&2
   remote_lock=$(fm_remote_inherit_transaction_lock_path "$STATE" "$id")
   if ! fm_lock_acquire_wait "$remote_lock"; then
     fm_lock_release "$registry_lock" || true
@@ -1561,12 +1573,25 @@ spawn_remote_secondmate() {
     fm_lock_release "$remote_lock" || true
     fm_lock_release "$registry_lock" || true
     fm_lock_release "$SPAWN_TASK_LOCK" || true
+    # A host-side agent that exited at once reports the line it printed and
+    # its runtime version. Summary first: callers such as the liveness sweep
+    # report only the first line.
+    if [ "$rc" -ne 255 ] && printf '%s\n' "$out" | grep -q '^launch_refusal='; then
+      remote_exit_line=$(printf '%s\n' "$out" | sed -n 's/^launch_refusal=//p' | tail -1)
+      remote_runtime=$(printf '%s\n' "$out" | sed -n 's/^runtime_version=//p' | tail -1)
+      if fm_remote_runtime_record_refusal "$STATE" "$id" "$host" "$harness" "$remote_runtime" "$remote_exit_line"; then
+        echo "error: $FM_REMOTE_RUNTIME_REFUSAL" >&2
+      else
+        echo "error: remote secondmate $id exited at launch on $host (${remote_exit_line:-no output}); its endpoint is kept for inspection" >&2
+      fi
+    fi
     [ -z "$out" ] || printf '%s\n' "$out" >&2
     if [ "$rc" -eq 255 ]; then
       echo "error: remote secondmate $id is unavailable or launch completion is unknown; preserved route $host:$home" >&2
     fi
     return "$rc"
   fi
+  rm -f -- "$STATE/.remote-runtime-refusal-$id"
   remote_backend=$(printf '%s\n' "$out" | sed -n 's/^backend=//p' | tail -1)
   remote_target=$(printf '%s\n' "$out" | sed -n 's/^target=//p' | tail -1)
   remote_harness=$(printf '%s\n' "$out" | sed -n 's/^harness=//p' | tail -1)

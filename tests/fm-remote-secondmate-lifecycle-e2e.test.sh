@@ -37,6 +37,7 @@ cleanup() {
   local worker_pid=''
   touch "$TMP_ROOT/provision.release" "$TMP_ROOT/seed.release" "$TMP_ROOT/handoff.release" \
     "$TMP_ROOT/inherit.release" "$TMP_ROOT/launch.release" "$TMP_ROOT/race-clone.release" 2>/dev/null || true
+  [ -z "${exited_shell_pid:-}" ] || kill "$exited_shell_pid" 2>/dev/null || true
   # A watcher leg cut short by a failed assertion is still polling the root.
   if [ -n "${watch_pid:-}" ]; then
     kill "$watch_pid" 2>/dev/null || true
@@ -1420,6 +1421,141 @@ assert_grep 'remote_host=remote-mac' "$WATCH_STATE_UNREACHABLE/ios.meta" \
 assert_grep '- ios ' "$PARENT/data/secondmates.md" \
   "an unreachable remote probe changed the registry route"
 pass "watch liveness: an unreachable remote secondmate is probed, preserved, and never failed over"
+
+# --- a worker runtime too old for this home's extensions --------------------
+# The readiness doctor proves only that the session server is up, so a host
+# whose worker runtime is older than this home's passes it and the agent then
+# exits at launch. The launch must refuse with the line the agent printed and
+# the named version gap, keep the mate's home and endpoint, and never respawn
+# into the same gap again, while a missing session server keeps its old refusal
+# and a healthy host still launches.
+RUNTIME_BIN="$TMP_ROOT/runtime-bin"
+mkdir -p "$RUNTIME_BIN"
+printf '0.90.0\n' > "$TMP_ROOT/home-codex.version"
+printf '0.80.0\n' > "$TMP_ROOT/remote-codex.version"
+cat > "$RUNTIME_BIN/codex" <<SH
+#!/usr/bin/env bash
+[ "\${1:-}" = --version ] || exit 1
+printf 'codex-cli %s\n' "\$(cat '$TMP_ROOT/home-codex.version')"
+SH
+cat > "$REMOTE_ROOT/bin/codex" <<SH
+#!/usr/bin/env bash
+[ "\${1:-}" = --version ] || exit 1
+printf 'codex-cli %s\n' "\$(cat '$TMP_ROOT/remote-codex.version')"
+SH
+chmod +x "$RUNTIME_BIN/codex" "$REMOTE_ROOT/bin/codex"
+runtime_env() { PATH="$RUNTIME_BIN:$PATH" remote_env "$@"; }
+OLD_RUNTIME_LINE='Error: extension API revision 5 needs codex >= 0.85.0; this is codex 0.80.0'
+printf '%s\n' "$OLD_RUNTIME_LINE" > "$HERDR_STATE.exits"
+sleep 3600 &
+exited_shell_pid=$!
+printf '%s\n' "$exited_shell_pid" > "$HERDR_STATE.shellpid"
+kill_remote_agent() {
+  local pane
+  pane=$(sed -n 's/^herdr_pane_id=//p' "$remote_route_meta")
+  [ -n "$pane" ] || fail "the remote route meta did not record its Herdr pane"
+  jq --arg p "$pane" \
+    '.typed |= with_entries(select(.key != $p)) | .working |= with_entries(select(.key != $p))' \
+    "$HERDR_STATE" > "$TMP_ROOT/herdr-dead.json" && mv "$TMP_ROOT/herdr-dead.json" "$HERDR_STATE"
+}
+kill_remote_agent
+[ "$(remote_env "$ROOT/bin/fm-on.sh" ios fm-remote-secondmate-control.sh state ios)" = dead ] \
+  || fail "the agent-free remote pane did not classify dead before the old-runtime launch"
+cp "$PARENT/state/ios.meta" "$TMP_ROOT/ios-before-old-runtime.meta"
+home_status_before=$(git -C "$REMOTE_HOME" status --porcelain; git -C "$REMOTE_HOME" rev-parse HEAD)
+if runtime_env "$ROOT/bin/fm-spawn.sh" ios --secondmate \
+  > "$TMP_ROOT/spawn-old-runtime.out" 2> "$TMP_ROOT/spawn-old-runtime.err"; then
+  fail "a remote launch whose agent exited at once was reported as spawned"
+fi
+old_runtime_err=$(cat "$TMP_ROOT/spawn-old-runtime.err")
+assert_contains "$old_runtime_err" \
+  "notice: remote secondmate ios: host remote-mac runs codex 0.80.0, older than this home's 0.90.0" \
+  "the pre-launch comparison did not say the host runtime is the older one"
+first_error=$(grep -m1 '^error:' "$TMP_ROOT/spawn-old-runtime.err")
+assert_contains "$first_error" "remote secondmate ios exited at launch on remote-mac ($OLD_RUNTIME_LINE)" \
+  "the launch refusal did not lead with the line the agent printed"
+assert_contains "$first_error" \
+  "host remote-mac runs codex 0.80.0, older than this home's codex 0.90.0; upgrade codex on remote-mac to 0.90.0 or newer" \
+  "the launch refusal did not name the version gap and what clears it"
+assert_present "$PARENT/state/.remote-runtime-refusal-ios" "the old-runtime refusal was not recorded"
+cmp -s "$PARENT/state/ios.meta" "$TMP_ROOT/ios-before-old-runtime.meta" \
+  || fail "the refused launch rewrote the parent route record"
+[ "$(git -C "$REMOTE_HOME" status --porcelain; git -C "$REMOTE_HOME" rev-parse HEAD)" = "$home_status_before" ] \
+  || fail "the refused launch changed the mate's home"
+[ "$(remote_env "$ROOT/bin/fm-on.sh" ios fm-remote-secondmate-control.sh state ios)" = dead ] \
+  || fail "the refused launch did not keep its agent-free endpoint for inspection"
+pass "an old host runtime fails the launch with its own line and the named version gap, not a dead endpoint"
+
+# Recovery of that dead endpoint must refuse before respawning, not loop: the
+# watcher's own relaunch reports the named refusal and creates no endpoint.
+WATCH_STATE_OLD="$TMP_ROOT/watch-old-runtime"
+mkdir -p "$WATCH_STATE_OLD"
+cp "$PARENT/state/ios.meta" "$PARENT/state/.remote-runtime-refusal-ios" "$WATCH_STATE_OLD/"
+cp "$PARENT/state/.remote-inherit-ios.generation" "$WATCH_STATE_OLD/" 2>/dev/null || true
+touch "$WATCH_STATE_OLD/home-summary.json"
+tabs_before=$(grep -c '^tab create' "$HERDR_LOG" || true)
+PATH="$RUNTIME_BIN:$PATH" FM_STATE_OVERRIDE="$WATCH_STATE_OLD" FM_SECONDMATE_LIVENESS_SECS=1 FM_POLL=1 \
+  FM_SECONDMATE_LIVENESS_TIMEOUT="$watch_relaunch_timeout" \
+  FM_SIGNAL_GRACE=0 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 \
+  remote_env exec "$ROOT/bin/fm-watch.sh" \
+  > "$TMP_ROOT/watch-old-runtime.out" 2> "$TMP_ROOT/watch-old-runtime.err" &
+watch_pid=$!
+watch_deadline=$((SECONDS + watch_relaunch_timeout + 30))
+while kill -0 "$watch_pid" 2>/dev/null && [ "$SECONDS" -lt "$watch_deadline" ]; do
+  sleep 0.1
+done
+if kill -0 "$watch_pid" 2>/dev/null; then
+  kill "$watch_pid" 2>/dev/null || true
+  fail "the watcher did not exit on its failed-relaunch wake: $(cat "$TMP_ROOT/watch-old-runtime.out" "$TMP_ROOT/watch-old-runtime.err" 2>/dev/null)"
+fi
+wait "$watch_pid" || true
+watch_pid=''
+assert_grep 'check: secondmate ios auto-relaunch failed after remote endpoint dead on its configured host: error: remote secondmate ios was not relaunched: its last launch exited at once' \
+  "$TMP_ROOT/watch-old-runtime.out" "the watcher relaunch did not report the named old-runtime refusal"
+assert_grep 'upgrade codex on remote-mac to 0.90.0 or newer' "$TMP_ROOT/watch-old-runtime.out" \
+  "the watcher wake did not say what clears the refusal"
+[ "$(grep -c '^tab create' "$HERDR_LOG" || true)" -eq "$tabs_before" ] \
+  || fail "a relaunch into the same old host runtime created a new endpoint"
+# A direct respawn refuses the same way, before any transfer or launch.
+if runtime_env "$ROOT/bin/fm-spawn.sh" ios --secondmate > /dev/null 2> "$TMP_ROOT/spawn-old-again.err"; then
+  fail "a respawn into the same old host runtime was reported as spawned"
+fi
+assert_contains "$(grep -m1 '^error:' "$TMP_ROOT/spawn-old-again.err")" \
+  'remote secondmate ios was not relaunched: its last launch exited at once' \
+  "a repeated respawn did not lead with the named old-runtime refusal"
+[ "$(grep -c '^tab create' "$HERDR_LOG" || true)" -eq "$tabs_before" ] \
+  || fail "a repeated respawn into the same old host runtime created a new endpoint"
+pass "repeated relaunches into the same old host runtime refuse by name instead of looping"
+
+# A missing session server still refuses at the readiness gate, as before, and
+# never reaches the runtime comparison or a launch.
+if FM_FAKE_SSH_MODE=doctor-human runtime_env "$ROOT/bin/fm-spawn.sh" ios --secondmate \
+  > /dev/null 2> "$TMP_ROOT/spawn-no-server.err"; then
+  fail "a host that is not ready launched a remote second mate"
+fi
+assert_grep 'error: remote secondmate ios host remote-mac is not ready for a remote second mate; launch refused' \
+  "$TMP_ROOT/spawn-no-server.err" "a host that is not ready lost its readiness refusal"
+assert_no_grep 'runs codex' "$TMP_ROOT/spawn-no-server.err" \
+  "a host that is not ready reached the runtime comparison"
+[ "$(grep -c '^tab create' "$HERDR_LOG" || true)" -eq "$tabs_before" ] \
+  || fail "a host that is not ready created an endpoint"
+pass "a host that is not ready still refuses at the readiness gate"
+
+# Once the host runtime is upgraded the record clears and the mate launches.
+printf '0.90.0\n' > "$TMP_ROOT/remote-codex.version"
+rm -f "$HERDR_STATE.exits"
+out=$(runtime_env "$ROOT/bin/fm-spawn.sh" ios --secondmate 2> "$TMP_ROOT/spawn-upgraded.err") \
+  || fail "the upgraded host did not launch: $(cat "$TMP_ROOT/spawn-upgraded.err")"
+assert_contains "$out" 'remote=remote-mac backend=herdr' "the upgraded host did not report its remote route"
+assert_no_grep 'runs codex' "$TMP_ROOT/spawn-upgraded.err" "equal runtimes still reported a version gap"
+assert_absent "$PARENT/state/.remote-runtime-refusal-ios" "a healthy launch kept the old-runtime refusal"
+[ "$(remote_env "$ROOT/bin/fm-on.sh" ios fm-remote-secondmate-control.sh state ios)" = alive ] \
+  || fail "the upgraded host's relaunched endpoint did not read alive"
+rm -f "$REMOTE_ROOT/bin/codex" "$HERDR_STATE.shellpid"
+kill "$exited_shell_pid" 2>/dev/null || true
+wait "$exited_shell_pid" 2>/dev/null || true
+exited_shell_pid=''
+pass "a healthy host launches and clears the old-runtime refusal"
 
 # --- a stale herdr client shadowing the one the server accepts --------------
 # The remote host's job PATH can resolve an older self-updated herdr ahead of
