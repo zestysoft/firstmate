@@ -649,12 +649,17 @@ test_extension_handoff_with_live_session_is_healthy() {
   pass "fm-guard stale banner: extension-owned hand-off with a live session is healthy"
 }
 
-# A fakebin whose uname reports <uname> and whose `ps -W` lists one Pi-shaped
-# Windows process, WINPID 7204; every other ps question is the real one.
+# A fakebin whose `uname -s` reports <uname> and whose `ps -W` lists one
+# Pi-shaped Windows process, WINPID 7204; every other ps question is the real one.
+# Only the kernel-name query the Windows boundary reads is faked: bare `uname`
+# selects the host's stat flavour, and faking it on a BSD-stat host breaks every
+# mtime read, so a fresh beacon reads as "last beat: unknown" and alarms.
 windows_table_fakebin() {  # <dir> <uname>
-  local fakebin
+  local fakebin real_uname
   fakebin=$(fm_fakebin "$1")
-  printf '#!/usr/bin/env bash\nprintf "%%s\\n" %s\n' "$2" > "$fakebin/uname"
+  real_uname=$(command -v uname)
+  printf '#!/usr/bin/env bash\n[ "$*" = -s ] || exec %q "$@"\nprintf "%%s\\n" %q\n' \
+    "$real_uname" "$2" > "$fakebin/uname"
   cat > "$fakebin/ps" <<'SH'
 #!/usr/bin/env bash
 [ "$*" = -W ] || exec /bin/ps "$@"
@@ -696,6 +701,10 @@ test_extension_handoff_with_tagged_windows_session() {
       alarm)
         [ "$(count_text "$out" "WATCHER DOWN - SUPERVISION IS OFF")" -eq 1 ] \
           || fail "a $case_name tagged session must not prove extension ownership; guard output: $out"
+        # The beacon is fresh, so the alarm must come from the session verdict,
+        # never from a fixture that left the beacon unreadable.
+        assert_not_contains "$out" "last beat: unknown" \
+          "a $case_name tagged session alarmed on an unreadable beacon, not on its session"
         ;;
     esac
   done
