@@ -816,7 +816,8 @@ test_external_review_done_without_backup_is_accepted_on_the_url() {
 # its own done instruction, or a worker reading top to bottom meets the done
 # step first.
 test_every_ship_dod_commits_before_records() {
-  local variant mode forge pr out rule_line done_line
+  local variant mode forge pr out rule_line done_line unverified_line
+  local unverified='Count a test or validation run as passed only from finished output you have read that shows it passing'
   local rule='Commit each finished change on your branch as soon as its checks pass, before you write any record, handoff note, report, or status line about it'
   for variant in no-mistakes:none:auto direct-PR:none:auto local-only:none:auto \
     no-mistakes:none:manual direct-PR:gerrit:auto no-mistakes:gerrit:auto \
@@ -828,12 +829,17 @@ test_every_ship_dod_commits_before_records() {
     rule_line=$(grep -nF "$rule" "$out" | head -1 | cut -d: -f1)
     [ -n "$rule_line" ] || fail "$variant: Definition of done lost the commit-before-records rule: $(cat "$out")"
     [ "$(grep -cF "$rule" "$out")" -eq 1 ] || fail "$variant: the commit-before-records rule rendered more than once"
+    unverified_line=$(grep -nF "$unverified" "$out" | head -1 | cut -d: -f1)
+    [ -n "$unverified_line" ] || fail "$variant: Definition of done lets a silent or missing result count as a pass"
+    [ "$(grep -cF "$unverified" "$out")" -eq 1 ] || fail "$variant: the unverified-result rule rendered more than once"
     done_line=$(grep -n 'append `done' "$out" | head -1 | cut -d: -f1)
     [ -n "$done_line" ] || fail "$variant: Definition of done has no done instruction to order against"
     [ "$rule_line" -lt "$done_line" ] \
       || fail "$variant: the commit-before-records rule (line $rule_line) comes after the done instruction (line $done_line)"
+    [ "$unverified_line" -lt "$done_line" ] \
+      || fail "$variant: the unverified-result rule (line $unverified_line) comes after the done instruction (line $done_line)"
   done
-  pass "every ship Definition of done orders the commit before records and the done line"
+  pass "every ship Definition of done orders the commit before records and the done line, and refuses a silent result as a pass"
 }
 
 test_external_review_done_with_backup_needs_the_copy() {

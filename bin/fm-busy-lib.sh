@@ -437,6 +437,21 @@ fm_busy_turn_ended_on_error() {  # <state-dir> <id> <harness>
   return 1
 }
 
+# fm_busy_turn_settled: succeeds only when the task's current record is a valid
+# idle close written by the task's own adapter source, so the agent is provably
+# sitting between turns rather than inside one. A firstmate-written close
+# (fm-interrupt, fm-recovery) does not count: something outside the agent ended
+# that turn, and a supervisor owns what happens next. Missing, malformed,
+# stale-gen, untrusted, busy, and unknown records answer no.
+fm_busy_turn_settled() {  # <state-dir> <id> <harness>
+  local parsed r_state r_source _event _seq
+  parsed=$(fm_busy_record_read "$1" "$2") || return 1
+  read -r r_state r_source _event _seq <<< "$parsed"
+  [ "$r_state" = idle ] || return 1
+  case "$r_source" in fm-spawn|fm-interrupt|fm-recovery) return 1 ;; esac
+  fm_busy_source_trusted "$3" "$r_source"
+}
+
 # ---------------------------------------------------------------------------
 # muse session-log busy source
 #

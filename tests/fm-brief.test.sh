@@ -218,6 +218,8 @@ test_ship_modes_generate_clean_briefs() {
       "$id: brief missing nonterminal working:/setup-complete gate protection"
     assert_grep "Commit each finished change on your branch as soon as its checks pass, before you write any record" "$brief" \
       "$id: brief missing the commit-before-records finish order"
+    assert_grep "Count a test or validation run as passed only from finished output you have read that shows it passing" "$brief" \
+      "$id: brief lets a silent or missing test result count as a pass"
     assert_no_grep "EOF" "$brief" "$id: brief leaked a heredoc EOF marker (unterminated heredoc)"
   done
   pass "fm-brief.sh: no-mistakes/direct-PR/local-only briefs generate cleanly"
@@ -1179,6 +1181,8 @@ test_scout_and_secondmate_scaffold() {
   assert_grep "## Captain's intent" "$brief" "scout brief missing Captain's intent subsection"
   assert_grep "## Firstmate spec" "$brief" "scout brief missing Firstmate spec subsection"
   assert_grep "{FIRSTMATE_SPEC}" "$brief" "scout brief missing the spec placeholder"
+  assert_grep "Count a test or validation run as passed only from finished output you have read that shows it passing" "$brief" \
+    "scout brief lets a silent or missing test result count as a pass"
 
   FM_SECONDMATE_CHARTER='Supervise the alpha domain.' \
     FM_HOME="$BRIEF_HOME" "$ROOT/bin/fm-brief.sh" brief-sm-q6 --secondmate alpha >/dev/null 2>&1 \

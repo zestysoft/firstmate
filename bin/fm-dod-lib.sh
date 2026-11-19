@@ -512,6 +512,14 @@ fm_dod_commit_first() {
   printf '%s' 'Commit each finished change on your branch as soon as its checks pass, before you write any record, handoff note, report, or status line about it, and commit the records you then write in the repository as well: if your session stops mid-turn, an uncommitted finished change is the work that is lost.'
 }
 
+# The evidence rule every ship Definition of done and the scout report carry,
+# stated once here: a stalled turn often ends with a run the worker started but
+# never read back, and a silent or missing result must never be reported as a
+# pass.
+fm_dod_unverified_results() {
+  printf '%s' 'Count a test or validation run as passed only from finished output you have read that shows it passing; a run that is still going, was stopped or timed out, or left no output or exit status is unverified, and you must report it as unverified rather than passing.'
+}
+
 # The no-mistakes block for a pr=manual project, where the worker owns the PR
 # title and body. The pipeline's pr step would rewrite them on every validated
 # push, so the run skips `pr` and, with no PR for it to watch, `ci`; push stays,
@@ -529,6 +537,7 @@ This project's pull-request text is written by hand: the pipeline's \`pr\` step 
 Pass \`--skip pr,ci\` on every \`no-mistakes axi run\` for this task, and skip nothing else: \`review\`, \`test\`, \`document\`, \`lint\`, and \`push\` still run, and \`ci\` has no pipeline-opened PR to watch.
 The task is complete only when committed on your branch.
 $(fm_dod_commit_first)
+$(fm_dod_unverified_results)
 When you believe it is complete, append \`done [at=<epoch>]: {summary}\` to the status file and stop.
 Firstmate will then instruct you to run /no-mistakes to validate and push.
 That first \`done:\` is the handoff that starts the pipeline, which owns the push; it is not a request to push from this copy.
@@ -585,6 +594,7 @@ This task ships **direct-PR** to a Gerrit review server: you publish the change 
 Gerrit has no pull requests, so there is nothing to open; publishing creates the change.
 The task is complete only when committed on your branch.
 $(fm_dod_commit_first)
+$(fm_dod_unverified_results)
 When it is implemented and committed, publish it.
 EOF
       fm_gerrit_publish_block
@@ -602,6 +612,7 @@ Pass \`--skip push,pr,ci\` on every \`no-mistakes axi run\` for this task, and s
 Those three are the only steps that reach a forge, and skipping them is a supported outcome, not a degraded one.
 The task is complete only when committed on your branch.
 $(fm_dod_commit_first)
+$(fm_dod_unverified_results)
 When you believe it is complete, append \`done [at=<epoch>]: {summary}\` to the status file and stop.
 Firstmate will then instruct you to run /no-mistakes to validate.
 That first \`done:\` is the handoff that starts the pipeline; it is not a request to publish.
@@ -635,6 +646,7 @@ Ship branch: $branch
 This task ships **direct-PR** through an external review tool: the tool uploads a snapshot of your local commits itself, so you never push a branch to publish, and there is no pull request to open.
 The task is complete only when committed on your branch.
 $(fm_dod_commit_first)
+$(fm_dod_unverified_results)
 EOF
       if [ -n "$FM_REVIEW_BACKUP_REMOTE" ]; then
         printf '%s\n' "Before uploading, push a durable copy to the backup remote as your first rule names; your done is accepted only when that copy holds your HEAD."
@@ -664,6 +676,7 @@ Ship branch: $branch
 This task ships **direct-PR**: you raise the PR yourself, without the no-mistakes pipeline.
 The task is complete only when committed on your branch.
 $(fm_dod_commit_first)
+$(fm_dod_unverified_results)
 When it is implemented and committed, push your branch and open a PR with \`$forge_cli\` that is ready for review, not a draft$pr_base.
 Before you report done, read the PR back from the forge and confirm it is not a draft $draft_check
 A draft cannot be merged, so a done report on one leaves the merge unasked.
@@ -681,6 +694,7 @@ Ship branch: $branch
 This task ships **local-only**: no remote, no PR, no pipeline.
 The task is complete only when committed on your branch \`$branch\`. Do NOT push, do NOT open a PR, do NOT merge.
 $(fm_dod_commit_first)
+$(fm_dod_unverified_results)
 A \`done:\` is accepted when the named head is on this project's shared local branch, not only on a detached copy; the check tests that head, not merely that a branch moved.
 Keep your branch a clean fast-forward onto the current default branch - if \`main\` has advanced, rebase onto it so the eventual merge stays a fast-forward.
 After a rebase, report \`done\` again; the new head replaces the one you reported only when it carries the same change.
@@ -701,6 +715,7 @@ Delivery contract: mode=no-mistakes$contract_forge$contract_consent
 Ship branch: $branch
 The task is complete only when committed on your branch.
 $(fm_dod_commit_first)
+$(fm_dod_unverified_results)
 When you believe it is complete, append \`done [at=<epoch>]: {summary}\` to the status file and stop.
 Firstmate will then instruct you to run /no-mistakes to validate and ship a PR.
 That first \`done:\` is the handoff that starts the pipeline, which owns the push; it is not a request to push from this copy.

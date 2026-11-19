@@ -35,10 +35,11 @@
 #                          both surfaced at once, except that a finished-and-parked
 #                          lane (finished_parked_stale_bound) alarms once per record
 #                          and logs later redraws as parked, and a non-terminal lane
-#                          whose harness ended its turn on a provider error gets one
-#                          automatic resume steer instead, within a bounded count
-#                          whose exhaustion surfaces with that count named
-#                          (redrive_dropped_turn). A provably-working stale past the
+#                          whose harness ended its turn on a provider error, or a
+#                          settled lane whose own declared wait time has passed,
+#                          gets one automatic resume steer instead, within a
+#                          bounded count whose exhaustion surfaces with that count
+#                          named (redrive_lane). A provably-working stale past the
 #                          wedge threshold also surfaces, with an "escalation N"
 #                          count in the reason; at FM_WEDGE_DEMAND_INSPECT_COUNT
 #                          consecutive escalations on the SAME pane, the reason
@@ -421,10 +422,10 @@ TURNEND_CHURN_ABSORB_SECS=${FM_TURNEND_CHURN_ABSORB_SECS:-900}  # longest a task
 # daemon owns triage, so this watcher reverts to one-shot (enqueue + exit on every
 # wake) and never double-triages - and never runs the costly provably-working read.
 STALE_ESCALATE_SECS=${FM_STALE_ESCALATE_SECS:-240}  # idle secs before a provably-working stale escalates as a possible wedge
-# Dropped-turn re-drive bound (redrive_dropped_turn): at most REDRIVE_MAX
-# automatic resumes per lane inside any REDRIVE_WINDOW_SECS, counted from the
-# durable state/.redrive-<key> ledger so a watcher restart cannot reset it.
-# FM_REDRIVE_MAX=0 turns the re-drive off and restores the plain stale surface.
+# Stalled-turn resume bound (redrive_lane): at most REDRIVE_MAX automatic
+# resumes per lane inside any REDRIVE_WINDOW_SECS, counted from the durable
+# state/.redrive-<key> ledger so a watcher restart cannot reset it.
+# FM_REDRIVE_MAX=0 turns the resume off and restores the plain stale surfaces.
 REDRIVE_MAX=${FM_REDRIVE_MAX:-}
 case "$REDRIVE_MAX" in ''|*[!0-9]*) REDRIVE_MAX=2 ;; esac
 REDRIVE_WINDOW_SECS=${FM_REDRIVE_WINDOW_SECS:-}
@@ -2593,10 +2594,16 @@ handle_paused_stale() {  # <window> <task> <hash>
       silent=1
       reason="paused ${age}s, awaiting external - the declared time is beyond the recheck cadence; confirm the wait still holds"
     else
-      # The declared time has passed: recheck now, once per declaration, then
-      # hold the cadence.
+      # The declared time has passed. A settled lane is resumed first
+      # (redrive_lane wait-due); otherwise recheck now, once per declaration,
+      # then hold the cadence.
+      if redrive_lane "$win" "$task" || redrive_pending "$task"; then
+        triage_log "absorbed stale (paused, declared time reached, resume steer delivered or pending): $win"
+        return 0
+      fi
       detail="paused, declared time reached"
       reason="paused ${age}s, awaiting external - the declared clearing time has passed, rechecked on a long cadence not a wedge; confirm the wait cleared"
+      [ -z "$REDRIVE_NOTE" ] || reason="$reason; $REDRIVE_NOTE"
       declaration="$declaration:due"
       min_age=0
     fi
@@ -3220,33 +3227,63 @@ finished_parked_rearm() {  # <window-key>
 # Both records of an ordinary crew wait bound it (see task_captain_call_open
 # above): the status line the worker declared, and the backlog hold firstmate
 # recorded once the captain took the work in hand.
-# Dropped-turn re-drive. A crew whose harness ended its turn on a provider error
-# (fm_busy_turn_ended_on_error owns which recorded events mean that) sits at an
-# idle prompt with its work in flight: nothing it chose, so nothing for a
-# supervisor to judge. Reached only from the non-terminal first-sight stale
-# route after pause_state_class found no running pipeline, busy verdict, or
-# declared wait, so a done, paused, captain-held, or blocked lane never gets
-# here. It writes one fixed steer through the ordinary steering inbox and rings
-# it once; the inbox ladder owns every later delivery attempt and escalation.
-# Bounded by REDRIVE_MAX per REDRIVE_WINDOW_SECS: the ledger is written before
-# the steer, so a crash can only undercount resumes, never exceed the bound,
-# and once it is spent the lane surfaces as an ordinary stale with
-# REDRIVE_NOTE naming the exhausted resumes instead of being re-driven again.
-# pause_state_class answers none for a live lane whose declared wait it could
-# not confirm, so the declared wait, an open decision of the worker's own, and
-# a backlog captain hold are re-checked here and left to their own cadences.
-# Secondmates, a blocking dialog, a dead or missing agent, and an inbox that
-# already holds an unhandled steer are left to the existing path too.
-# Returns 0 when it re-drove the lane, 1 when the caller should surface it.
+# Stalled-turn resume. Two lanes sit at an idle prompt with nothing left for a
+# supervisor to judge, and each is told apart from every other quiet lane by a
+# record, never by the rendered pane:
+#   dropped   the harness ended the turn on a provider error
+#             (fm_busy_turn_ended_on_error owns which recorded events mean that).
+#             Reached from the non-terminal first-sight stale route after
+#             pause_state_class found no running pipeline, busy verdict, or
+#             declared wait; pause_state_class answers none for a live lane whose
+#             declared wait it could not confirm, so a declared wait, an open
+#             decision of the worker's own, and a backlog captain hold are
+#             re-checked here and left to their own cadences.
+#   wait-due  the worker's own `paused: ... until <time>` has passed while its
+#             adapter shows the turn settled between turns (fm_busy_turn_settled):
+#             a background job or stream it was waiting on can have ended
+#             without waking it. Reached from handle_paused_stale's
+#             declared-time-reached branch only, so a wait still inside its own
+#             time, an overdue wait already escalated, a captain hold, and a busy
+#             or interrupted pane are untouched.
+# A done, blocked, or needs-decision lane never reaches either route. A lane
+# that is busy without progress (a long call with nothing behind it) has no
+# record that tells it apart from real work, so it stays on the busy-turn bound.
+# Each resume writes one fixed steer through the ordinary steering inbox and
+# rings it once; the inbox ladder owns every later delivery attempt and
+# escalation. Both causes share one bound, REDRIVE_MAX per REDRIVE_WINDOW_SECS:
+# the ledger is written before the steer, so a crash can only undercount
+# resumes, never exceed the bound, and once it is spent the lane surfaces on its
+# ordinary path with REDRIVE_NOTE naming the spent resumes instead of being
+# resumed again. Secondmates, a blocking dialog, a dead or missing agent, and an
+# inbox that already holds an unhandled steer are left to the existing path.
+# Returns 0 when it resumed the lane, 1 when the caller should surface it.
 REDRIVE_NOTE=
-REDRIVE_MESSAGE='Your last turn ended because the model connection dropped (the harness reported an API error), not because of anything you chose; this is an automatic resume from the firstmate watcher. Continue from exactly where you stopped: do not restart, and do not re-run checks that already passed. If a change is finished and its checks pass, commit it on your branch before you write any record or status line about it. If you were in fact finished or waiting, append the status line your instructions require for that and stop.'
-redrive_dropped_turn() {  # <window> <task> [dialog-name]
-  local win=$1 task=$2 dialog=${3-} key ledger now cutoff at count=0 kept='' rec backend ring_rc=0
+REDRIVE_FINISH='If a change is finished and its checks pass, commit it on your branch before you write any record or status line about it. A test or validation run counts as passed only from finished output you have read that shows it passing; a run that is still going, was stopped, or left no output or exit status is unverified and must be reported as unverified. If you were in fact finished or still waiting, append the status line your instructions require for that and stop.'
+REDRIVE_MESSAGE_DROPPED="Your last turn ended because the model connection dropped (the harness reported an API error), not because of anything you chose; this is an automatic resume from the firstmate watcher. Continue from exactly where you stopped: do not restart, and do not re-run checks that already passed. $REDRIVE_FINISH"
+REDRIVE_MESSAGE_WAIT_DUE="The time your own paused line declared for your wait has passed and your turn is idle, so whatever you were waiting on may have finished or stopped without waking you; this is an automatic resume from the firstmate watcher. Read the actual result of that job or stream now instead of assuming it is still running, then continue from where you stopped. $REDRIVE_FINISH"
+redrive_lane() {  # <window> <task> [dialog-name]
+  local win=$1 task=$2 dialog=${3-} key ledger now cutoff at count=0 kept='' rec backend ring_rc=0 harness message
+  local cause last until
   REDRIVE_NOTE=
   [ "$REDRIVE_MAX" -gt 0 ] && [ -n "$task" ] && [ -z "$dialog" ] || return 1
   [ "$(window_kind "$win")" != secondmate ] || return 1
-  fm_busy_turn_ended_on_error "$STATE" "$task" "$(window_harness "$win")" || return 1
-  ! status_is_paused_or_captain_held "$(status_declared_wait_line "$STATE/$task.status")" || return 1
+  harness=$(window_harness "$win")
+  last=$(status_declared_wait_line "$STATE/$task.status")
+  if status_is_paused "$last"; then
+    until=$(status_paused_until "$last") || return 1
+    now=$(date +%s)
+    [ "$now" -ge "$until" ] || return 1
+    ! status_pause_is_overdue "$last" 0 "$now" || return 1
+    fm_busy_turn_settled "$STATE" "$task" "$harness" || return 1
+    cause=wait-due
+    message=$REDRIVE_MESSAGE_WAIT_DUE
+  elif status_is_captain_held "$last"; then
+    return 1
+  else
+    fm_busy_turn_ended_on_error "$STATE" "$task" "$harness" || return 1
+    cause=dropped
+    message=$REDRIVE_MESSAGE_DROPPED
+  fi
   [ -z "$(status_own_open_decisions "$STATE/$task.status")" ] || return 1
   ! task_captain_call_open "$task" || return 1
   ! fm_task_inbox_oldest_unhandled "$STATE" "$task" >/dev/null 2>&1 || return 1
@@ -3267,17 +3304,27 @@ redrive_dropped_turn() {  # <window> <task> [dialog-name]
     done < "$ledger"
   fi
   if [ "$count" -ge "$REDRIVE_MAX" ]; then
-    REDRIVE_NOTE="model connection dropped again after $count automatic resumes in the last ${REDRIVE_WINDOW_SECS}s; resume or inspect the worker by hand"
-    triage_log "dropped-turn re-drive exhausted ($count/$REDRIVE_MAX): $win"
+    REDRIVE_NOTE="stalled again after $count automatic resumes in the last ${REDRIVE_WINDOW_SECS}s; resume or inspect the worker by hand"
+    triage_log "stalled-turn resume exhausted ($cause, $count/$REDRIVE_MAX): $win"
     return 1
   fi
   { printf '%s%s\n' "$kept" "$now" > "$ledger.tmp" && mv "$ledger.tmp" "$ledger"; } 2>/dev/null \
     || { rm -f "$ledger.tmp"; return 1; }
-  rec=$(fm_task_inbox_write "$STATE" "$task" "$REDRIVE_MESSAGE") || return 1
-  FM_COMPOSER_HARNESS=$(window_harness "$win") \
+  rec=$(fm_task_inbox_write "$STATE" "$task" "$message") || return 1
+  FM_COMPOSER_HARNESS=$harness \
     fm_task_inbox_ring "$backend" "$win" "$rec" "$(window_label "$win")" || ring_rc=$?
-  triage_log "re-drove dropped turn ($(( count + 1 ))/$REDRIVE_MAX): $win ${rec##*/} ring=$ring_rc"
+  triage_log "resumed stalled turn ($cause, $(( count + 1 ))/$REDRIVE_MAX): $win ${rec##*/} ring=$ring_rc"
   return 0
+}
+
+# 0 while the task's oldest unhandled steer is a resume redrive_lane wrote: the
+# inbox ladder owns its delivery and escalation, so the declared-wait recheck
+# stays quiet instead of waking a supervisor about the wait being resumed.
+redrive_pending() {  # <task>
+  local rec body
+  rec=$(fm_task_inbox_oldest_unhandled "$STATE" "$1" 2>/dev/null) || return 1
+  body=$(fm_task_inbox_body "$rec" 2>/dev/null) || return 1
+  [ "$body" = "$REDRIVE_MESSAGE_WAIT_DUE" ] || [ "$body" = "$REDRIVE_MESSAGE_DROPPED" ]
 }
 
 surface_nonterminal_stale() {  # <window> <hash> [dialog-name] [note]
@@ -4943,7 +4990,7 @@ EOF
                 handle_paused_stale "$w" "$task" "$h"
                 ;;
               *)
-                if redrive_dropped_turn "$w" "$task" "$dialog"; then
+                if redrive_lane "$w" "$task" "$dialog"; then
                   # Re-driven, not surfaced: this hash is classified, and an
                   # unchanged pane afterwards (a swallowed doorbell) reaches the
                   # ordinary wedge timer below while the inbox ladder re-rings.

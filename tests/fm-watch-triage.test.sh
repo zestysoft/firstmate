@@ -5654,8 +5654,8 @@ EOF
 # A stable first-sight Claude lane on a fake tmux that also accepts send-keys and
 # logs them, so a case can see the doorbell the re-drive rang. <event> is the
 # busy record's closing event; <status-log> is the whole task log.
-prime_redrive_lane() {  # <dir> <event> <status-log>
-  local dir=$1 event=$2 log=$3 state statusf window gen
+prime_redrive_lane() {  # <dir> <event> <status-log> [record-source]
+  local dir=$1 event=$2 log=$3 source=${4:-claude-hook} state statusf window gen
   state="$dir/state"; window="test:fm-redrive"; statusf="$state/redrive.status"
   printf 'idle at an empty prompt after a cut-off reply' > "$dir/pane.txt"
   printf 'window=%s\nkind=ship\nharness=claude\nbackend=tmux\n' "$window" > "$state/redrive.meta"
@@ -5663,8 +5663,8 @@ prime_redrive_lane() {  # <dir> <event> <status-log>
   printf '%s' "$(seen_sig "$statusf")" > "$state/.seen-redrive_status"
   gen=g1.1.1
   printf '%s\n' "$gen" > "$state/redrive.busy-gen"
-  printf 'v1 gen=%s seq=3 state=idle source=claude-hook event=%s ts=%s\n' \
-    "$gen" "$event" "$(date +%s)" > "$state/redrive.busy-state"
+  printf 'v1 gen=%s seq=3 state=idle source=%s event=%s ts=%s\n' \
+    "$gen" "$source" "$event" "$(date +%s)" > "$state/redrive.busy-state"
   printf '%s' "$(hash_text "$(cat "$dir/pane.txt")")" > "$state/.hash-$(watch_window_key "$window")"
   printf '1\n' > "$state/.count-$(watch_window_key "$window")"
   cat > "$dir/fakebin/tmux" <<'SH'
@@ -5726,6 +5726,8 @@ test_dropped_turn_with_work_in_flight_is_redriven() {
     || fail "the resume steer does not keep the worker from restarting: $(cat "$msg")"
   grep -F 'commit it on your branch before you write any record' "$msg" >/dev/null \
     || fail "the resume steer does not carry the commit-first finish order: $(cat "$msg")"
+  grep -F 'is unverified and must be reported as unverified' "$msg" >/dev/null \
+    || fail "the resume steer lets a missing result pass: $(cat "$msg")"
   grep -F 'send-keys' "$dir/sent.log" >/dev/null 2>&1 \
     || fail "the re-drive never rang the worker's doorbell"
   [ "$(grep -c . "$state/.redrive-$key")" -eq 1 ] || fail "the re-drive did not record its one attempt"
@@ -5784,7 +5786,7 @@ test_repeated_drops_stop_redriving_and_surface_once() {
   now=$(date +%s)
   printf '%s\n%s\n' "$(( now - 300 ))" "$(( now - 60 ))" > "$state/.redrive-$key"
   redrive_round "$dir" exit || fail "a lane past its re-drive budget did not surface: $(cat "$dir/watch.out")"
-  grep -F 'stale: test:fm-redrive (model connection dropped again after 2 automatic resumes' "$dir/watch.out" >/dev/null \
+  grep -F 'stale: test:fm-redrive (stalled again after 2 automatic resumes' "$dir/watch.out" >/dev/null \
     || fail "the exhausted surface does not name the spent resumes: $(cat "$dir/watch.out")"
   [ "$(redrive_inbox_count "$state")" -eq 0 ] || fail "a lane past its budget was re-driven again"
   [ "$(grep -c . "$state/.redrive-$key")" -eq 2 ] || fail "an exhausted lane grew its re-drive ledger"
@@ -5801,6 +5803,33 @@ test_repeated_drops_stop_redriving_and_surface_once() {
   redrive_round "$dir" absorb || fail "resumes outside the window still blocked a new one: $(cat "$dir/watch.out")"
   [ "$(redrive_inbox_count "$state")" -eq 1 ] || fail "a drop after the window passed was not resumed"
   pass "repeated drops stop re-driving at the bound and surface once, while an aged-out budget resets"
+}
+
+# The other stalled-turn cause with a record behind it: the worker's own
+# `paused: ... until <time>` has passed while its adapter shows the turn settled,
+# so the job or stream it waited on may have ended without waking it. The lane is
+# resumed with a steer that sends it to read the real result, and only a settled
+# turn qualifies: a firstmate-written close keeps the ordinary recheck.
+test_settled_lane_past_its_declared_wait_is_resumed() {
+  local dir state past msg
+  past=$(iso_utc_at "$(( $(date +%s) - 600 ))")
+  dir=$(make_case redrive-wait-due); state="$dir/state"; mkdir -p "$dir/config"
+  prime_redrive_lane "$dir" stop "paused [at=1]: own validation round in background; resumes when it exits until $past"
+  redrive_round "$dir" absorb FM_PAUSE_RESURFACE_SECS=999 \
+    || fail "a settled lane past its declared wait woke a supervisor instead of resuming: $(cat "$dir/watch.out")"
+  [ "$(redrive_inbox_count "$state")" -eq 1 ] || fail "a settled lane past its declared wait was not resumed"
+  msg=$(find "$state/redrive.inbox" -maxdepth 1 -name '*.msg' | head -1)
+  grep -F 'Read the actual result of that job or stream now' "$msg" >/dev/null \
+    || fail "the wait-due steer does not send the worker to the real result: $(cat "$msg")"
+  grep -F 'is unverified and must be reported as unverified' "$msg" >/dev/null \
+    || fail "the wait-due steer lets a missing result pass: $(cat "$msg")"
+
+  dir=$(make_case redrive-wait-due-interrupted); state="$dir/state"; mkdir -p "$dir/config"
+  prime_redrive_lane "$dir" interrupt "paused [at=1]: own validation round in background; resumes when it exits until $past" fm-interrupt
+  redrive_round "$dir" exit FM_PAUSE_RESURFACE_SECS=999 \
+    || fail "an interrupted lane past its declared wait was not surfaced: $(cat "$dir/watch.out")"
+  [ "$(redrive_inbox_count "$state")" -eq 0 ] || fail "a lane firstmate interrupted was resumed automatically"
+  pass "a settled lane past its own declared wait is resumed, while an interrupted one keeps the ordinary recheck"
 }
 
 # CI's stock macOS Bash lane sets FM_TEST_STOCK_BASH=1 to run just the bash-3.2
@@ -5953,4 +5982,5 @@ fm_test_run \
   test_dropped_turn_in_a_declared_wait_is_not_redriven \
   test_ordinary_turn_end_keeps_the_plain_stale \
   test_repeated_drops_stop_redriving_and_surface_once \
+  test_settled_lane_past_its_declared_wait_is_resumed \
   test_closed_exit_picker_drops_saved_dialog_name
