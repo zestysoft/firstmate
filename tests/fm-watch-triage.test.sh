@@ -2460,6 +2460,88 @@ test_finished_parked_refusals_name_their_signal() {
   pass "finished-and-parked exemption is refused, with the refusing signal logged, for open decisions, blockers, background work, and unrecognised verdicts"
 }
 
+# A local-only lane that reports ready, adds a commit, and reports ready again
+# naming the newer head is still finished and parked. Before the local done
+# head could move on a newer stamped report, the real crew state read that
+# second report as a refused one (blocked), the exemption refused it, and every
+# redraw of the idle pane - including the first poll of a restarted watcher -
+# alarmed the same finished record again. The bound itself is durable, so a
+# restarted watcher must absorb the redraw. This case runs the real
+# bin/fm-crew-state.sh against a real local-only lane rather than a canned verdict.
+# Runs one watcher until it exits; 0 when it printed a stale wake for the lane.
+rereport_watch_alarms() {  # <state> <fakebin> <out> <capture-file> <window>
+  local state=$1 fakebin=$2 out=$3 capture_file=$4 window=$5 pid
+  : > "$out"
+  watch_bg "$state" "$fakebin" "$out" env FM_FAKE_TMUX_WINDOW="$window" FM_FAKE_TMUX_CAPTURE="$capture_file" \
+    FM_CREW_STATE_BIN="$ROOT/bin/fm-crew-state.sh" FM_CREW_STATE_NO_FORGE=1
+  pid=$!
+  if wait_poll_cycle "$state" "$pid"; then
+    reap "$pid"
+    [ ! -s "$state/.wake-queue" ] || fail "rereported head: a poll with no printed wake still queued one"
+    return 1
+  fi
+  grep -F "stale: $window" "$out" >/dev/null || fail "rereported head: the watcher exited without a stale wake: $(cat "$out")"
+  ack_stopped_cycle "$state" || fail "rereported head: could not acknowledge the stale wake"
+  touch "$state/.last-check" "$state/.last-heartbeat"
+}
+
+# Show the watcher an idle pane at a new hash that is already stable for one
+# poll, and mark the status log as already classified.
+rereport_redraw() {  # <state> <capture-file> <key> <text>
+  printf '%s' "$4" > "$2"
+  printf '%s' "$(hash_text "$4")" > "$1/.hash-$3"
+  printf '1\n' > "$1/.count-$3"
+  printf '%s' "$(seen_sig "$1/parked.status")" > "$1/.seen-parked_status"
+}
+
+test_finished_parked_rereported_head_stays_quiet_across_restart() {
+  local dir state fakebin out capture_file window key project wt gen head
+  dir=$(make_case finished-parked-rereported-head); state="$dir/state"; fakebin="$dir/fakebin"
+  out="$dir/watch.out"; capture_file="$dir/pane.txt"; window="test:fm-parked"
+  project="$dir/project"; wt="$dir/wt"
+  fm_git_init_commit "$project"
+  git -C "$project" worktree add -q -b fm/parked "$wt" main
+  printf 'one\n' > "$wt/one.txt"
+  git -C "$wt" add one.txt
+  git -C "$wt" -c user.name='Firstmate Tests' -c user.email='tests@example.invalid' commit -qm one
+  printf 'window=%s\nkind=ship\nharness=claude\nmode=local-only\nworktree=%s\nproject=%s\nbranch=fm/parked\n' \
+    "$window" "$wt" "$project" > "$state/parked.meta"
+  gen=$("$ROOT/bin/fm-busy-event.sh" arm "$state" parked)
+  "$ROOT/bin/fm-busy-event.sh" apply "$state" parked idle --gen "$gen" --source claude-hook --event settled \
+    || fail "rereported head: could not record the settled idle state"
+  key=$(watch_window_key "$window")
+
+  # First ready report: its first sight alarms.
+  printf 'done [at=1795000000]: ready in branch fm/parked\n' > "$state/parked.status"
+  rereport_redraw "$state" "$capture_file" "$key" 'finished, sitting at the prompt'
+  rereport_watch_alarms "$state" "$fakebin" "$out" "$capture_file" "$window" \
+    || fail "rereported head: the first ready report did not alarm on first sight"
+
+  # A further commit and a newer ready report naming it: a new record, whose
+  # first sight alarms once.
+  printf 'two\n' > "$wt/two.txt"
+  git -C "$wt" add two.txt
+  git -C "$wt" -c user.name='Firstmate Tests' -c user.email='tests@example.invalid' commit -qm two
+  head=$(git -C "$wt" rev-parse --short HEAD)
+  printf 'done [at=1795000600]: ready in branch fm/parked (head %s)\n' "$head" >> "$state/parked.status"
+  rereport_redraw "$state" "$capture_file" "$key" 'finished again, sitting at the prompt'
+  rereport_watch_alarms "$state" "$fakebin" "$out" "$capture_file" "$window" \
+    || fail "rereported head: the newer ready report did not alarm on first sight"
+
+  # A fresh watcher process sees the same idle lane redrawn: nothing new.
+  rereport_redraw "$state" "$capture_file" "$key" 'finished again, sitting at the prompt (redrawn)'
+  if rereport_watch_alarms "$state" "$fakebin" "$out" "$capture_file" "$window"; then
+    fail "a finished lane that re-reported a newer head alarmed again after a watcher restart: $(cat "$state/.watch-triage.log" 2>/dev/null)"
+  fi
+  grep -F "absorbed stale (finished and parked: crew state done from status-log, busy-state idle " \
+    "$state/.watch-triage.log" >/dev/null \
+    || fail "the restarted watcher did not log the lane as finished and parked: $(cat "$state/.watch-triage.log" 2>/dev/null)"
+  if grep -F 'finished-and-parked exemption refused' "$state/.watch-triage.log" >/dev/null; then
+    fail "the re-reported ready head was refused: $(cat "$state/.watch-triage.log")"
+  fi
+  pass "a finished lane that re-reports a newer local head stays quiet across a watcher restart, read by the real crew state"
+}
+
 # --- stale pane, STALE terminal status overridden by an active run: absorbed ---
 # Regression for the 2026-07 herdr false-surface incidents: a crew's own status
 # log gets no new entry once firstmate hands it to a no-mistakes validation
@@ -5924,6 +6006,7 @@ fm_test_run \
   test_finished_parked_redraw_absorbed \
   test_finished_parked_wedges_still_alarm \
   test_finished_parked_refusals_name_their_signal \
+  test_finished_parked_rereported_head_stays_quiet_across_restart \
   test_stale_terminal_status_overridden_by_active_run \
   test_nonterminal_stale_provably_working_absorbed_then_escalated \
   test_wedge_escalation_marks_demand_deep_inspection_after_threshold \
