@@ -12,6 +12,18 @@ set -u
 
 TMP_ROOT=$(fm_test_tmproot fm-guard-stale-banner)
 
+# fm-guard.sh deliberately keeps the watcher banner silent for the supervision
+# branch actor, so an ambient FM_SUPERVISION_ACTOR=branch (the actor that most
+# often runs suites) would turn every main-actor banner case red. Pin the main
+# actor for the whole suite, as the helpers below pin the supervision model, and
+# say so: the branch-actor cases set the actor explicitly per call, so every case
+# still runs under the actor it is about.
+if [ -n "${FM_SUPERVISION_ACTOR:-}" ]; then
+  printf '# note: ambient FM_SUPERVISION_ACTOR=%s ignored; main-actor cases pin the main actor, branch-actor cases set it per call\n' \
+    "$FM_SUPERVISION_ACTOR"
+  unset FM_SUPERVISION_ACTOR
+fi
+
 make_guard_case() {
   local name=$1 dir home root
   dir="$TMP_ROOT/$name"
