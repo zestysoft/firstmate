@@ -639,6 +639,34 @@ test_run_timed_delivers_piped_stdin_on_every_mechanism() {
   pass "fm_run_timed delivers piped stdin through every available mechanism"
 }
 
+test_run_timed_bash_fallback_carries_status_without_a_temp_file() {
+  local out rc case_spec name bound expect
+  # An unusable TMPDIR must not turn a real run into a reported bound: the
+  # bash mechanism reads both statuses from wait, so the command still runs.
+  # The other cases pin the outcomes that status used to carry: the command's
+  # own code and signal death, and the bound even when the command exits 0 on
+  # the bound's TERM.
+  for case_spec in \
+    'ran|5|3|echo ran; exit 3' \
+    'self-kill|5|137|kill -KILL $$' \
+    'bound|1|124|sleep 30' \
+    'bound-exit0|1|124|trap "exit 0" TERM; sleep 30 & wait'; do
+    name=${case_spec%%|*}
+    case_spec=${case_spec#*|}
+    bound=${case_spec%%|*}
+    case_spec=${case_spec#*|}
+    expect=${case_spec%%|*}
+    rc=0
+    out=$(TMPDIR=/nonexistent/fm-timeout-test FM_TIMEOUT_MECHANISM_OVERRIDE=bash /bin/bash -c '
+      . "$1"
+      fm_run_timed "$2" sh -c "$3"
+    ' _ "$ROOT/bin/fm-timeout-lib.sh" "$bound" "${case_spec#*|}" 2>/dev/null) || rc=$?
+    [ "$rc" -eq "$expect" ] || fail "bash fallback $name returned $rc, not $expect (out=$out)"
+  done
+  [ "$out" = "" ] || fail "bash fallback bound-exit0 printed output: $out"
+  pass "fm_run_timed bash fallback carries the command and bound statuses without a temp file"
+}
+
 test_run_timed_keeps_stdout_and_nonzero_status_when_a_function_shadows_timeout() {
   local out rc=0
   # The functions live in this subshell so they cannot leak into later cases.
@@ -1094,6 +1122,7 @@ test_run_timed_reports_the_bound_when_the_wrapper_records_a_signal_death
 test_run_timed_passes_a_natural_exit_through_a_fired_bound
 test_run_timed_external_runner_keeps_every_outcome_distinct
 test_run_timed_external_runner_claims_only_its_reserved_fds
+test_run_timed_bash_fallback_carries_status_without_a_temp_file
 test_run_timed_keeps_stdout_and_nonzero_status_when_a_function_shadows_timeout
 test_run_timed_delivers_piped_stdin_on_every_mechanism
 test_term_ends_a_cooperative_command_at_the_bound

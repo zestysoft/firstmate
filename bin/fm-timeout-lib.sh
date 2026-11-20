@@ -141,28 +141,26 @@ fm_timeout_background() {
 }
 
 fm_bash_timeout_child() {
-  local status_file=$1 command_rc
-  shift
   set +m
   "$@"
-  command_rc=$?
-  printf '%s\n' "$command_rc" > "$status_file"
-  exit "$command_rc"
 }
 
+# No file or pipe carries a status: wait reports the background child's exit,
+# which is the command's own, and the watchdog's exit is the deadline flag.
+# The watchdog ignores TERM before it signals the command, so the TERM sent
+# after a natural exit ends it (143) only while it is still sleeping; once it
+# has fired it always finishes with 124.
 fm_run_bash_timeout() {
-  local seconds=$1 command_status deadline_status child_pid watchdog_pid command_rc recorded_rc monitor_was_on=0
+  local seconds=$1 child_pid watchdog_pid command_rc watchdog_rc monitor_was_on=0
   shift
-  command_status=$(mktemp "${TMPDIR:-/tmp}/fm-bash-timeout-command.XXXXXX" 2>/dev/null) || return 124
-  deadline_status="${command_status}.deadline"
   case $- in *m*) monitor_was_on=1 ;; esac
   set -m
-  fm_timeout_background fm_bash_timeout_child "$command_status" "$@"
+  fm_timeout_background fm_bash_timeout_child "$@"
   child_pid=$!
   (
     set +m
     sleep "$seconds"
-    printf 'expired\n' > "$deadline_status"
+    trap '' TERM
     kill -TERM -- "-$child_pid" 2>/dev/null || true
     sleep 0.2
     kill -KILL -- "-$child_pid" 2>/dev/null || true
@@ -176,16 +174,13 @@ fm_run_bash_timeout() {
   else
     command_rc=$?
   fi
-  if [ -s "$deadline_status" ]; then
-    wait "$watchdog_pid" 2>/dev/null || true
-    command_rc=124
+  kill -TERM -- "-$watchdog_pid" 2>/dev/null || kill "$watchdog_pid" 2>/dev/null || true
+  if wait "$watchdog_pid" 2>/dev/null; then
+    watchdog_rc=0
   else
-    kill -TERM -- "-$watchdog_pid" 2>/dev/null || kill "$watchdog_pid" 2>/dev/null || true
-    wait "$watchdog_pid" 2>/dev/null || true
-    recorded_rc=$(cat "$command_status" 2>/dev/null || true)
-    case "$recorded_rc" in ''|*[!0-9]*) ;; *) command_rc=$recorded_rc ;; esac
+    watchdog_rc=$?
   fi
-  rm -f "$command_status" "$deadline_status" 2>/dev/null || true
+  [ "$watchdog_rc" != 124 ] || return 124
   return "$command_rc"
 }
 
