@@ -2002,7 +2002,8 @@ contribution_tasks_json() {
   local meta id merge_authority=''
   for meta in "$STATE"/*.meta; do
     [ -f "$meta" ] && [ ! -L "$meta" ] || continue
-    id=$(basename "$meta" .meta)
+    id=${meta##*/}
+    id=${id%.meta}
     # The answer is the home's, not the task's (fm_merge_authority_resolve), and
     # an away record costs a validator run, so the first task's answer serves all.
     if [ -z "$merge_authority" ]; then
