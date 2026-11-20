@@ -209,7 +209,10 @@ fm_run_external_timeout() {
   else
     runner_rc=$?
   fi
-  command_rc=$(cat "$status_file" 2>/dev/null || true)
+  # The wrapper writes its one status line once; the read builtin takes it, or
+  # an unterminated partial write, without a cat start per bounded call.
+  command_rc=
+  IFS= read -r command_rc 2>/dev/null < "$status_file" || true
   rm -f "$status_file" 2>/dev/null || true
   case "$command_rc" in
     ''|*[!0-9]*) ;;
