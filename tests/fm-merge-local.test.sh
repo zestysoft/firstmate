@@ -199,6 +199,25 @@ test_missing_and_malformed_head_refuse() {
   pass 'missing, malformed and ambiguous done heads refuse without moving main'
 }
 
+# A refusal and the accepted retry both keep the whole record, spawn
+# generation included, so cleanup can still identify this incarnation.
+test_refused_then_accepted_landing_keeps_whole_record() {
+  local before="$TMP_ROOT/kept-record"
+  make_case kept
+  record_done || fail 'done head was not accepted'
+  [ "$(grep -c '^spawn_gen=fixture-1$' "$META")" = 1 ] || fail 'fixture record lacks its spawn generation'
+  cp -p -- "$META" "$before"
+  printf 'dirty\n' > "$PROJ/untracked.txt"
+  land >/dev/null 2>&1 && fail 'landing into a dirty checkout succeeded'
+  assert_no_record_violation
+  rm -f -- "$PROJ/untracked.txt"
+  land >/dev/null || fail 'the retry after the refusal did not land'
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$X" ] || fail 'the retry did not land X'
+  cmp -s -- "$before" "$META" || fail 'a successful landing changed the task record'
+  [ "$(grep -c '^spawn_gen=fixture-1$' "$META")" = 1 ] || fail 'the landed record lost its spawn generation'
+  pass 'a refused landing and its accepted retry both leave the whole record, spawn generation included'
+}
+
 # A Git shim moves the branch inside the final ref-changing Git invocation.
 # It is a scheduling seam only: every Git operation still uses the real binary.
 test_change_after_hold_check_refuses() {
@@ -885,7 +904,8 @@ test_no_refused_landing_changed_its_record() {
 }
 
 fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
-  test_missing_and_malformed_head_refuse test_change_after_hold_check_refuses \
+  test_missing_and_malformed_head_refuse test_refused_then_accepted_landing_keeps_whole_record \
+  test_change_after_hold_check_refuses \
   test_diverged_default_refuses test_change_during_approval_check_refuses \
   test_snapshot_cannot_pin_a_replacement_task test_done_recording_preserves_caller_locks \
   test_rebased_same_change_replaces_recorded_head test_rereading_a_bound_report_cannot_take_a_rebase \
