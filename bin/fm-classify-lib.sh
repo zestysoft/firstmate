@@ -382,8 +382,13 @@ status_is_paused_or_captain_held() {  # <status-line>
 # latest event. Bounded like last_status_line: only a tail window made wholly of
 # resolved events widens the read to the whole file.
 status_declared_wait_line() {  # <status-file>
-  local f=$1 last verb resolve legacy_re
-  last=$(last_status_line "$f")
+  _fm_status_declared_wait_after "$1" "$(last_status_line "$1")"
+}
+
+# status_declared_wait_line for a caller that already holds <last>, the
+# last_status_line read of <status-file>.
+_fm_status_declared_wait_after() {  # <status-file> <last>
+  local f=$1 last=$2 verb resolve legacy_re
   if status_is_paused_or_captain_held "$last"; then
     printf '%s\n' "$last"
     return 0
@@ -1043,15 +1048,19 @@ status_open_decisions() {  # <status-file> [<kind>]
 # the latest recognized event, stands when nothing is open.
 # Actual run/pane evidence is still reconciled by fm-crew-state.sh.
 status_current_line() {  # <status-file> <kind>
-  local open key verb note current=''
+  local open key verb note current='' last
   open=$(status_open_decisions "$1" "$2")
   while IFS=$'\t' read -r key verb note; do
     case "$verb" in ?*) current="$verb [key=$key]: $note" ;; esac
   done <<EOF
 $open
 EOF
-  [ -n "$current" ] || current=$(status_declared_wait_line "$1")
-  [ -n "$current" ] || current=$(last_status_line "$1")
+  if [ -z "$current" ]; then
+    # One event read serves both the declared-wait check and the fallback.
+    last=$(last_status_line "$1")
+    current=$(_fm_status_declared_wait_after "$1" "$last")
+    [ -n "$current" ] || current=$last
+  fi
   printf '%s\n' "$current"
 }
 

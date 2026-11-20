@@ -232,7 +232,7 @@
 # of state; exit 2 only on a usage error (no id).
 set -u
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(d=${BASH_SOURCE[0]%/*}; [ "$d" != "${BASH_SOURCE[0]}" ] || d=.; cd "${d:-/}" && pwd)"
 FM_ROOT="${FM_ROOT_OVERRIDE:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 STATE="${FM_STATE_OVERRIDE:-$FM_HOME/state}"
@@ -304,8 +304,13 @@ emit_run() {  # <state> <detail> [pr]
 
 [ -f "$META" ] || emit unknown none "no metadata for $ID"
 
+# The last matching line is taken in the shell rather than by a tail start; grep
+# and cut still read the bytes, so a binary or unreadable metadata file reads the
+# same as before.
 meta_value() {  # <key>
-  grep "^$1=" "$META" 2>/dev/null | tail -1 | cut -d= -f2- || true
+  local matches
+  matches=$(grep "^$1=" "$META" 2>/dev/null) || return 0
+  printf '%s\n' "${matches##*$'\n'}" | cut -d= -f2- || true
 }
 
 WT=$(meta_value worktree)
