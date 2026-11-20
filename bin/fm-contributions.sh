@@ -439,11 +439,25 @@ observe() { # canonical GitHub URL -> normalized JSON
   BUDGET_EXHAUSTED=0
   OBSERVE_SEQ=$((${OBSERVE_SEQ:-0} + 1))
   FORGE_ERR="$TMP/core.err" forge api "$endpoint" > "$TMP/core.json" || return 1
-  jq -e '(.state == "open" or .state == "closed") and (.user.login | type == "string")' "$TMP/core.json" >/dev/null \
-    || unobserved 'core read returned an unexpected shape' || return 1
+  # One jq start proves a healthy one-value core body. Any other answer runs the
+  # separate checks below, so each broken body keeps its own reason and output.
+  head=$(jq -nr --arg kind "$kind" '[inputs] | select(length == 1) | .[0]
+    | select(try ((.state == "open" or .state == "closed") and (.user.login | type == "string")) catch false)
+    | if $kind == "pull" then [try (.head.sha | select(test("^[a-fA-F0-9]{40}$"))) catch empty] | select(length == 1) | "ok " + .[0]
+      else "ok" end' "$TMP/core.json" 2>/dev/null) || head=
+  case "$head" in
+    'ok '*) head=${head#ok } ;;
+    ok) head= ;;
+    *)
+      jq -e '(.state == "open" or .state == "closed") and (.user.login | type == "string")' "$TMP/core.json" >/dev/null \
+        || unobserved 'core read returned an unexpected shape' || return 1
+      if [ "$kind" = pull ]; then
+        head=$(jq -er '.head.sha | select(test("^[a-fA-F0-9]{40}$"))' "$TMP/core.json") \
+          || unobserved 'core read named no head commit' || return 1
+      fi
+      ;;
+  esac
   if [ "$kind" = pull ]; then
-    head=$(jq -er '.head.sha | select(test("^[a-fA-F0-9]{40}$"))' "$TMP/core.json") \
-      || unobserved 'core read named no head commit' || return 1
     FORGE_ERR="$TMP/comments.err" forge api "repos/$part/issues/$number/comments?per_page=100" --paginate --slurp > "$TMP/comments.json" &
     local comments_pid=$!
     FORGE_ERR="$TMP/reviews.err" forge api "$endpoint/reviews?per_page=100" --paginate --slurp > "$TMP/reviews.json" &
@@ -465,10 +479,18 @@ observe() { # canonical GitHub URL -> normalized JSON
       pids+=("$!")
     fi
     wait_forges "${pids[@]}" || return 1
-    jq -e 'type == "array" and all(.[]; type == "array")' "$TMP/comments.json" >/dev/null \
-      || unobserved 'comment pages returned an unexpected shape' || return 1
-    jq -e 'type == "array" and all(.[]; (.data.repository.pullRequest.reviewThreads.nodes | type) == "array")' "$TMP/threads.json" >/dev/null \
-      || unobserved 'review thread pages returned an unexpected shape' || return 1
+    # As for the core body: one start proves both one-value page sets healthy,
+    # and anything else runs the separate checks in their order.
+    if ! jq -ne --slurpfile c "$TMP/comments.json" --slurpfile t "$TMP/threads.json" '
+      ($c | length) == 1 and ($t | length) == 1
+      and (try ($c[0] | type == "array" and all(.[]; type == "array")) catch false)
+      and (try ($t[0] | type == "array" and all(.[]; (.data.repository.pullRequest.reviewThreads.nodes | type) == "array")) catch false)' \
+      >/dev/null 2>&1; then
+      jq -e 'type == "array" and all(.[]; type == "array")' "$TMP/comments.json" >/dev/null \
+        || unobserved 'comment pages returned an unexpected shape' || return 1
+      jq -e 'type == "array" and all(.[]; (.data.repository.pullRequest.reviewThreads.nodes | type) == "array")' "$TMP/threads.json" >/dev/null \
+        || unobserved 'review thread pages returned an unexpected shape' || return 1
+    fi
     FORGE_ERR="$TMP/head.err" forge pr view "$url" --json headRefOid,reviewDecision > "$TMP/after.json" || return 1
     after=$(jq -er '.headRefOid | select(test("^[a-fA-F0-9]{40}$"))' "$TMP/after.json") \
       || unobserved 'head read named no head commit' || return 1

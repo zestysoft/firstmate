@@ -841,6 +841,15 @@ clock_bump() {
   printf '%s\n' "$(( $(cat "$FORGE/clock") + $1 ))" > "$tmp"
   mv -f "$tmp" "$FORGE/clock"
 }
+# A raw body file replaces one read's fixture output byte for byte.
+case "$*" in
+  'api repos/o/r/pulls/8') raw=raw-core ;;
+  'api repos/o/r/issues/8/comments?'*) raw=raw-comments ;;
+  'api graphql '*) raw=raw-threads ;;
+  'api repos/o/r/issues/9') raw=raw-issue-core ;;
+  *) raw= ;;
+esac
+if [ -n "$raw" ] && [ -e "$FORGE/$raw" ]; then cat "$FORGE/$raw"; exit 0; fi
 case "$fault:$*" in
   # Advance once before the parallel read wave; its readers share this clock.
   reserve:'api repos/o/r/issues/9') clock_bump 6 ;;
@@ -1178,6 +1187,93 @@ test_next_url_does_not_inherit_a_forge_diagnostic() {
     "$home/data/filed/contributions.json" >/dev/null \
     || fail 'the issue inherited the preceding PR read diagnostic'
   pass 'a URL never inherits the previous URL read diagnostic'
+}
+
+malformed_read_case() { # name raw-file body why [reply-age]: one malformed read keeps its own reason
+  local name=$1 raw=$2 body=$3 why=$4 age=${5:-} home out
+  home=$(new_home "malformed-$name")
+  forge_home "$home"
+  wrap_forge "$home"
+  printf '%s' "$body" > "$home/forge/$raw"
+  out=$(with_home "$home" env FM_CONTRIBUTIONS_REPLY_AGE="$age" "$ROOT/bin/fm-contributions.sh" poll 2>/dev/null) \
+    || fail "poll failed on a malformed read ($name)"
+  [ "$out" = "contributions: observation unavailable for https://github.com/o/r/pull/8 - $why" ] \
+    || fail "a malformed read ($name) did not wake with its own reason: $out"
+  jq -e --arg why "forge observation unavailable: $why" '.records[0].error == $why' \
+    "$home/data/delivery/contributions.json" >/dev/null \
+    || fail "a malformed read ($name) recorded another reason: $(jq -c .records[0].error "$home/data/delivery/contributions.json")"
+}
+
+test_malformed_reads_keep_distinct_reasons() {
+  local home out ok shape='core read returned an unexpected shape' headless='core read named no head commit'
+  local comments='comment pages returned an unexpected shape' threads='review thread pages returned an unexpected shape'
+  ok=$(printf '{"state":"open","user":{"login":"author"},"head":{"sha":"%s"},"draft":false,"mergeable":true,"merged_at":null}' "$HEAD_A")
+  malformed_read_case core-state raw-core '{"state":"odd","user":{"login":"author"},"head":{"sha":"'"$HEAD_A"'"}}' "$shape"
+  malformed_read_case core-author raw-core '{"state":"open","user":{},"head":{"sha":"'"$HEAD_A"'"}}' "$shape"
+  malformed_read_case core-string raw-core '"text"' "$shape"
+  malformed_read_case core-parse raw-core '{"state":' "$shape"
+  malformed_read_case core-empty raw-core '' "$shape"
+  malformed_read_case core-last-bad raw-core "$ok"'"text"' "$shape"
+  malformed_read_case core-no-head raw-core '{"state":"open","user":{"login":"author"}}' "$headless"
+  malformed_read_case core-bad-head raw-core '{"state":"open","user":{"login":"author"},"head":{"sha":"xyz"}}' "$headless"
+  malformed_read_case core-trailing-garbage raw-core "$ok"' x' "$shape"
+  # Two whole bodies name the head twice, so the later head read cannot match it.
+  malformed_read_case core-two-values raw-core "$ok$ok" 'head changed during observation'
+  malformed_read_case comments-object raw-comments '{}' "$comments"
+  malformed_read_case comments-parse raw-comments '[[' "$comments"
+  malformed_read_case comments-empty raw-comments '' "$comments"
+  malformed_read_case comments-last-bad raw-comments '[[]] {}' "$comments"
+  malformed_read_case threads-shape raw-threads '[{"data":null}]' "$threads" 1
+  malformed_read_case threads-parse raw-threads '[{' "$threads" 1
+  malformed_read_case threads-empty raw-threads '' "$threads" 1
+  malformed_read_case threads-last-bad raw-threads '[] {}' "$threads" 1
+  # Both pages broken: the comment check runs first and names its own pages.
+  home=$(new_home malformed-both)
+  forge_home "$home"
+  wrap_forge "$home"
+  printf '{}' > "$home/forge/raw-comments"
+  printf '[{' > "$home/forge/raw-threads"
+  out=$(with_home "$home" env FM_CONTRIBUTIONS_REPLY_AGE=1 "$ROOT/bin/fm-contributions.sh" poll 2>/dev/null) \
+    || fail 'poll failed with both pages malformed'
+  [ "$out" = "contributions: observation unavailable for https://github.com/o/r/pull/8 - $comments" ] \
+    || fail "both malformed pages did not report the comment pages: $out"
+  # A filed issue checks its core body without a head.
+  home=$(new_home malformed-issue-core)
+  forge_home "$home"
+  wrap_forge "$home"
+  rm "$home/state/delivery.meta" "$home/data/delivery/contributions.json"
+  printf -- '- [ ] filed - Filed https://github.com/o/r/issues/9 (repo: sample) (kind: ship)\n' >> "$home/data/backlog.md"
+  sed -i.bak '/pull\/8/d' "$home/data/backlog.md"
+  printf '{"state":"open","user":{}}' > "$home/forge/raw-issue-core"
+  out=$(with_home "$home" "$ROOT/bin/fm-contributions.sh" poll 2>/dev/null) || fail 'poll failed on a malformed issue core'
+  [ "$out" = "contributions: observation unavailable for https://github.com/o/r/issues/9 - $shape" ] \
+    || fail "a malformed issue core did not wake with its own reason: $out"
+  pass 'each malformed core, comment and thread read keeps its own recorded reason'
+}
+
+test_healthy_observation_folds_its_body_checks() {
+  local home calls
+  home=$(new_home healthy-fold)
+  forge_home "$home"
+  # Count jq starts that read the observer's own core, comment or thread body
+  # (the fake forge also runs jq, over its fixtures under forge/).
+  cat > "$home/fakebin/jq" <<'SH'
+#!/usr/bin/env bash
+case " $* " in
+  */forge/*) ;;
+  */core.json\ *|*/comments.json\ *|*/threads.json\ *) printf 'jq\n' >> "$FORGE/jq-calls" ;;
+esac
+PATH=${PATH#*fakebin:} exec jq "$@"
+SH
+  chmod +x "$home/fakebin/jq"
+  with_home "$home" env FM_CONTRIBUTIONS_REPLY_AGE=1 "$ROOT/bin/fm-contributions.sh" poll >/dev/null \
+    || fail 'healthy poll failed'
+  jq -e '.records[0].error == null' "$home/data/delivery/contributions.json" >/dev/null \
+    || fail 'the healthy observation recorded an error'
+  calls=$(wc -l < "$home/forge/jq-calls" | tr -d ' ')
+  # One check of the core body, one of the comment and thread pages, one assembly.
+  [ "$calls" = 3 ] || fail "a healthy pull request read its bodies with $calls jq starts, not 3"
+  pass 'a healthy pull request checks its core body and its pages with one jq start each'
 }
 
 test_shared_url_observed_once() {
@@ -2322,7 +2418,7 @@ test_settled_task_gets_no_closed_event_for_its_other_pr() {
 }
 
 failures=0
-for test_name in test_forge_settlement_defers_while_the_task_is_busy test_settled_task_gets_no_closed_event_for_its_other_pr test_forge_release_waits_for_an_attended_session test_forge_release_waits_for_the_away_record_lock test_forge_policy_survives_a_follow_up_pr_link test_closed_pr_is_reported_only_to_open_captain_holds test_late_linked_hold_gets_its_own_closed_event_once test_forge_hold_settlement_retry test_forge_hold_settlement_rejects_uncertain_evidence test_forge_settles_only_declared_holds test_forge_hold_policy_guards test_actor_coverage test_stale_verdict test_unchecked_is_not_silence test_newest_check_has_no_verdict test_comment_wake test_review_wake test_inline_wake test_review_bot_inline_wake test_review_bot_watching_is_opt_in test_review_bot_allowlist_is_configurable test_ready_issue_wake test_fresh_issue_requires_maintainer test_missing_lane_remains_missing test_partial_freshness_keeps_measured_rows test_malformed_record_cannot_prove_silence test_issue_timeline_and_exact_ack test_verdict_retains_judged_head test_verdict_actor_values_are_discoverable test_observed_replacement_refreshes_verdict test_unobserved_head_leaves_verdict_unknown test_away_yolo_is_fleet_work test_away_yolo_cross_home_is_fleet_work test_retired_and_unsupported_coverage test_unsupported_forge_is_not_fleet_work test_held_unsupported_forge_is_not_captain_work test_unsupported_poll_is_silent_and_clears_legacy_errors test_legacy_cleanup_preserves_supported_failure test_shared_contribution_signal_wakes_once test_watcher_keeps_diagnostics_separate_from_contribution_wakes test_expired_child_unsupported_forge_stays_unmeasured test_watcher_surfaces_new_contribution_once test_home_summary_coverage test_unreadable_pending_is_not_empty test_record_task_identity_matches_dirname_basename test_read_only_views_create_no_state test_budget_refusal_between_calls test_budget_bounded_call_timeout test_genuine_failure_near_deadline_is_unavailable test_http_500_once_retries_without_waking test_http_500_twice_records_the_failed_read test_http_404_is_not_retried test_real_gh_errors_drive_retry_and_summary test_next_url_does_not_inherit_a_forge_diagnostic test_shared_url_observed_once test_terminal_contribution_settles test_late_owner_inherits_terminal_observation test_interrupted_multi_owner_poll_settles_every_owner test_done_task_open_pr_still_observed test_many_settled_records_keep_the_poll_inside_the_check_bound test_many_settled_records_beside_a_malformed_one_keep_the_poll_inside_the_check_bound test_record_without_trailing_newline_does_not_join_its_neighbour test_records_beyond_one_read_batch_are_all_read test_reservation_defers_later_url_when_fifteen_seconds_do_not_remain test_three_second_pr_reads_complete_fresh_in_one_cycle test_slow_read_deadline_kill_is_budget_refusal test_unmeasured_url_does_not_starve_the_tail test_budget_is_cut_down_to_the_watcher_check_bound test_arm_plumbs_a_configured_budget_into_the_check_shim test_unavailable_forge_records_error_and_wakes_once_per_episode test_late_owner_keeps_failure_episode_suppressed test_retire_ends_observation_of_a_gone_contribution test_late_owner_of_a_retired_final_contribution_is_not_retired test_retire_is_idempotent_and_refuses_unknown_pairs test_unanswered_thread_is_raised_again_under_hold test_resolved_thread_is_answered test_reply_rules test_reply_age_is_configurable_and_validated test_closed_pull_request_drops_its_threads test_unanswered_reraise_is_off_unless_configured test_arm_plumbs_the_reply_age_into_the_check_shim test_many_reviews_stay_readable; do
+for test_name in test_forge_settlement_defers_while_the_task_is_busy test_settled_task_gets_no_closed_event_for_its_other_pr test_forge_release_waits_for_an_attended_session test_forge_release_waits_for_the_away_record_lock test_forge_policy_survives_a_follow_up_pr_link test_closed_pr_is_reported_only_to_open_captain_holds test_late_linked_hold_gets_its_own_closed_event_once test_forge_hold_settlement_retry test_forge_hold_settlement_rejects_uncertain_evidence test_forge_settles_only_declared_holds test_forge_hold_policy_guards test_actor_coverage test_stale_verdict test_unchecked_is_not_silence test_newest_check_has_no_verdict test_comment_wake test_review_wake test_inline_wake test_review_bot_inline_wake test_review_bot_watching_is_opt_in test_review_bot_allowlist_is_configurable test_ready_issue_wake test_fresh_issue_requires_maintainer test_missing_lane_remains_missing test_partial_freshness_keeps_measured_rows test_malformed_record_cannot_prove_silence test_issue_timeline_and_exact_ack test_verdict_retains_judged_head test_verdict_actor_values_are_discoverable test_observed_replacement_refreshes_verdict test_unobserved_head_leaves_verdict_unknown test_away_yolo_is_fleet_work test_away_yolo_cross_home_is_fleet_work test_retired_and_unsupported_coverage test_unsupported_forge_is_not_fleet_work test_held_unsupported_forge_is_not_captain_work test_unsupported_poll_is_silent_and_clears_legacy_errors test_legacy_cleanup_preserves_supported_failure test_shared_contribution_signal_wakes_once test_watcher_keeps_diagnostics_separate_from_contribution_wakes test_expired_child_unsupported_forge_stays_unmeasured test_watcher_surfaces_new_contribution_once test_home_summary_coverage test_unreadable_pending_is_not_empty test_record_task_identity_matches_dirname_basename test_read_only_views_create_no_state test_budget_refusal_between_calls test_budget_bounded_call_timeout test_genuine_failure_near_deadline_is_unavailable test_http_500_once_retries_without_waking test_http_500_twice_records_the_failed_read test_http_404_is_not_retried test_real_gh_errors_drive_retry_and_summary test_next_url_does_not_inherit_a_forge_diagnostic test_malformed_reads_keep_distinct_reasons test_healthy_observation_folds_its_body_checks test_shared_url_observed_once test_terminal_contribution_settles test_late_owner_inherits_terminal_observation test_interrupted_multi_owner_poll_settles_every_owner test_done_task_open_pr_still_observed test_many_settled_records_keep_the_poll_inside_the_check_bound test_many_settled_records_beside_a_malformed_one_keep_the_poll_inside_the_check_bound test_record_without_trailing_newline_does_not_join_its_neighbour test_records_beyond_one_read_batch_are_all_read test_reservation_defers_later_url_when_fifteen_seconds_do_not_remain test_three_second_pr_reads_complete_fresh_in_one_cycle test_slow_read_deadline_kill_is_budget_refusal test_unmeasured_url_does_not_starve_the_tail test_budget_is_cut_down_to_the_watcher_check_bound test_arm_plumbs_a_configured_budget_into_the_check_shim test_unavailable_forge_records_error_and_wakes_once_per_episode test_late_owner_keeps_failure_episode_suppressed test_retire_ends_observation_of_a_gone_contribution test_late_owner_of_a_retired_final_contribution_is_not_retired test_retire_is_idempotent_and_refuses_unknown_pairs test_unanswered_thread_is_raised_again_under_hold test_resolved_thread_is_answered test_reply_rules test_reply_age_is_configurable_and_validated test_closed_pull_request_drops_its_threads test_unanswered_reraise_is_off_unless_configured test_arm_plumbs_the_reply_age_into_the_check_shim test_many_reviews_stay_readable; do
   ( "$test_name" ) || failures=$((failures + 1))
 done
 [ "$failures" -eq 0 ] || fail "$failures contribution regressions"
