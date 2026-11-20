@@ -1182,8 +1182,9 @@ FM_SNAPSHOT_SECONDMATE_LANDED_PER_HOME=${FM_SNAPSHOT_SECONDMATE_LANDED_PER_HOME:
 case "$FM_SNAPSHOT_SECONDMATE_LANDED_PER_HOME" in ''|*[!0-9]*) FM_SNAPSHOT_SECONDMATE_LANDED_PER_HOME=10 ;; esac
 
 # GNU stat treats -f as a filesystem-report command, so a BSD-first fallback can
-# pollute arithmetic input before failing. Select the platform syntax once.
-if [ "$(uname 2>/dev/null || true)" = Darwin ]; then
+# pollute arithmetic input before failing. Select the platform syntax once,
+# from the kernel name fm-classify-lib.sh already read.
+if [ "${_FM_CLASSIFY_UNAME_S:-$(uname 2>/dev/null || true)}" = Darwin ]; then
   SNAPSHOT_STAT_STYLE=bsd
   file_mtime_epoch() { /usr/bin/stat -f '%m' "$1" 2>/dev/null || true; }
   file_mode_octal() { /usr/bin/stat -f '%Lp' "$1" 2>/dev/null || true; }
