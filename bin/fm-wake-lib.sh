@@ -44,6 +44,20 @@ _fm_wake_require_session_lock() {
   . "$FM_WAKE_LIB_DIR/fm-session-lock-lib.sh"
 }
 
+# `rm -f <path>...` that skips the exec when no path exists, for per-poll
+# clean-ups of markers that are normally absent. Same status as rm -f: 0 when
+# nothing exists, otherwise rm's own. A dangling symlink still counts as present.
+fm_rm_present() {  # <path>...
+  local fm_rm_path
+  for fm_rm_path in "$@"; do
+    if [ -e "$fm_rm_path" ] || [ -L "$fm_rm_path" ]; then
+      rm -f "$@"
+      return
+    fi
+  done
+  return 0
+}
+
 # Pass a variable name to capture this frame's pid without forking it in $().
 # On Bash 3.2, exec a child shell so its PPID identifies this frame, unlike $$.
 fm_current_pid() {  # [output-variable]

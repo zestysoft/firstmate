@@ -1440,7 +1440,7 @@ _wedge_cap_int FM_ROLLBACK_SENTINEL_TTL_SECS "$FM_ROLLBACK_SENTINEL_TTL_SECS" 36
 # _wedge_cap_markers_clear <window-key>
 _wedge_cap_markers_clear() {
   local key=$1
-  rm -f "$STATE/.wedge-permanent-$key" \
+  fm_rm_present "$STATE/.wedge-permanent-$key" \
     "$STATE/.wedge-terminal-queued-$key" \
     "$STATE/.wedge-rollback-failed-$key"
 }
@@ -1501,7 +1501,7 @@ wedge_episode_end() {
     if [ "$keep_count" = 1 ] && [ "$FM_WEDGE_MAX_ESCALATIONS" -eq 0 ]; then
       rm -f "$STATE/.stale-since-$key" || status=1
     else
-      rm -f "$STATE/.stale-since-$key" "$STATE/.wedge-escalations-$key" || status=1
+      fm_rm_present "$STATE/.stale-since-$key" "$STATE/.wedge-escalations-$key" || status=1
     fi
     _wedge_cap_markers_clear "$key" || status=1
   fi
@@ -1949,7 +1949,7 @@ EOF
 # unbroken quiet stretch.
 clear_write_tracking() {  # <window-key>
   local key=$1
-  rm -f "$STATE/.writing-since-$key" "$STATE/.writing-resurfaced-$key" "$STATE/.guard-deferrals-$key" \
+  fm_rm_present "$STATE/.writing-since-$key" "$STATE/.writing-resurfaced-$key" "$STATE/.guard-deferrals-$key" \
     "$STATE/.validating-since-$key" "$STATE/.validating-resurfaced-$key"
 }
 
@@ -3785,7 +3785,10 @@ watcher_waited() {  # <command...>
   set +m
   watcher_stop_signals
   [ -z "$FM_CHECK_SIGNAL_PENDING" ] || exit 1
-  pgid=$(ps -o pgid= -p "$FM_ACTIVE_CHECK_PID" 2>/dev/null | tr -d '[:space:]')
+  # Builtin whitespace strip and file read: the same answers as `| tr` and cat
+  # without two more program starts on every pane read.
+  pgid=$(ps -o pgid= -p "$FM_ACTIVE_CHECK_PID" 2>/dev/null)
+  pgid=${pgid//[[:space:]]/}
   if [ -n "$pgid" ] && [ "$pgid" != "$FM_ACTIVE_CHECK_PGID" ]; then
     fm_active_check_stop || true
     fm_capture_output_cleanup
@@ -3795,7 +3798,7 @@ watcher_waited() {  # <command...>
   rc=$?
   FM_ACTIVE_CHECK_PID=
   fm_active_check_stop || { fm_capture_output_cleanup; return 2; }
-  WATCHER_CAPTURE=$(cat "$FM_CAPTURE_OUTPUT" 2>/dev/null || true)
+  { WATCHER_CAPTURE=$(< "$FM_CAPTURE_OUTPUT"); } 2>/dev/null || WATCHER_CAPTURE=
   fm_capture_output_cleanup
   return "$rc"
 }
@@ -5125,7 +5128,7 @@ EOF
           busy_turn_bound_check "$w" "$task" "$h" "$ssf" "$ewf" "$dialog" && paused_bound=0
         else
           wedge_episode_end "$key"
-          rm -f "$STATE/.model-stream-episode-$key"
+          fm_rm_present "$STATE/.model-stream-episode-$key"
           clear_write_tracking "$key"
         fi
         # A busy pane normally means real work resumed, so stale pause bookkeeping
@@ -5146,7 +5149,7 @@ EOF
         busy_turn_bound_check "$w" "$task" "$h" "$ssf" "$ewf" "$dialog" && paused_bound=0
       else
         wedge_episode_end "$key"
-        rm -f "$STATE/.model-stream-episode-$key"
+        fm_rm_present "$STATE/.model-stream-episode-$key"
         clear_write_tracking "$key"
       fi
       task=$(window_to_task "$w" "$STATE")

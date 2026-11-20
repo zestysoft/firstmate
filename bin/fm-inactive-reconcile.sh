@@ -822,6 +822,17 @@ case "$mode" in
       --startup) startup=1 ;;
       *) printf 'usage: fm-inactive-reconcile.sh scan [--startup]\n' >&2; exit 2 ;;
     esac
+    # A main home's non-startup scan that is not yet due does nothing under the
+    # lock but read the marker age, so answer that here and skip the timed
+    # re-exec and the lock. A secondmate home still runs its per-poll ledger
+    # pass, and any setup scan() would refuse still takes the full path.
+    if [ "$startup" != 1 ] && [ -d "$OUTCOME_DIR" ] && [ ! -L "$OUTCOME_DIR" ]; then
+      home_rc=0
+      home_secondmate_id >/dev/null 2>&1 || home_rc=$?
+      if [ "$home_rc" -eq 1 ] && [ "$(scan_marker_age)" -lt "$FM_INACTIVE_RECONCILE_SECS" ]; then
+        exit 0
+      fi
+    fi
     # The scan's own whole-second deadline enforces the budget; this outer
     # process-group kill is only the backstop for a scan wedged outside every
     # bounded section (an unbounded lock wait), so it fires one second after

@@ -1233,7 +1233,9 @@ status_scan_parent_channel_exclude() {  # <state>
     # shellcheck source=bin/fm-parent-channel-lib.sh
     . "$_FM_CLASSIFY_LIB_DIR/fm-parent-channel-lib.sh"
   fi
-  exclude=$(fm_parent_channel_outbound_status "$(dirname "$state")" "$state") || return 0
+  local home
+  if command -v fm_dirname_to >/dev/null 2>&1; then fm_dirname_to home "$state"; else home=$(dirname "$state"); fi
+  exclude=$(fm_parent_channel_outbound_status "$home" "$state") || return 0
   printf '%s\n' "$exclude"
 }
 

@@ -1000,12 +1000,14 @@ fm_procevent_path_normalize() {
 
 fm_procevent_directory_owned_by_current_user() {
   local owner
-  if [ "$(uname)" = Darwin ]; then
+  # The kernel name and effective uid come from builtins when the shell has
+  # them, the same answers as uname and id -u without two program starts.
+  if [ "${_FM_UNAME:-$(uname)}" = Darwin ]; then
     owner=$(/usr/bin/stat -f %u "$1" 2>/dev/null)
   else
     owner=$(stat -c %u "$1" 2>/dev/null)
   fi
-  [ "$owner" = "$(id -u)" ]
+  [ "$owner" = "${EUID:-$(id -u)}" ]
 }
 
 # fm_procevent_state_root_resolve <state-root>
