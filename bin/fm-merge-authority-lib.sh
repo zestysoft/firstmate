@@ -50,6 +50,8 @@ FM_MERGE_AUTHORITY_REASON=
 # shellcheck disable=SC2034 # Public results consumed by sourcing callers.
 FM_MERGE_AUTHORITY_RECORD_IDENTITY=
 
+# The answer depends only on <home> and <state>'s away record, never on <meta>
+# or <task-id>; bin/fm-fleet-snapshot.sh reads it once for all of a home's tasks.
 fm_merge_authority_resolve() {  # <home> <state> <meta> <task-id>
   local home=${1-} state=${2-} meta=${3-} id=${4-}
   FM_MERGE_AUTHORITY=

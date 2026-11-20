@@ -1999,13 +1999,17 @@ scout_report_lines() {
 
 BACKLOG_JSON=$(backlog_json) || { echo "fm-fleet-snapshot: backlog read failed" >&2; exit 1; }
 contribution_tasks_json() {
-  local meta id merge_authority
+  local meta id merge_authority=''
   for meta in "$STATE"/*.meta; do
     [ -f "$meta" ] && [ ! -L "$meta" ] || continue
     id=$(basename "$meta" .meta)
-    merge_authority=unknown
-    if fm_merge_authority_resolve "$FM_HOME" "$STATE" "$meta" "$id"; then
-      merge_authority=$FM_MERGE_AUTHORITY
+    # The answer is the home's, not the task's (fm_merge_authority_resolve), and
+    # an away record costs a validator run, so the first task's answer serves all.
+    if [ -z "$merge_authority" ]; then
+      merge_authority=unknown
+      if fm_merge_authority_resolve "$FM_HOME" "$STATE" "$meta" "$id"; then
+        merge_authority=$FM_MERGE_AUTHORITY
+      fi
     fi
     jq -n --arg id "$id" --arg kind "$(meta_value "$meta" kind)" \
       --arg url "$(meta_value "$meta" pr)" --arg head "$(meta_value "$meta" pr_head)" \

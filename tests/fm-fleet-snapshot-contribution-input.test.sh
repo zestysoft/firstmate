@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Regression coverage for bin/fm-fleet-snapshot.sh --contribution-input:
 # a failing final jq assembly must exit non-zero instead of exiting 0 with
-# empty output (issue #5349).
+# empty output (issue #5349), and every task carries its id and the home's
+# merge authority under each away-record state.
 set -u
 
 # shellcheck source=tests/lib.sh
@@ -63,4 +64,35 @@ test_contribution_input_propagates_jq_failure() {
   pass "contribution-input propagates a failing jq assembly as a non-zero exit"
 }
 
+write_task_metas() {  # <home>
+  local i
+  for i in 1 2 3; do
+    printf 'kind=ship\npr=https://github.com/o/r/pull/%s\npr_head=%040d\n' "$i" "$i" > "$1/state/task-$i.meta"
+  done
+}
+
+# <home> <expected-authority> <label>: all three tasks, in id order, carry it.
+assert_task_authorities() {
+  local out
+  out=$(FM_HOME="$1" "$SNAPSHOT" --contribution-input 2>&1) || fail "$3: contribution-input failed: $out"
+  out=$(printf '%s' "$out" | jq -c '[.tasks[] | [.id, .pr.url, .merge_authority]]') || fail "$3: unreadable output"
+  assert_equals "$out" "[[\"task-1\",\"https://github.com/o/r/pull/1\",\"$2\"],[\"task-2\",\"https://github.com/o/r/pull/2\",\"$2\"],[\"task-3\",\"https://github.com/o/r/pull/3\",\"$2\"]]" "$3"
+}
+
+test_contribution_input_merge_authority_per_away_state() {
+  local home
+  home=$(make_home authority)
+  write_backlog "$home"
+  write_task_metas "$home"
+  assert_task_authorities "$home" attended "with no away record every task is attended"
+  FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$ROOT/bin/fm-afk-contract.sh" enter \
+    --words 'merge green work' >/dev/null 2>&1 || fail "away entry failed"
+  assert_task_authorities "$home" away "with an away record every task is away"
+  grep -v '^entered_epoch:' "$home/state/.afk-contract" > "$home/contract.tmp" || fail "could not damage the away record"
+  mv "$home/contract.tmp" "$home/state/.afk-contract" || fail "could not replace the away record"
+  assert_task_authorities "$home" unknown "with an unreadable away record every task is unknown"
+  pass "contribution-input gives every task its id and the home's merge authority"
+}
+
 test_contribution_input_propagates_jq_failure
+test_contribution_input_merge_authority_per_away_state
