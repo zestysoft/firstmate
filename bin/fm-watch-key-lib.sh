@@ -30,3 +30,34 @@ window_key() {  # <window>
   fi
   printf 'v3.%s' "${digest%% *}"
 }
+
+# window_key_to <var> <window>: set <var> to window_key <window> without a
+# command substitution, so a caller that keys the same endpoints every poll
+# does not start a hash program each time. The key is a pure function of the
+# endpoint bytes, so remembering it in this shell is not a remembered verdict:
+# a hit returns exactly what window_key would print. The memo holds at most
+# 64 endpoints and is emptied when full, never written to a file.
+_FM_WINDOW_KEY_EPS=()
+_FM_WINDOW_KEY_KEYS=()
+window_key_to() {  # <var> <window>
+  local _wk_i=0 _wk_n=${#_FM_WINDOW_KEY_EPS[@]} _wk_key
+  while [ "$_wk_i" -lt "$_wk_n" ]; do
+    if [ "${_FM_WINDOW_KEY_EPS[$_wk_i]}" = "$2" ]; then
+      printf -v "$1" '%s' "${_FM_WINDOW_KEY_KEYS[$_wk_i]}"
+      return 0
+    fi
+    _wk_i=$((_wk_i + 1))
+  done
+  _wk_key=$(window_key "$2")
+  printf -v "$1" '%s' "$_wk_key"
+  # Only a complete digest is remembered, so a failed hash start is retried
+  # on the next call exactly as it is without the memo.
+  [ "${#_wk_key}" -eq 67 ] || return 0
+  if [ "$_wk_n" -ge 64 ]; then
+    _FM_WINDOW_KEY_EPS=()
+    _FM_WINDOW_KEY_KEYS=()
+    _wk_n=0
+  fi
+  _FM_WINDOW_KEY_EPS[_wk_n]=$2
+  _FM_WINDOW_KEY_KEYS[_wk_n]=$_wk_key
+}
