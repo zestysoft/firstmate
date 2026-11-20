@@ -1,0 +1,4 @@
+none-exist rc=0
+dangling+real rc=0 left=
+rm: d: is a directory
+directory rc=1 (rm -f on dir: 1) dir-still=yes

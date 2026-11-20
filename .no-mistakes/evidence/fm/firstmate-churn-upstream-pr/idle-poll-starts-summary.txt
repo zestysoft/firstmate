@@ -1,0 +1,31 @@
+Idle watcher poll program starts (PATH-shim + BASH_ENV tracer, /bin/bash 3.2, macOS, lab FM_HOME with 10 already-reported status files, no task windows, FM_POLL=3, 40s run)
+base per-poll segments (between 'sleep 3'):
+293 191 191 193 191 191 191 191 191 191 227 (partial tail) 
+base total starts in 40s:     2251
+head per-poll segments (between 'sleep 3'):
+175 82 82 82 82 82 82 82 82 82 82 82 39 (partial tail) 
+head total starts in 40s:     1128
+
+Steady poll: base 191 -> head 82 (-57%)
+-- base steady-poll top programs
+  65 stat
+  22 cat
+  20 tr
+  20 od
+  12 readlink
+   7 rm
+   7 dirname
+   7 date
+   6 sh
+   4 uname
+-- head steady-poll top programs
+  15 stat
+  12 readlink
+  12 cat
+   7 rm
+   6 sh
+   6 date
+   4 uname
+   4 mktemp
+   3 rmdir
+   3 mv
