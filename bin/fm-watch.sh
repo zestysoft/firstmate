@@ -4354,6 +4354,14 @@ rerecord_device_shifted_pr_poll() {  # <id>
   return 0
 }
 
+# The per-poll arm check: the lock-free quiet answer (fm-wake-lib.sh owns its
+# equivalence argument) settles a poll with nothing to recover, and every other
+# observation takes the locked transition.
+poll_arm_check() {
+  fm_recovery_marker_arm_quiet "$WATCHER_DOWNTIME_MARKER" && return 0
+  fm_recovery_marker_arm_check "$WATCHER_DOWNTIME_MARKER"
+}
+
 resurface_after_downtime() {
   # Handling successors already have a predecessor-delivered wake on the way.
   # Re-announcing from this cycle is what turned a lost handshake into an
@@ -4361,7 +4369,7 @@ resurface_after_downtime() {
   # handoff after consuming the predecessor's rows, making any row left for
   # main a recoverable downtime episode.
   if [ "${FM_WATCH_HANDLING_SUCCESSOR:-0}" = 1 ]; then
-    if ! fm_recovery_marker_arm_check "$WATCHER_DOWNTIME_MARKER"; then
+    if ! poll_arm_check; then
       echo "watcher: recovery state could not be consumed safely" >&2
       exit 1
     fi
@@ -4370,7 +4378,7 @@ resurface_after_downtime() {
     wake "check: rearm-resurface"
   fi
   if [ "$WATCHER_RECOVERY_PENDING" -ne 1 ]; then
-    if ! fm_recovery_marker_arm_check "$WATCHER_DOWNTIME_MARKER"; then
+    if ! poll_arm_check; then
       echo "watcher: recovery state could not be consumed safely" >&2
       exit 1
     fi

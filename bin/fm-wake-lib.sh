@@ -1296,6 +1296,54 @@ _fm_recovery_marker_arm_check() {
   fm_lock_release "$FM_WAKE_QUEUE_LOCK"
 }
 
+# Lock-free quiet answer for the watcher's per-poll arm check. It returns 0
+# only when an observation proves the locked transition above would write
+# nothing and recover nothing; any other observation returns 1 and the caller
+# takes the locked transition, which alone announces, quarantines or recovers.
+# Builtins only, so a quiet poll starts no program and waits on no lock.
+# Why an unlocked observation is the locked answer at one instant (every
+# marker write is one atomic rename; docs/watcher-continuity.md owns the
+# episode contract):
+# - A pending handling or announced token needs only that one read: the locked
+#   check answers wait for it whatever the queue holds.
+# - An absent or acknowledged marker answers none only with an empty queue, so
+#   the marker is read again after the queue and must be byte-identical. A
+#   durable append publishes a pending marker before its row, and every
+#   generation it mints is fresh, so a row added in between changes the second
+#   read. The only writes that put an earlier token back are an append that
+#   failed before its row (the queue lock held throughout, so the queue read is
+#   the one beside the first marker read) and the take-over restore, which runs
+#   after the stopped watcher has exited and before its successor starts.
+fm_recovery_marker_arm_quiet() {  # <marker>
+  local marker=$1 before
+  FM_RECOVERY_MARKER_ACTION='none'
+  FM_RECOVERY_MARKER_QUEUED=0
+  if [ ! -e "$marker" ] && [ ! -L "$marker" ]; then
+    before=
+  elif fm_recovery_marker_read "$marker"; then
+    before=$FM_RECOVERY_MARKER_TOKEN
+    case "$before" in
+      pending:handling:*|announced:*)
+        # shellcheck disable=SC2034 # Outputs read by callers after this function returns.
+        [ ! -s "$FM_WAKE_QUEUE" ] || FM_RECOVERY_MARKER_QUEUED=1
+        # shellcheck disable=SC2034 # Output read by callers after this function returns.
+        FM_RECOVERY_MARKER_ACTION='wait'
+        return 0
+        ;;
+      acked:*) ;;
+      *) return 1 ;;
+    esac
+  else
+    return 1
+  fi
+  [ ! -s "$FM_WAKE_QUEUE" ] || return 1
+  if [ -z "$before" ]; then
+    [ ! -e "$marker" ] && [ ! -L "$marker" ]
+    return
+  fi
+  fm_recovery_marker_read "$marker" && [ "$FM_RECOVERY_MARKER_TOKEN" = "$before" ]
+}
+
 # Apply the owner-documented announced-episode arm transition atomically with
 # the queue read. Handling successors and foreground checkpoints must not call
 # this transition.

@@ -2285,6 +2285,154 @@ test_handover_restore_undoes_only_its_own_stop() {
   pass "a handover undoes only the downtime its own stop published over an acknowledged episode"
 }
 
+# Pin the watcher's per-poll quiet arm check (fm_recovery_marker_arm_quiet)
+# to the locked arm-check transition it stands in for: it answers only a
+# marker and queue the locked transition would leave untouched, with the same
+# action, and declines every state the locked transition announces, so each
+# genuine outage still recovers through the lock with the same marker record.
+quiet_arm_seed() {  # <state> <marker> <queued 0|1>
+  local state=$1
+  case "$2" in
+    absent) ;;
+    symlink) printf 'acked:downtime:seed.1.aaa\n' > "$state/marker-target"; ln -s marker-target "$state/.watcher-down" ;;
+    directory) mkdir "$state/.watcher-down" ;;
+    invalid) printf 'not-a-token\n' > "$state/.watcher-down" ;;
+    *) printf '%s\n' "$2" > "$state/.watcher-down" ;;
+  esac
+  [ "$3" = 0 ] || printf '%s\t1\tcheck\tseed\tcheck: seed\n' "$(date +%s)" > "$state/.wake-queue"
+}
+
+quiet_arm_run() {  # <state> <quiet|locked> [bound]
+  FM_STATE_OVERRIDE="$1" bash -c '
+    # shellcheck disable=SC1090,SC1091
+    . "$1/bin/fm-wake-lib.sh"
+    marker="$STATE/.watcher-down"
+    rc=0
+    if [ "$2" = quiet ]; then
+      fm_recovery_marker_arm_quiet "$marker" || rc=$?
+    else
+      fm_recovery_marker_arm_check "$marker" "$3" || rc=$?
+    fi
+    printf "rc=%s action=%s queued=%s\n" "$rc" "$FM_RECOVERY_MARKER_ACTION" "$FM_RECOVERY_MARKER_QUEUED"
+  ' _ "$ROOT" "$2" "${3:-}"
+}
+
+quiet_arm_listing() {  # <state>: names and marker bytes, to prove nothing was written
+  ls -A "$1"
+  if [ -f "$1/.watcher-down" ]; then cat "$1/.watcher-down"; fi
+}
+
+test_quiet_arm_check_matches_the_locked_transition() {
+  local case_spec marker queued expect n=0 q l qout lout before after
+  for case_spec in \
+    'absent|0|none' \
+    'acked:downtime:g.1.aaa|0|none' \
+    'acked:handling:g.1.aaa|0|none' \
+    'pending:handling:g.1.aaa|0|wait' \
+    'pending:handling:g.1.aaa|1|wait' \
+    'announced:downtime:g.1.aaa|0|wait' \
+    'announced:downtime:g.1.aaa|1|wait' \
+    'announced:handling:g.1.aaa|0|wait' \
+    'announced:handling:g.1.aaa|1|wait' \
+    'absent|1|recover' \
+    'acked:downtime:g.1.aaa|1|recover' \
+    'acked:handling:g.1.aaa|1|recover' \
+    'pending:downtime:g.1.aaa|0|recover' \
+    'pending:downtime:g.1.aaa|1|recover' \
+    'invalid|0|recover' \
+    'invalid|1|recover' \
+    'directory|0|recover' \
+    'symlink|0|recover'; do
+    n=$((n + 1))
+    marker=${case_spec%%|*}
+    queued=${case_spec#*|}
+    expect=${queued#*|}
+    queued=${queued%%|*}
+    q="$(make_case "quiet-arm-$n-q")/state"
+    l="$(make_case "quiet-arm-$n-l")/state"
+    quiet_arm_seed "$q" "$marker" "$queued"
+    quiet_arm_seed "$l" "$marker" "$queued"
+    before=$(quiet_arm_listing "$q")
+    qout=$(quiet_arm_run "$q" quiet)
+    after=$(quiet_arm_listing "$q")
+    [ "$after" = "$before" ] || fail "quiet arm check wrote state for $case_spec: $before -> $after"
+    lout=$(quiet_arm_run "$l" locked)
+    case "$expect" in
+      recover)
+        case "$qout" in rc=1\ *) ;; *) fail "quiet arm check answered a state the lock must recover ($case_spec): $qout" ;; esac
+        [ "$lout" = "rc=0 action=recover queued=$queued" ] \
+          || fail "locked arm check did not recover $case_spec: $lout"
+        case "$(cat "$l/.watcher-down")" in
+          announced:downtime:*) ;;
+          *) fail "locked arm check did not record an announced episode for $case_spec: $(cat "$l/.watcher-down")" ;;
+        esac
+        ;;
+      *)
+        [ "$qout" = "rc=0 action=$expect queued=$queued" ] \
+          || fail "quiet arm check gave the wrong answer for $case_spec: $qout"
+        [ "$lout" = "$qout" ] \
+          || fail "quiet and locked arm checks disagree for $case_spec: quiet $qout, locked $lout"
+        [ "$(quiet_arm_listing "$l")" = "$before" ] \
+          || fail "fixture: the locked arm check wrote a state the quiet check answers ($case_spec)"
+        ;;
+    esac
+  done
+  pass "the quiet arm check answers only states the locked arm check leaves alone, and declines every recovery"
+}
+
+test_quiet_arm_check_ignores_held_and_dead_locks() {
+  local state holder holder_pid sleeper_pid start out i
+  state="$(make_case quiet-arm-held)/state"
+  quiet_arm_seed "$state" 'acked:downtime:g.1.aaa' 0
+  holder="$state/../holder.sh"
+  cat > "$holder" <<'SH'
+#!/usr/bin/env bash
+# shellcheck disable=SC1090,SC1091
+. "$1/bin/fm-wake-lib.sh"
+fm_lock_acquire_wait "$FM_WAKE_QUEUE_LOCK" || exit 1
+fm_lock_acquire_wait "$STATE/.watcher-down.lock" || exit 1
+sleep 60 &
+printf '%s\n' "$!" > "$STATE/../sleeper.pid"
+printf 'held\n' > "$STATE/../held"
+wait
+SH
+  FM_STATE_OVERRIDE="$state" bash "$holder" "$ROOT" &
+  holder_pid=$!
+  i=0
+  while [ ! -e "$state/../held" ] && [ "$i" -lt 100 ]; do sleep 0.1; i=$((i + 1)); done
+  [ -e "$state/../held" ] || fail "fixture: the lock holder never took both locks"
+  sleeper_pid=$(cat "$state/../sleeper.pid")
+
+  start=$SECONDS
+  out=$(quiet_arm_run "$state" quiet)
+  [ "$out" = "rc=0 action=none queued=0" ] || fail "quiet arm check did not answer beside a live lock holder: $out"
+  [ $((SECONDS - start)) -le 2 ] || fail "quiet arm check waited on a live lock holder"
+
+  printf 'pending:downtime:g.2.bbb\n' > "$state/.watcher-down"
+  out=$(quiet_arm_run "$state" quiet)
+  case "$out" in rc=1\ *) ;; *) fail "quiet arm check answered a pending episode under a held lock: $out" ;; esac
+  out=$(quiet_arm_run "$state" locked 1)
+  case "$out" in rc=1\ *) ;; *) fail "the locked arm check did not wait for the live holder: $out" ;; esac
+  [ "$(cat "$state/.watcher-down")" = 'pending:downtime:g.2.bbb' ] \
+    || fail "a refused locked arm check changed the marker"
+
+  kill -TERM "$holder_pid" 2>/dev/null || true
+  kill -TERM "$sleeper_pid" 2>/dev/null || true
+  wait "$holder_pid" 2>/dev/null || true
+  [ -e "$state/.watcher-down.lock" ] || [ -L "$state/.watcher-down.lock" ] \
+    || fail "fixture: the dead holder left no marker lock behind"
+
+  printf 'acked:downtime:g.2.bbb\n' > "$state/.watcher-down"
+  out=$(quiet_arm_run "$state" quiet)
+  [ "$out" = "rc=0 action=none queued=0" ] || fail "quiet arm check did not answer beside a dead holder's lock: $out"
+  printf 'pending:downtime:g.2.bbb\n' > "$state/.watcher-down"
+  out=$(quiet_arm_run "$state" locked)
+  [ "$out" = "rc=0 action=recover queued=0" ] || fail "the locked arm check did not reclaim the dead holder's locks and recover: $out"
+  [ "$(cat "$state/.watcher-down")" = 'announced:downtime:g.2.bbb' ] \
+    || fail "the reclaimed recovery did not record its announcement: $(cat "$state/.watcher-down")"
+  pass "the quiet arm check neither waits on nor clears another process's locks, and recovery still takes them"
+}
+
 test_stale_recovery_generation_cannot_touch_a_newer_episode() {
   local dir state first_err replay_err sequence generation handling_marker
   local newer_marker newer_sequence newer_generation rc
@@ -3874,6 +4022,8 @@ test_recovery_mint_and_delivery_log_avoid_sibling_subst
 test_large_sequences_stay_exact_decimal_identifiers
 test_legacy_generationless_wake_is_adopted
 test_handover_restore_undoes_only_its_own_stop
+test_quiet_arm_check_matches_the_locked_transition
+test_quiet_arm_check_ignores_held_and_dead_locks
 test_stale_recovery_generation_cannot_touch_a_newer_episode
 test_stale_ack_that_consumes_nothing_names_the_current_wake
 test_branch_stale_ack_that_consumes_nothing_names_its_granted_wake
