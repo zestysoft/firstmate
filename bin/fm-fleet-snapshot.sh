@@ -127,7 +127,7 @@ cleanup_json_files() {
   rm -rf -- "$JSON_TRANSPORT_DIR"
 }
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(d=${BASH_SOURCE[0]%/*}; [ "$d" != "${BASH_SOURCE[0]}" ] || d=.; cd "${d:-/}" && pwd)"
 FM_ROOT="${FM_ROOT_OVERRIDE:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 STATE="${FM_STATE_OVERRIDE:-$FM_HOME/state}"
@@ -308,20 +308,16 @@ bool_json() {
   if [ "$1" = 1 ]; then printf 'true'; else printf 'false'; fi
 }
 
-path_present_json() {  # <contract-path> [<observed-path>]
-  local path=$1 observed=${2:-$1} present=0
-  [ -e "$observed" ] && present=1
-  jq -n --arg path "$path" --argjson present "$(bool_json "$present")" \
-    '{path:$path,present:$present}'
-}
-
 meta_value() {  # <meta-file> <key>
   fm_meta_get "$1" "$2"
 }
 
+# grep still selects the lines; the shell keeps the last one instead of a tail start.
 last_nonempty_line() {  # <file>
+  local lines
   [ -f "$1" ] || return 1
-  grep -v '^[[:space:]]*$' "$1" 2>/dev/null | tail -1
+  lines=$(grep -v '^[[:space:]]*$' "$1" 2>/dev/null) || return 0
+  printf '%s\n' "${lines##*$'\n'}"
 }
 
 # A local crew-state read is bounded so one slow child cannot extend this
@@ -341,7 +337,7 @@ crew_state_json() {  # <id> [<captured-meta>] [<captured-status>]
       FM_CONFIG_OVERRIDE="$CONFIG" \
       "$SCRIPT_DIR/fm-crew-state.sh" "$id" 2>/dev/null || true
   )
-  raw=$(printf '%s\n' "$raw" | head -1)
+  raw=${raw%%$'\n'*}
   sep=' · '
   state=unknown
   source=none
@@ -361,31 +357,29 @@ crew_state_json() {  # <id> [<captured-meta>] [<captured-status>]
     '{state:$state,source:$source,detail:$detail,raw:$raw}'
 }
 
-status_event_json() {  # <observed-status-log> [<contract-path>]
-  local log=$1 path=${2:-$1} present=0 raw='' verb='' note='' epoch=null age=null
-  if [ -f "$log" ]; then
-    present=1
-    raw=$(last_nonempty_line "$log" || true)
-    verb=$(status_line_verb "$raw")
-    note=$(status_line_note "$raw")
-    epoch=$(status_line_at_epoch "$raw") || epoch=null
-    if [ "$epoch" != null ] && [ "$epoch" -le "$SNAPSHOT_EPOCH" ]; then
-      age=$((SNAPSHOT_EPOCH - epoch))
-    fi
+# The status log's last event, as the fields task_json_row's jq composes into
+# its event_history object: sets STATUS_EVENT_PRESENT (0/1), STATUS_EVENT_RAW,
+# STATUS_EVENT_VERB, STATUS_EVENT_NOTE, and STATUS_EVENT_AGE (seconds or null).
+status_event_fields() {  # <observed-status-log>
+  local log=$1 epoch
+  STATUS_EVENT_PRESENT=0 STATUS_EVENT_RAW='' STATUS_EVENT_VERB='' STATUS_EVENT_NOTE='' STATUS_EVENT_AGE=null
+  [ -f "$log" ] || return 0
+  STATUS_EVENT_PRESENT=1
+  STATUS_EVENT_RAW=$(last_nonempty_line "$log" || true)
+  STATUS_EVENT_VERB=$(status_line_verb "$STATUS_EVENT_RAW")
+  STATUS_EVENT_NOTE=$(status_line_note "$STATUS_EVENT_RAW")
+  epoch=$(status_line_at_epoch "$STATUS_EVENT_RAW") || epoch=null
+  if [ "$epoch" != null ] && [ "$epoch" -le "$SNAPSHOT_EPOCH" ]; then
+    STATUS_EVENT_AGE=$((SNAPSHOT_EPOCH - epoch))
   fi
-  jq -n \
-    --arg path "$path" \
-    --arg raw "$raw" \
-    --arg verb "$verb" \
-    --arg note "$note" \
-    --argjson age "$age" \
-    --argjson present "$(bool_json "$present")" \
-    '{path:$path,present:$present,kind:"event_history",last_event:{state:$verb,note:$note,raw:$raw,age_seconds:$age}}'
 }
 
+# grep still finds the URLs; the shell keeps the first one instead of a head start.
 first_pr_url_in_file() {  # <file>
+  local urls
   [ -f "$1" ] || return 1
-  grep -Eo 'https?://[^[:space:])"]+/pull/[0-9]+' "$1" 2>/dev/null | head -1
+  urls=$(grep -Eo 'https?://[^[:space:])"]+/pull/[0-9]+' "$1" 2>/dev/null) || return 0
+  printf '%s\n' "${urls%%$'\n'*}"
 }
 
 # Isolate this read-only projection from the fleet collector's shell state.
@@ -721,7 +715,8 @@ prefetch_task_current_states() {
   # composition one coherent task manifest even if publication or teardown races it.
   for meta in "$STATE"/*.meta; do
     [ -e "$meta" ] || continue
-    id=$(basename "$meta" .meta)
+    id=${meta##*/}
+    id=${id%.meta}
     captured_meta="$SNAPSHOT_TASK_DIR/$id.meta"
     if ! cp -- "$meta" "$captured_meta" 2>"$captured_meta.copy-error"; then
       # Teardown may unlink a task after the glob selected it but before cp opens
@@ -741,7 +736,8 @@ prefetch_task_current_states() {
   done
   while [ "$index" -lt "$SNAPSHOT_TASK_META_COUNT" ]; do
     meta=${SNAPSHOT_TASK_METAS[index]}
-    id=$(basename "$meta" .meta)
+    id=${meta##*/}
+    id=${id%.meta}
     prefetch_task_observations "$meta" "$id" &
     pids[active]=$!
     active=$((active + 1))
@@ -765,9 +761,10 @@ prefetch_task_current_states() {
 task_json_row() {  # <captured-meta> <id>
   local meta=$1 id=$2 original_meta kind harness mode yolo project worktree home projects spawn_gen branch backend target status_log report_path
   local remote_host remote_root current_file endpoint_file observation_line
-  local pr pr_source event_json current_json endpoint_exists agent_alive meta_json status_json report_json worktree_json home_json
-  local last_event_raw current_state current_source pending_decision blocked_event report_present=0 pr_from_status
-  local open_decisions_tsv open_decisions_json
+  local pr pr_source current_json endpoint_exists agent_alive meta_present=0 report_seen=0 worktree_present=false home_present=false
+  local current_state current_source pending_decision blocked_event report_present=0 pr_from_status
+  local open_decisions_tsv open_decisions_json open_decisions_out
+  local STATUS_EVENT_PRESENT STATUS_EVENT_RAW STATUS_EVENT_VERB STATUS_EVENT_NOTE STATUS_EVENT_AGE
 
   original_meta="$STATE/$id.meta"
   kind=$(meta_value "$meta" kind)
@@ -806,8 +803,7 @@ task_json_row() {  # <captured-meta> <id>
 
   current_file="$SNAPSHOT_TASK_DIR/$id.json"
   current_json=$(<"$current_file") || return 1
-  event_json=$(status_event_json "$status_log" "$STATE/$id.status")
-  last_event_raw=$(printf '%s' "$event_json" | jq -r '.last_event.raw // ""')
+  status_event_fields "$status_log"
   read -r current_state current_source < <(
     printf '%s' "$current_json" | jq -r '[.state // "", .source // ""] | @tsv'
   )
@@ -836,12 +832,19 @@ task_json_row() {  # <captured-meta> <id>
        || { [ "$current_state" = "done" ] || [ "$current_state" = "failed" ]; }; }; then
     open_decisions_tsv=""
   fi
-  open_decisions_json=$(printf '%s' "$open_decisions_tsv" | jq -R -s '
+  # One jq start parses the set and answers both flags: the set as one JSON line,
+  # then the needs-decision and blocked flags on a line each.
+  open_decisions_out=$(printf '%s' "$open_decisions_tsv" | jq -R -s -r '
     [ splits("\n") | select(length > 0)
       | (capture("^(?<key>[^\t]*)\t(?<verb>[^\t]*)\t(?<summary>.*)$")?)
-      | select(. != null) ]')
-  pending_decision=$(printf '%s' "$open_decisions_json" | jq 'if any(.[]; .verb == "needs-decision") then 1 else 0 end')
-  blocked_event=$(printf '%s' "$open_decisions_json" | jq 'if any(.[]; .verb == "blocked") then 1 else 0 end')
+      | select(. != null) ]
+    | tojson,
+      (if any(.[]; .verb == "needs-decision") then 1 else 0 end),
+      (if any(.[]; .verb == "blocked") then 1 else 0 end)')
+  open_decisions_json=${open_decisions_out%%$'\n'*}
+  pending_decision=${open_decisions_out#*$'\n'}
+  blocked_event=${pending_decision#*$'\n'}
+  pending_decision=${pending_decision%%$'\n'*}
 
   endpoint_exists=null
   agent_alive=not_checked
@@ -853,16 +856,15 @@ task_json_row() {  # <captured-meta> <id>
     esac
   done < "$endpoint_file" || return 1
   [ -f "$report_path" ] && report_present=1 || report_present=0
-  meta_json=$(path_present_json "$original_meta" "$meta")
-  status_json=$event_json
-  report_json=$(path_present_json "$DATA/$id/report.md" "$report_path")
-  if [ -n "$worktree" ]; then worktree_json=$(path_present_json "$worktree"); else worktree_json=$(jq -n '{path:null,present:false}'); fi
+  # The path objects below are composed by the row's own jq: each path is shown
+  # as recorded, and its presence is tested here, as one jq start per object did.
+  [ -e "$meta" ] && meta_present=1
+  [ -e "$report_path" ] && report_seen=1
+  if [ -n "$worktree" ] && [ -e "$worktree" ]; then worktree_present=true; fi
   if [ -n "$home" ] && [ -n "$remote_host" ]; then
-    home_json=$(jq -n --arg path "$home" '{path:$path,present:null}')
-  elif [ -n "$home" ]; then
-    home_json=$(path_present_json "$home")
-  else
-    home_json=$(jq -n '{path:null,present:false}')
+    home_present=null
+  elif [ -n "$home" ] && [ -e "$home" ]; then
+    home_present=true
   fi
 
   jq -n \
@@ -886,13 +888,19 @@ task_json_row() {  # <captured-meta> <id>
     --arg pr_head "$(meta_value "$meta" pr_head)" \
     --arg agent_alive "$agent_alive" \
     --arg observed_at "$SNAPSHOT_NOW" \
-    --arg last_event_raw "$last_event_raw" \
+    --arg last_event_raw "$STATUS_EVENT_RAW" \
     --argjson current_state "$current_json" \
-    --argjson meta_path "$meta_json" \
-    --argjson status_log "$status_json" \
-    --argjson report "$report_json" \
-    --argjson worktree_path "$worktree_json" \
-    --argjson home_path "$home_json" \
+    --arg meta_path "$original_meta" \
+    --argjson meta_present "$(bool_json "$meta_present")" \
+    --arg status_path "$STATE/$id.status" \
+    --argjson status_present "$(bool_json "$STATUS_EVENT_PRESENT")" \
+    --arg status_verb "$STATUS_EVENT_VERB" \
+    --arg status_note "$STATUS_EVENT_NOTE" \
+    --argjson status_age "$STATUS_EVENT_AGE" \
+    --arg report_path "$DATA/$id/report.md" \
+    --argjson report_seen "$(bool_json "$report_seen")" \
+    --argjson worktree_present "$worktree_present" \
+    --argjson home_present "$home_present" \
     --argjson endpoint_exists "$endpoint_exists" \
     --argjson open_decisions "$open_decisions_json" \
     --argjson pending_decision "$(bool_json "$pending_decision")" \
@@ -910,11 +918,12 @@ task_json_row() {  # <captured-meta> <id>
       backend:$backend,
       remote:(if $remote_host == "" then null else {host:$remote_host,root:$remote_root} end),
       paths:{
-        meta:$meta_path,
-        status_log:$status_log,
-        worktree:$worktree_path,
-        home:$home_path,
-        report:$report
+        meta:{path:$meta_path,present:$meta_present},
+        status_log:{path:$status_path,present:$status_present,kind:"event_history",
+          last_event:{state:$status_verb,note:$status_note,raw:$last_event_raw,age_seconds:$status_age}},
+        worktree:{path:($worktree | if . == "" then null else . end),present:$worktree_present},
+        home:{path:($home | if . == "" then null else . end),present:$home_present},
+        report:{path:$report_path,present:$report_seen}
       },
       secondmate_projects:($projects | if . == "" then [] else split(",") | map(gsub("^[[:space:]]+|[[:space:]]+$"; "")) | map(select(. != "")) end),
       current_state:($current_state + {observed_at:$observed_at,freshness:"fresh"}),
@@ -945,11 +954,12 @@ task_json_row() {  # <captured-meta> <id>
 }
 
 task_json_lines() {
-  local index=0
+  local index=0 id
   local -a row_files=()
   [ "$SNAPSHOT_TASK_META_COUNT" -gt 0 ] || { jq -n '[]'; return; }
   while [ "$index" -lt "$SNAPSHOT_TASK_META_COUNT" ]; do
-    row_files[index]="$SNAPSHOT_TASK_DIR/$(basename "${SNAPSHOT_TASK_METAS[index]}" .meta).row"
+    id=${SNAPSHOT_TASK_METAS[index]##*/}
+    row_files[index]="$SNAPSHOT_TASK_DIR/${id%.meta}.row"
     index=$((index + 1))
   done
   jq -s 'sort_by(.id)' "${row_files[@]}"
