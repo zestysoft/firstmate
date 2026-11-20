@@ -27,7 +27,7 @@
 # for tests and diagnostics.
 set -u
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(d=${BASH_SOURCE[0]%/*}; [ "$d" != "${BASH_SOURCE[0]}" ] || d=.; cd "${d:-/}" && pwd)"
 FM_ROOT="${FM_ROOT_OVERRIDE:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 STATE="${FM_STATE_OVERRIDE:-$FM_HOME/state}"
@@ -101,7 +101,7 @@ home_summary_fail() {
 
 home_summary_refresh_once() {
   local producer_rc producer_error
-  if ! mkdir -p "$STATE" 2>/dev/null; then
+  if ! { [ -d "$STATE" ] || mkdir -p "$STATE" 2>/dev/null; }; then
     home_summary_fail "state directory is unavailable: $STATE"
     return 1
   fi
