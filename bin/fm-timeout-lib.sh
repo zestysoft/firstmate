@@ -31,6 +31,13 @@
 #       command on every mechanism. The timeout and bash mechanisms background
 #       the command and restore that redirected stdin afterwards; they do not
 #       attach a terminal, and a closed stdin does not fail the call.
+#       Reserved descriptors: on the timeout and gtimeout mechanisms the
+#       runner claims fds 57 and 58 (caller stdout and the status pipe; Bash
+#       3.2 cannot allocate a free one), and the timeout and bash mechanisms
+#       claim fd 3 while backgrounding. The command never inherits a claimed
+#       fd, so a caller must not hold one open across a call for the command
+#       to use; under Bash 3.2 a caller holding 57 also leaks a saved copy of
+#       it, numbered above 9, into the command.
 #       On caller INT/HUP/TERM, the Perl fallback reaps its command group with
 #       up to 0.2s TERM-to-KILL grace, then restores traps active in the current
 #       process and redelivers the signal. In a command substitution, inherited
@@ -183,9 +190,8 @@ fm_run_bash_timeout() {
 }
 
 fm_run_external_timeout() {
-  local runner=$1 seconds=$2 status_file runner_pid runner_rc command_rc
+  local runner=$1 seconds=$2 result runner_pid runner_rc command_rc stdout_fd=1 inner_fd=57
   shift 2
-  status_file=$(mktemp "${TMPDIR:-/tmp}/fm-timeout-status.XXXXXX" 2>/dev/null) || return 124
   # Run the executable path asynchronously (never a bare name: that is the omp
   # timeout builtin, and backgrounding it leaves $! empty) so its pid - also
   # the process-group id created by GNU/BSD timeout without --foreground -
@@ -194,26 +200,45 @@ fm_run_external_timeout() {
   # A shell wrapper can exit promptly on TERM while one of its descendants
   # ignores TERM; timeout then considers the command finished and does not send
   # its configured KILL. Explicitly reap that leftover group on a real timeout.
+  # The wrapper's status and the runner's travel over the command
+  # substitution's pipe on fd 58, while fd 57 carries the caller's stdout past
+  # it (the reserved pair in the header); no temporary file, so no mktemp or rm
+  # start per call. The command runs with 58 closed, so a leftover descendant
+  # cannot hold the read open. A closed caller stdout stays closed for the
+  # command: 57>&1 would fail, so both duplications become closes instead.
+  # 58 is closed before it is pointed at the pipe: when the caller already
+  # holds 58, Bash 3.2 silently ignores 58>&1 in the substitution otherwise.
+  # The two ':' lines keep "$@" on line 4 of the wrapper, the line Bash names
+  # in its command-not-found and signal-death messages.
+  { { :; } 57>&1; } 2>/dev/null || { stdout_fd=-; inner_fd=-; }
   # shellcheck disable=SC2016  # Expansion is deliberately deferred to the child shell.
-  fm_timeout_background "$runner" -k 1 "$seconds" bash -c '
-    status_file=$1
-    shift
-    "$@"
-    command_rc=$?
-    printf "%s\n" "$command_rc" > "$status_file"
-    exit "$command_rc"
-  ' _ "$status_file" "$@"
-  runner_pid=$!
-  if wait "$runner_pid"; then
-    runner_rc=0
-  else
-    runner_rc=$?
-  fi
-  # The wrapper writes its one status line once; the read builtin takes it, or
-  # an unterminated partial write, without a cat start per bounded call.
-  command_rc=
-  IFS= read -r command_rc 2>/dev/null < "$status_file" || true
-  rm -f "$status_file" 2>/dev/null || true
+  { result=$(
+    exec 58>&- 58>&1 1>&"$inner_fd" 57>&-
+    fm_timeout_background "$runner" -k 1 "$seconds" bash -c '
+      :
+      :
+      { "$@"; } 58>&-
+      command_rc=$?
+      printf "%s\n" "$command_rc" >&58
+      exit "$command_rc"
+    ' _ "$@"
+    runner_pid=$!
+    if wait "$runner_pid"; then
+      runner_rc=0
+    else
+      runner_rc=$?
+    fi
+    printf 'r %s %s\n' "$runner_rc" "$runner_pid" >&58
+  ); } 57>&"$stdout_fd"
+  # result is "<command rc>\nr <runner rc> <runner pid>", or only the r line
+  # when the wrapper never recorded a status.
+  case $result in
+    r\ *) command_rc= ;;
+    *) command_rc=${result%%$'\n'*}; result=${result#*$'\n'} ;;
+  esac
+  result=${result#r }
+  runner_rc=${result%% *}
+  runner_pid=${result#* }
   case "$command_rc" in
     ''|*[!0-9]*) ;;
     *)

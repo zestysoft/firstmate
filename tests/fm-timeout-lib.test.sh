@@ -443,6 +443,79 @@ test_run_timed_passes_a_natural_exit_through_a_fired_bound() {
   pass 'fm_run_timed passes a natural exit through when the bound fired after completion'
 }
 
+# external_runner_bin <name>: a PATH directory whose timeout is the host's
+# <name> executable, so fm_run_timed takes that runner; empty when absent.
+external_runner_bin() {
+  local real dir
+  real=$(type -P "$1" 2>/dev/null) || return 0
+  dir="$TMP_ROOT/runner-$1"
+  mkdir -p "$dir"
+  ln -sf "$real" "$dir/timeout"
+  printf '%s\n' "$dir"
+}
+
+# run_external <bin> <case script>: run one fm_run_timed call under stock
+# /bin/bash with the runner in <bin>; prints "rc=<n>" after the call's output.
+run_external() {
+  /bin/bash -c '
+    PATH="$3:$PATH"
+    . "$1/bin/fm-timeout-lib.sh"
+    eval "$2"
+    echo "rc=$?"
+  ' _ "$ROOT" "$2" "$1" 2>&1
+}
+
+# Every real timeout runner carries the command's own status past its 8-bit
+# exit, so success, a failure, the command's own SIGKILL, a missing command,
+# and the bound stay distinct, with the wording Bash gives a supervisor.
+test_run_timed_external_runner_keeps_every_outcome_distinct() {
+  local name bin out checked=''
+  for name in timeout gtimeout; do
+    bin=$(external_runner_bin "$name")
+    [ -n "$bin" ] || continue
+    checked="$checked $name"
+    out=$(run_external "$bin" "fm_run_timed 5 sh -c 'echo ok; echo e0 >&2'")
+    assert_equals "$out" "ok
+e0
+rc=0" "$name: success lost its output or status"
+    out=$(run_external "$bin" "fm_run_timed 5 sh -c 'exit 7'")
+    assert_equals "$out" "rc=7" "$name: a failure lost its status"
+    out=$(run_external "$bin" "fm_run_timed 5 sh -c 'kill -KILL \$\$'")
+    assert_contains "$out" "_: line 4: " "$name: the command's own SIGKILL lost Bash's message line"
+    assert_contains "$out" 'Killed: 9' "$name: the command's own SIGKILL lost Bash's message"
+    assert_contains "$out" "rc=137" "$name: the command's own SIGKILL read as the bound"
+    out=$(run_external "$bin" "fm_run_timed 5 fm-no-such-command-xyz")
+    assert_equals "$out" "_: line 4: fm-no-such-command-xyz: command not found
+rc=127" "$name: a missing command changed status or wording"
+    out=$(run_external "$bin" "fm_run_timed 1 sh -c 'trap \"\" TERM; sleep 30'")
+    assert_equals "$out" "rc=124" "$name: a TERM-ignoring command at the bound was not reported as the bound"
+    out=$(run_external "$bin" "fm_run_timed 5 sh -c 'echo gone; exit 3' >&-")
+    assert_contains "$out" "rc=3" "$name: a closed caller stdout stopped the command or lost its status"
+  done
+  [ -n "$checked" ] || { pass 'fm_run_timed external runners (skipped: no timeout or gtimeout on this host)'; return 0; }
+  pass "fm_run_timed keeps every outcome distinct through:$checked"
+}
+
+# The external runners claim fds 57 and 58; any other caller fd still reaches
+# the command, and a caller already holding the claimed pair still gets the
+# command's own status.
+test_run_timed_external_runner_claims_only_its_reserved_fds() {
+  local name bin out checked=''
+  for name in timeout gtimeout; do
+    bin=$(external_runner_bin "$name")
+    [ -n "$bin" ] || continue
+    checked="$checked $name"
+    out=$(run_external "$bin" "exec 7>&1; fm_run_timed 5 sh -c 'echo via-seven >&7; exit 4'")
+    assert_equals "$out" "via-seven
+rc=4" "$name: an unrelated caller fd did not reach the command"
+    out=$(run_external "$bin" "exec 57>/dev/null 58>/dev/null; fm_run_timed 5 sh -c 'echo held; exit 4'")
+    assert_equals "$out" "held
+rc=4" "$name: a caller holding fds 57 and 58 lost the command's output or status"
+  done
+  [ -n "$checked" ] || { pass 'fm_run_timed reserved fds (skipped: no timeout or gtimeout on this host)'; return 0; }
+  pass "fm_run_timed claims only fds 57 and 58 through:$checked"
+}
+
 # An omp shell defines timeout as a builtin, and a function of that name is
 # ahead of both the builtin and the executable. command -v reports the name
 # and a bare call runs the shadow, which drops the command's stdout and
@@ -1019,6 +1092,8 @@ test_passes_the_command_status_and_output_through
 test_system_bash_preserves_completion_and_signal_statuses
 test_run_timed_reports_the_bound_when_the_wrapper_records_a_signal_death
 test_run_timed_passes_a_natural_exit_through_a_fired_bound
+test_run_timed_external_runner_keeps_every_outcome_distinct
+test_run_timed_external_runner_claims_only_its_reserved_fds
 test_run_timed_keeps_stdout_and_nonzero_status_when_a_function_shadows_timeout
 test_run_timed_delivers_piped_stdin_on_every_mechanism
 test_term_ends_a_cooperative_command_at_the_bound
