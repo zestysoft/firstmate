@@ -192,6 +192,9 @@ FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 # classification predicates have exactly one definition.
 # shellcheck source=bin/fm-classify-lib.sh
 . "$FM_DAEMON_DIR/fm-classify-lib.sh"
+# The push-edge wake detail matcher (fm_transition_push_wake_detail_is).
+# shellcheck source=bin/fm-transition-lib.sh
+. "$FM_DAEMON_DIR/fm-transition-lib.sh"
 # The away-posture record owner: while state/.afk-contract exists an item held
 # for the captain is never rechecked (the watcher applies the same rule).
 # shellcheck source=bin/fm-afk-contract.sh
@@ -1908,8 +1911,13 @@ handle_wake() {  # <reason> <state>
               # Where config/wedge-defer-worker-wait arms it, the worker's own
               # still-open newest blocked: or needs-decision: line is the same
               # kind of declaration, and that line's own signal already escalated it.
+              # A native push edge (the runtime saw the pane stop in front of a
+              # prompt) is the one stale a declared wait never absorbs: the
+              # watcher already delivered it once per edge for that reason.
               case "${decision%%|*}" in
-                pause) : ;;
+                pause)
+                  fm_transition_push_wake_detail_is "$stale_detail" \
+                    && decision="escalate|${reason#stale: }" ;;
                 *) case "$stale_detail" in
                      idle\ *s,\ possible\ wedge,\ escalation\ *)
                        last=$(status_declared_wait_line "$state/$task.status")

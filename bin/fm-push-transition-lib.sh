@@ -153,22 +153,19 @@ handle_push_transition() {  # <backend> <session> <record>
   [ -n "$pane_id" ] || { sleep 1; return; }
   window=$(fm_backend_transition_target "$backend" "$session" "$pane_id")
   task=$(window_to_task "$window" "$STATE")
-  # A declared wait already names the human this transition would report: an
-  # external dependency, or the captain a verified hold transferred the work to.
-  # Either way the wait is durably recorded, so absorb the immediate escalation
-  # and leave the bounded re-surface to the watcher's own pause cadence.
-  if status_is_paused_or_captain_held "$(status_declared_wait_line "$STATE/$task.status")"; then
-    triage_log "absorbed push $to (declared wait, awaiting external or captain): $window"
-    fm_backend_commit_transition "$backend" "$STATE" "$session" "$record" || exit 1
-    return
-  fi
+  # Never absorbed under a declared wait (paused: or captain-held). The
+  # declaration explains a quiet pane, not one the runtime sees stopped in front
+  # of an approval prompt: a lane waiting on a pipeline or the captain is not
+  # supposed to be parked on a prompt, and the prompt times out within minutes.
+  # The per-pane dedupe still bounds this to one wake per ->blocked edge, and
+  # stale polls of the same wait keep the watcher's bounded pause cadence.
   span_record=$(status_span_first_actionable_record "$STATE/$task.status" \
     "$(hb_surfaced_offset "$task")")
   case $? in
     0|1) surface_end=${span_record%%$'\t'*}; rest=${span_record#*$'\t'}; surface_ident=${rest%%$'\t'*} ;;
   esac
   note=$(fm_backend_transition_note "$backend" "$record" 2>/dev/null || true)
-  reason="stale: $window ($backend: agent $to${detail:+ ($detail)} - waiting on human${note:+: $note}, escalated immediately, not via wedge timer)"
+  reason="stale: $window ($(fm_transition_push_wake_detail "$backend" "$to" "$detail" "$note"))"
   fm_wake_append stale "$window" "$reason" || exit 1
   fm_backend_commit_transition "$backend" "$STATE" "$session" "$record" || exit 1
   mark_surfaced "$STATE/$task.status" "$surface_end" "$surface_ident"

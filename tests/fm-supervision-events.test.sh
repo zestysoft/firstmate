@@ -79,31 +79,46 @@ fm_write_meta "$STATE_DIR/tk1.meta" "window=default:wG:pQ" "backend=herdr" "kind
 [ ! -e "$STATE_DIR/.herdr-escalated-default_wG_pQ" ] || fail "a failed durable enqueue must leave the blocked edge eligible for reconnect reconciliation"
 pass "handle_push_transition: enqueue failure cannot commit the Herdr dedupe marker"
 
-# --- handle_push_transition: absorb (no wake, no enqueue) for a declared pause -
+# --- handle_push_transition: a blocked edge pierces a declared wait ----------
+# A declared wait explains a quiet pane, not one the runtime sees stopped in
+# front of an approval prompt, so the push is delivered under either declaration.
+
+for decl in 'paused: waiting on the upstream release' \
+            'captain-held [key=route]: tracked by task-decision-route'; do
+  reset_state
+  fm_write_meta "$STATE_DIR/tk2.meta" "window=default:wG:pQ" "backend=herdr" "kind=ship"
+  printf '%s\n' "$decl" > "$STATE_DIR/tk2.status"
+  handle_push_transition herdr default "$(mkrec wG:pQ blocked)"
+  grep -q 'stale	default:wG:pQ	.*herdr: agent blocked' "$STATE_DIR/.wake-queue" 2>/dev/null \
+    || fail "a blocked push under '$decl' must enqueue its stale wake: $(cat "$STATE_DIR/.wake-queue" 2>/dev/null)"
+  [ "$(wc -l < "$WAKE_LOG" | tr -d ' ')" = 1 ] || fail "a blocked push under '$decl' must wake the supervisor once: $(cat "$WAKE_LOG")"
+  [ -e "$STATE_DIR/.herdr-escalated-default_wG_pQ" ] || fail "the delivered edge under '$decl' must commit its dedupe marker"
+  ! grep -q 'absorbed push' "$STATE_DIR/.watch-triage.log" 2>/dev/null || fail "a blocked push under '$decl' must not be logged as absorbed"
+
+  # A repeat of the same blocked state is not redelivered: the reader's dedupe
+  # holds it until a working edge clears the marker.
+  out=$(fm_transition_apply "$STATE_DIR" .herdr-escalated- default "$(mkrec wG:pQ blocked)"); rc=$?
+  [ "$rc" -eq 1 ] && [ -z "$out" ] || fail "a repeated blocked level under '$decl' must not re-fire (rc=$rc out=$out)"
+  fm_transition_apply "$STATE_DIR" .herdr-escalated- default "$(mkrec wG:pQ working)" >/dev/null || true
+  out=$(fm_transition_apply "$STATE_DIR" .herdr-escalated- default "$(mkrec wG:pQ blocked)") \
+    || fail "a fresh blocked edge after working under '$decl' must be actionable again"
+  [ "$(wc -l < "$WAKE_LOG" | tr -d ' ')" = 1 ] || fail "dedupe checks under '$decl' must not add a wake"
+done
+pass "handle_push_transition: a blocked push under a declared paused or captain-held wait is delivered once per edge"
+
+# --- the same declared wait still absorbs an ordinary stale poll --------------
 
 reset_state
 fm_write_meta "$STATE_DIR/tk2.meta" "window=default:wG:pQ" "backend=herdr" "kind=ship"
 printf 'paused: waiting on the upstream release\n' > "$STATE_DIR/tk2.status"
-handle_push_transition herdr default "$(mkrec wG:pQ blocked)"
+handle_paused_stale default:wG:pQ tk2 somehash
+[ ! -s "$WAKE_LOG" ] || fail "an ordinary stale poll under a fresh declared wait must stay absorbed: $(cat "$WAKE_LOG")"
 if [ -e "$STATE_DIR/.wake-queue" ] && grep -q 'stale' "$STATE_DIR/.wake-queue"; then
-  fail "a declared-pause crew must NOT be fast-escalated: $(cat "$STATE_DIR/.wake-queue")"
+  fail "an ordinary stale poll under a fresh declared wait must not enqueue: $(cat "$STATE_DIR/.wake-queue")"
 fi
-[ ! -s "$WAKE_LOG" ] || fail "a declared-pause crew must not wake the supervisor from the event fast-path"
-grep -q 'absorbed push' "$STATE_DIR/.watch-triage.log" 2>/dev/null || fail "the paused absorb should be logged to the triage log"
-pass "handle_push_transition: a declared-pause crew is absorbed (no fast wake), left to the poll loop's long cadence"
-
-# --- handle_push_transition: absorb for a verified captain-held transfer -------
-
-reset_state
-fm_write_meta "$STATE_DIR/tk2h.meta" "window=default:wG:pQ" "backend=herdr" "kind=ship"
-printf 'captain-held [key=route]: tracked by task-decision-route\n' > "$STATE_DIR/tk2h.status"
-handle_push_transition herdr default "$(mkrec wG:pQ blocked)"
-if [ -e "$STATE_DIR/.wake-queue" ] && grep -q 'stale' "$STATE_DIR/.wake-queue"; then
-  fail "a captain-held crew must NOT be fast-escalated: $(cat "$STATE_DIR/.wake-queue")"
-fi
-[ ! -s "$WAKE_LOG" ] || fail "a captain-held crew must not wake the supervisor from the event fast-path"
-grep -q 'absorbed push' "$STATE_DIR/.watch-triage.log" 2>/dev/null || fail "the captain-held absorb should be logged to the triage log"
-pass "handle_push_transition: a captain-held crew is absorbed (no fast wake), left to the poll loop's long cadence"
+grep -q 'absorbed stale (paused' "$STATE_DIR/.watch-triage.log" 2>/dev/null \
+  || fail "the ordinary paused stale absorb should be logged: $(cat "$STATE_DIR/.watch-triage.log" 2>/dev/null)"
+pass "handle_paused_stale: an ordinary stale poll under the same declared wait is still absorbed"
 
 # --- event_wait_or_sleep: secondmate windows are excluded from the pane list --
 

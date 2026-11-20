@@ -158,6 +158,29 @@ fm_transition_apply() {  # <state_dir> <prefix> <session> <record>
   return 1
 }
 
+# fm_transition_push_wake_detail: THE builder of the parenthetical a fresh
+# actionable push edge carries in its `stale: <window> (<detail>)` wake, and
+# fm_transition_push_wake_detail_is its matcher. A downstream classifier (the
+# away-mode daemon) uses the matcher to tell this native "stopped in front of a
+# prompt" edge from an ordinary stale poll, because the edge reports a pane that
+# a declared wait cannot account for and so is never absorbed as that wait.
+FM_TRANSITION_PUSH_WAKE_TAG='escalated immediately, not via wedge timer'
+
+fm_transition_push_wake_detail() {  # <backend> <to_status> [edge-detail] [note]
+  local detail=${3-} note=${4-}
+  printf '%s: agent %s%s - waiting on human%s, %s' "$1" "$2" \
+    "${detail:+ ($detail)}" "${note:+: $note}" "$FM_TRANSITION_PUSH_WAKE_TAG"
+}
+
+# 0 when <stale-detail> (the text after a stale wake's window and " (") is a
+# push-edge parenthetical built by fm_transition_push_wake_detail.
+fm_transition_push_wake_detail_is() {  # <stale-detail>
+  case "$1" in
+    *", $FM_TRANSITION_PUSH_WAKE_TAG)") return 0 ;;
+  esac
+  return 1
+}
+
 fm_transition_commit() {  # <state_dir> <prefix> <session> <record>
   local pane_id
   pane_id=$(fm_transition_pane_id "$4")

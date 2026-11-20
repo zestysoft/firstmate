@@ -908,13 +908,9 @@ Protocol 16 can subscribe to `pane.agent_status_changed` over one bounded Unix-s
 `bin/fm-transition-lib.sh` owns the backend-neutral transition vocabulary and policy.
 The Herdr adapter subscribes before reconciling current levels, buffers edges during reconciliation, and returns fresh blocked transitions for this home's panes.
 
-The watcher maps the pane back to the task and skips these:
-
-- Secondmate endpoints.
-- Declared `paused:` waits, because the worker's declared wait already accounts for its quiet.
-  It is left to the watcher's own bounded pause cadence.
-- Verified `captain-held` transfers.
-  A captain-held transfer remains silent without rechecks while the away-posture record exists.
+The watcher maps the pane back to the task and skips secondmate endpoints.
+A blocked edge is delivered even while the task declares a `paused:` wait or a verified `captain-held` transfer, because a declaration accounts for a quiet pane, not one stopped in front of a prompt; the away-mode daemon escalates that wake under a declared wait too.
+Stale polls of the same declared wait keep the bounded pause cadence.
 
 ### Polling fallback
 

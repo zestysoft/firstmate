@@ -882,6 +882,44 @@ test_stale_diagnostic_wedge_survives_busy_housekeeping() {
   pass "enriched stale wedges bypass status absorption except under a declared wait, without disturbing busy workers"
 }
 
+# A native push edge (the runtime saw the pane stop in front of a prompt) reaches
+# the daemon as a stale wake. Under a declared wait the daemon's own classifier
+# says pause, but this one stale class is never absorbed as that wait; an
+# ordinary stale poll of the same declared wait still is.
+test_push_blocked_stale_pierces_declared_wait() {
+  local dir state task win key decl push plain
+  for decl in 'paused: waiting on the upstream release' \
+              'captain-held [key=route]: tracked by task-decision-route'; do
+    dir=$(make_supercase "push-blocked-pierce-${decl%%:*}")
+    state="$dir/state"
+    task='push-blocked-w1'; win="sess:fm-$task"
+    key=$(printf '%s' "$task" | tr ':/.' '___')
+    fm_write_meta "$state/$task.meta" "window=$win" "backend=herdr"
+    printf '%s\n' "$decl" > "$state/$task.status"
+    case "$(FM_STATE_OVERRIDE="$state" classify_stale "$win" "$state")" in
+      pause\|*) ;;
+      *) fail "the fixture's own classifier verdict under '$decl' is not a pause, so this case pins nothing" ;;
+    esac
+
+    plain="stale: $win (idle 250s, possible wedge, escalation 2)"
+    LOG="$dir/daemon.log" FM_STATE_OVERRIDE="$state" FM_ESCALATE_BATCH_SECS=999999 \
+      handle_wake "$plain" "$state"
+    [ ! -s "$state/.subsuper-escalations" ] \
+      || fail "an ordinary stale under '$decl' escalated instead of staying absorbed: $(cat "$state/.subsuper-escalations")"
+
+    push="stale: $win ($(fm_transition_push_wake_detail herdr blocked))"
+    LOG="$dir/daemon.log" FM_STATE_OVERRIDE="$state" FM_ESCALATE_BATCH_SECS=999999 \
+      handle_wake "$push" "$state"
+    [ "$(wc -l < "$state/.subsuper-escalations" | tr -d ' ')" = 1 ] \
+      || fail "a push-blocked stale under '$decl' did not escalate exactly once: $(cat "$state/.subsuper-escalations" 2>/dev/null)"
+    grep -F 'herdr: agent blocked - waiting on human' "$state/.subsuper-escalations" >/dev/null \
+      || fail "the push-blocked escalation under '$decl' lost its cause: $(cat "$state/.subsuper-escalations")"
+    [ -e "$state/.subsuper-paused-$key" ] \
+      || fail "the push-blocked escalation under '$decl' dropped the wait's own pause tracking"
+  done
+  pass "away mode: a push-blocked stale pierces a declared wait while an ordinary stale of that wait stays absorbed"
+}
+
 # The second half of issue #3149. The watcher's wedge timer emits an enriched
 # "idle Ns, possible wedge, escalation N" reason for any pane it reads as frozen -
 # including one whose crew has a CURRENT declared wait, because the watcher's own
@@ -3886,6 +3924,7 @@ test_unknown_wake_ack_failure_still_clears_delivered_digest
 test_stale_transient_self_records_marker
 test_stale_diagnostic_wedge_survives_busy_housekeeping
 test_enriched_wedge_under_declared_wait_uses_pause_cadence
+test_push_blocked_stale_pierces_declared_wait
 test_enriched_wedge_under_worker_blocker_follows_its_flag
 test_stale_terminal_escalates
 test_stale_actionable_wait_escalates_and_keeps_pause_cadence
