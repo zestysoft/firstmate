@@ -1,0 +1,63 @@
+### Scenario: captain holds must be typed (lab home = plain clone of c3ddb20d)
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 0
+[exit 0]
+$ bin/fm-captain-hold.sh hold rental-spend --title Spend on the rental --reason approve the rental spend --repo sample
+fm-captain-hold: --class is required: name which of the captain's categories this call belongs to (money, permanent-removal, merge-or-landing-outside-authority, exploit-kernel-security-flash, physical-or-credential, product-or-scope-expansion, destructive-irreversible-security, discard-unlanded, design-pick, repeated-finding-ruling, deferred-by-captain); if no class fits, it is not a captain call and is firstmate's to decide
+[exit 1]
+$ bin/fm-captain-hold.sh hold rental-spend --title Spend on the rental --class reversible-tweak --reason approve the rental spend --repo sample
+fm-captain-hold: unknown --class reversible-tweak: the captain-hold classes are money, permanent-removal, merge-or-landing-outside-authority, exploit-kernel-security-flash, physical-or-credential, product-or-scope-expansion, destructive-irreversible-security, discard-unlanded, design-pick, repeated-finding-ruling, deferred-by-captain; if no class fits, it is not a captain call and is firstmate's to decide
+[exit 1]
+$ bin/fm-captain-hold.sh hold later-call --title Revisit cutover --class deferred-by-captain --reason captain said later --repo sample
+fm-captain-hold: --class deferred-by-captain records the captain's own later and requires --until YYYY-MM-DD
+[exit 1]
+--- backlog after refused holds (should hold nothing):
+## In flight
+
+## Queued
+
+## Done
+$ bin/fm-captain-hold.sh classes
+money
+permanent-removal
+merge-or-landing-outside-authority
+exploit-kernel-security-flash
+physical-or-credential
+product-or-scope-expansion
+destructive-irreversible-security
+discard-unlanded
+design-pick
+repeated-finding-ruling
+deferred-by-captain
+[exit 0]
+$ bin/fm-captain-hold.sh hold rental-spend --title Spend on the rental --class money --reason approve the rental spend --repo sample
+rental-spend
+[exit 0]
+$ bin/fm-captain-hold.sh hold login-call --title Sign in to the registrar --class physical-or-credential --reason needs the captain's login --repo sample
+login-call
+[exit 0]
+$ bin/fm-captain-hold.sh hold later-call --title Revisit cutover --class deferred-by-captain --until 2099-01-01 --reason captain said later --repo sample
+later-call
+[exit 0]
+--- backlog:
+## In flight
+
+## Queued
+- [ ] rental-spend - Spend on the rental (repo: sample) (kind: captain) (since 2026-11-20) (hold: fm-hold-v1:YXBwcm92ZSB0aGUgcmVudGFsIHNwZW5k) (hold-kind: captain)
+  Captain hold set: 2026-11-20T08:32:37Z
+  Captain hold class: money
+- [ ] login-call - Sign in to the registrar (repo: sample) (kind: captain) (since 2026-11-20) (hold: fm-hold-v1:bmVlZHMgdGhlIGNhcHRhaW4ncyBsb2dpbg==) (hold-kind: captain)
+  Captain hold set: 2026-11-20T08:32:45Z
+  Captain hold class: physical-or-credential
+- [ ] later-call - Revisit cutover (repo: sample) (kind: captain) (since 2026-11-20) (hold: fm-hold-v1:Y2FwdGFpbiBzYWlkIGxhdGVy) (hold-kind: captain) (hold-until: 2099-01-01)
+  Captain hold set: 2026-11-20T08:32:49Z
+  Captain hold class: deferred-by-captain
+## Done
+
+### Scenario: waiting-on-you line every turn
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 2 - Spend on the rental [money]; Sign in to the registrar [physical-or-credential]
+[exit 0]
+$ bin/fm-waiting-on-you.sh --claude
+{"systemMessage":"Waiting on you: 2 - Spend on the rental [money]; Sign in to the registrar [physical-or-credential]"}
+[exit 0]

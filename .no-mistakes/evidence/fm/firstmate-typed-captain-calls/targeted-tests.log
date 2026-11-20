@@ -1,0 +1,41 @@
+== fm-waiting-on-you
+1..12
+ok - a turn end with no live captain hold shows Waiting on you: 0
+ok - a live captain hold shows its count, title, and class, and a dated deferral does not count
+ok - many live holds name three titles and count the rest
+ok - an aged unanswered hold still counts and is marked with its hold date
+ok - a registered secondmate makes the line say its holds are not counted
+ok - an unreadable backlog shows unknown, never a false zero
+ok - a home on a non-markdown backlog backend never prints a zero
+ok - a crewmate or scout worktree prints nothing
+ok - the registered Claude Stop hook shows the waiting line as its systemMessage, and only for Claude
+ok - only the Claude Stop hook registry runs the waiting line among the tracked JSON hook registries
+ok - a Pi turn end refreshes the footer status to the live waiting line, zero included
+ok - a Pi read that finishes after a newer one does not put back its stale count
+FM_TEST_COMPLETE
+exit=
+== fm-supervision-host-drain
+1..21
+ok - report surface: only the branch actor's current turn may report, and only on the tasks its wake names
+ok - report surface: visible late outcomes queue a relay, while silent outcomes remain stored without a wake or note
+ok - dispatch entry: the host reads branch eligibility, the offer rule, and the wake prompt from the Pi branch's own owner
+ok - drain: BRANCH OUTCOMES runs on a Claude home by default and on another primary with the file, never with off, and never on Pi
+ok - a main row that collapses a captain row keeps the captain's question as its own row first
+ok - a long captain question and a newer result both survive as rows, and the truncated one is named
+ok - a captain row newer than a main row keeps the main result as its own row, question first
+ok - a main outcome reaches main like a captain outcome, labelled as firstmate's to act on
+ok - drain: captain outcomes come first, and routine overflow collapses into a count one drain clears
+ok - drain: repeated captain outcomes collapse per task, and the byte cap presents only the run its acknowledgement covers
+ok - drain: a long away window costs one short drain, captain outcomes collapsed per task and routine overflow counted, and nothing from it is shown again
+ok - drain: the BRANCH OUTCOMES budgets count bytes, cutting multibyte summaries by whole characters in any locale
+ok - drain: branch outcomes stay unread when a projection of the store fails
+ok - drain: branch outcomes stay unread and the drain fails when jq is missing
+ok - drain: branch outcomes stay unread when the drain cannot print them
+ok - drain: a legacy backlog is presented with each outcome's age and a check-first instruction, never adopted
+ok - drain: a keyed decision survives acknowledgement through a newer outcome for its task
+ok - drain: an outcome carried across a switch off Pi comes back with its age, never adopted
+ok - drain: an outcome nothing has shown is presented until acknowledged, and a repeated acknowledgement changes nothing
+ok - drain: an outcome the host drain presented but main never acknowledged stays unprocessed across a switch to Pi
+ok - drain: an outcome the host drain presented but main never acknowledged survives an outcome index repair
+FM_TEST_COMPLETE
+exit=

@@ -1,0 +1,32 @@
+### Scenario: answering a hold removes it from the line
+$ bin/fm-captain-hold.sh answer rental-spend --decision-file /var/folders/vm/y9zpsxps43q2cvqmbq1xpqd00000gn/T//fm-lab.eJj772/decision.txt
+answered: rental-spend
+[exit 0]
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 1 - Sign in to the registrar [physical-or-credential]
+[exit 0]
+
+### Scenario: branch verdict 'main' is labelled main-to-act, not a captain call, and does not count as waiting on the captain
+$ bin/fm-branch-outcome.sh append --task alpha --verdict captain --summary needs the captain login
+1
+[exit 0]
+$ bin/fm-branch-outcome.sh append --task alpha --verdict main --summary PR #5 ready to merge
+2
+[exit 0]
+$ bin/fm-branch-outcome.sh append --task beta --verdict main --summary local branch ready to land
+3
+[exit 0]
+$ bin/fm-branch-outcome.sh append --task alpha --verdict bogus --summary x
+usage: fm-branch-outcome.sh append --task <id> --verdict routine|main|captain --summary <text> [--wake <text>] [--silent true|false] | unread | mark-read --through <seq> | unprocessed | mark-processed --through <seq> | present | processed-init [--held-lock] | list [--recent <n>] | lookup --seqs <n,...> | startup-replay | seed-tail
+[exit 2]
+--- drain as seen by a Claude-harness primary (bash invoked under the name 'claude' so harness detection resolves to Claude):
+$ claude -c bin/fm-wake-drain.sh
+BRANCH OUTCOMES (outcomes the supervision session recorded for you to act on, one line per task, oldest first, with a task's still-open captain call as its own row above its newest main result; verdict main is firstmate's own to act on and never a question for the captain, while verdict captain names one of the captain's own categories; each says what was true when it was recorded, so check the task's current state first, including its still-open decisions listed above under OPEN DECISIONS, and sort them into still open and already settled, such as a decision since answered, a PR since merged, or a task since finished - process the still-open ones as firstmate: tell the captain, land or merge what is ready, answer or escalate a decision, or act on a blocker; your reply to the captain covers only those, as if the settled ones had never been listed, and a settled one needs only the acknowledgement):
+[seq 1, captain call, recorded 0m ago] alpha: needs the captain login
+[seq 2, recorded 0m ago] alpha: PR #5 ready to merge
+[seq 3, recorded 0m ago, main to act, not a captain call] beta: local branch ready to land
+BRANCH OUTCOMES: after processing them run bin/fm-branch-outcome.sh mark-processed --through 3; until then every drain presents them again
+[exit 0]
+$ bin/fm-waiting-on-you.sh
+Waiting on you: 1 - Sign in to the registrar [physical-or-credential]
+[exit 0]
