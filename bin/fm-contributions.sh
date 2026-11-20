@@ -373,7 +373,10 @@ forge_bound_result() { # failed-rc failed-why fallback-rc
 forge() {
   local remaining rc=0 failed_rc=0 failed_why='' now read_deadline
   local forge_err=${FORGE_ERR:-$TMP/forge.err} out summary why
-  out=$(mktemp "$TMP/forge-output.XXXXXX")
+  # Each read of one observation has its own error file, and each observation its
+  # own number, so this buffer is never shared, even with a timed-out read that
+  # outlived its bound; cleanup removes it with $TMP.
+  out=$forge_err.${OBSERVE_SEQ:-0}.out
   now=$(date +%s)
   read_deadline=$((now + 5))
   [ "$read_deadline" -le "$DEADLINE" ] || read_deadline=$DEADLINE
@@ -382,7 +385,6 @@ forge() {
     remaining=$((read_deadline - now))
     if [ "$remaining" -le 0 ]; then
       forge_bound_result "$failed_rc" "$failed_why" 1
-      rm -f -- "$out"
       return "$FORGE_BOUND_RC"
     fi
     rc=0
@@ -390,14 +392,12 @@ forge() {
       gh "$@" > "$out" 2> "$forge_err" || rc=$?
     if [ "$rc" -eq 0 ]; then
       cat "$out"
-      rm -f -- "$out"
       return 0
     fi
     # A kill at the read bound or the deadline is budget refusal. If the retry
     # times out, retain the genuine forge failure that caused that retry.
     if [ "$rc" -eq 124 ]; then
       forge_bound_result "$failed_rc" "$failed_why" "$rc"
-      rm -f -- "$out"
       return "$FORGE_BOUND_RC"
     fi
     # Keep the failing read's own words; the retry and cleanup discard its error file.
@@ -407,7 +407,6 @@ forge() {
     if [ "$failed_rc" -ne 0 ] || ! forge_transient_error "$forge_err" "$summary"; then
       : > "$TMP/forge-unavailable"
       printf '%s\n' "$why" >> "$TMP/why"
-      rm -f -- "$out"
       return "$rc"
     fi
     failed_rc=$rc
@@ -438,6 +437,7 @@ observe() { # canonical GitHub URL -> normalized JSON
   case "$kind" in pull) endpoint="repos/$part/pulls/$number" ;; issues) endpoint="repos/$part/issues/$number" ;; *) return 1 ;; esac
   rm -f -- "$TMP/budget-exhausted" "$TMP/forge-unavailable" "$TMP/why"
   BUDGET_EXHAUSTED=0
+  OBSERVE_SEQ=$((${OBSERVE_SEQ:-0} + 1))
   FORGE_ERR="$TMP/core.err" forge api "$endpoint" > "$TMP/core.json" || return 1
   jq -e '(.state == "open" or .state == "closed") and (.user.login | type == "string")' "$TMP/core.json" >/dev/null \
     || unobserved 'core read returned an unexpected shape' || return 1

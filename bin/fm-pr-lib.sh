@@ -374,8 +374,10 @@ fm_pr_json_draft_state() {  # <pull-request-json>
   ' 2>/dev/null || true
 }
 
+# Callers that sourced fm-wake-lib.sh reuse its source-time uname ($_FM_UNAME);
+# others fork uname per call as before. Both name the same platform.
 fm_pr_file_mode() {
-  if [ "$(uname)" = Darwin ]; then
+  if [ "${_FM_UNAME:-$(uname)}" = Darwin ]; then
     /usr/bin/stat -f %Lp "$1" 2>/dev/null
   else
     stat -c %a "$1" 2>/dev/null
@@ -383,7 +385,7 @@ fm_pr_file_mode() {
 }
 
 fm_pr_file_device() {
-  if [ "$(uname)" = Darwin ]; then
+  if [ "${_FM_UNAME:-$(uname)}" = Darwin ]; then
     /usr/bin/stat -f %d "$1" 2>/dev/null
   else
     stat -c %d "$1" 2>/dev/null
@@ -391,7 +393,7 @@ fm_pr_file_device() {
 }
 
 fm_pr_file_link_count() {
-  if [ "$(uname)" = Darwin ]; then
+  if [ "${_FM_UNAME:-$(uname)}" = Darwin ]; then
     /usr/bin/stat -f %l "$1" 2>/dev/null
   else
     stat -c %h "$1" 2>/dev/null
@@ -399,7 +401,7 @@ fm_pr_file_link_count() {
 }
 
 fm_pr_file_inode() {
-  if [ "$(uname)" = Darwin ]; then
+  if [ "${_FM_UNAME:-$(uname)}" = Darwin ]; then
     /usr/bin/stat -f %i "$1" 2>/dev/null
   else
     stat -c %i "$1" 2>/dev/null
