@@ -2229,8 +2229,21 @@ EOF
 # Recorded 2026-10-05 on Claude Code 2.1.289: /exit while a background shell
 # is still running opens this picker, and its selected row is Exit and stop tasks.
 fm_composer_blocking_dialog() {  # <screen> -> dialog name
-  local screen=${1-}
+  local screen=${1-} LC_ALL=C
   [ -n "$screen" ] || return 1
+  # Builtin pre-gate, exact by construction: with no ESC byte the strip below
+  # cannot match, so awk sees the screen's own lines, and each of its three
+  # line patterns needs its literal phrase in the screen. A screen missing one
+  # is therefore a miss without starting sed or awk. A styled screen keeps the
+  # full path, because stripping can join a phrase split by an escape.
+  case "$screen" in
+    *$'\033'*) ;;
+    *'Background work is running'*'❯ 1. Exit and stop tasks'*) case "$screen" in
+        *'Enter to confirm · Esc to cancel'*) ;;
+        *) return 1 ;;
+      esac ;;
+    *) return 1 ;;
+  esac
   if printf '%s\n' "$screen" | fm_composer_strip_ansi | LC_ALL=C awk '
     /^[ \t]*Background work is running[ \t\r]*$/ { heading = 1 }
     heading && /^[ \t]*❯ 1\. Exit and stop tasks[ \t\r]*$/ { selected = 1 }

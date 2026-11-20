@@ -3754,11 +3754,97 @@ run_check_capture() {
 }
 
 FM_CAPTURE_OUTPUT=
+FM_CAPTURE_REUSED=
 WATCHER_CAPTURE=
+WATCHER_CAPTURE_REUSE=
 
 fm_capture_output_cleanup() {
-  [ -z "$FM_CAPTURE_OUTPUT" ] || rm -f -- "$FM_CAPTURE_OUTPUT"
+  [ -z "$FM_CAPTURE_OUTPUT" ] || [ -n "$FM_CAPTURE_REUSED" ] || rm -f -- "$FM_CAPTURE_OUTPUT"
   FM_CAPTURE_OUTPUT=
+  FM_CAPTURE_REUSED=
+}
+
+# Per-window pane capture files. The pane loop reads each window into one file
+# of its own, .fm-pane-capture.<watcher-pid>.<window-key>, instead of a fresh
+# mktemp file removed after every read; that saves a mktemp and an rm start per
+# window per poll. Only the path is reused, never bytes:
+# watcher_capture_file_reset empties the file before every read and refuses the
+# read unless that left a private regular file of length 0, and watcher_waited
+# refuses a read whose file is gone, replaced, or unreadable afterwards rather
+# than taking it as an empty pane. What a capture holds is therefore always the
+# output of this round's backend read and nothing else, and every verdict is
+# taken on that output as before. The pid in the name keeps one watcher's files
+# out of reach of any other: watcher_capture_files_prune drops this watcher's
+# file for a window it did not read this poll, watcher_cleanup drops them all,
+# and watcher_capture_files_sweep drops, at startup, every file whose owning
+# watcher is no longer alive (a killed watcher's leftovers). Both run in the
+# watcher's own shell between reads, never during one.
+WATCHER_PANE_CAPTURE_PREFIX=
+WATCHER_PANE_CAPTURE_KEYS=" "
+
+watcher_capture_file_reset() {  # <path>
+  local f=$1
+  if [ -L "$f" ] || { [ -e "$f" ] && { [ ! -f "$f" ] || [ ! -O "$f" ]; }; }; then
+    rm -f -- "$f" 2>/dev/null || return 1
+  fi
+  if [ -e "$f" ]; then
+    { : > "$f"; } 2>/dev/null || return 1
+  else
+    # Created private, as mktemp would. A subshell keeps the umask local and
+    # costs a fork, not a program start, once per window per watcher.
+    ( umask 077 && : > "$f" ) 2>/dev/null || return 1
+  fi
+  [ -f "$f" ] && [ ! -L "$f" ] && [ -O "$f" ] && [ ! -s "$f" ]
+}
+
+# watcher_capture_window: watcher_capture into this window's own reused file.
+watcher_capture_window() {  # <window-key> <backend> <target> <lines> [expected-label]
+  local key=$1 rc
+  shift
+  case "$WATCHER_PANE_CAPTURE_KEYS" in
+    *" $key "*) ;;
+    *) WATCHER_PANE_CAPTURE_KEYS="$WATCHER_PANE_CAPTURE_KEYS$key " ;;
+  esac
+  WATCHER_CAPTURE_REUSE="$WATCHER_PANE_CAPTURE_PREFIX$key"
+  watcher_waited fm_backend_capture "$@"
+  rc=$?
+  WATCHER_CAPTURE_REUSE=
+  return "$rc"
+}
+
+# Once per poll, after the pane loop: forget the windows read this poll and
+# drop this watcher's file for any window not among them.
+watcher_capture_files_prune() {
+  local f
+  for f in "$WATCHER_PANE_CAPTURE_PREFIX"*; do
+    [ -e "$f" ] || [ -L "$f" ] || continue
+    case "$WATCHER_PANE_CAPTURE_KEYS" in
+      *" ${f#"$WATCHER_PANE_CAPTURE_PREFIX"} "*) continue ;;
+    esac
+    rm -f -- "$f" 2>/dev/null || true
+  done
+  WATCHER_PANE_CAPTURE_KEYS=" "
+}
+
+# At startup, before this watcher's first read: drop every pane capture file
+# whose owning watcher is gone, including one named for this watcher's own pid,
+# which can only be a dead predecessor's that held the same pid. A file whose
+# pid belongs to another live process is kept, so the sweep never removes a
+# file a live watcher's read is using; a dead watcher's pid that the system has
+# since reused keeps its one file per window until that process exits.
+watcher_capture_files_sweep() {
+  local f pid
+  for f in "$STATE"/.fm-pane-capture.*; do
+    [ -e "$f" ] || [ -L "$f" ] || continue
+    pid=${f#"$STATE"/.fm-pane-capture.}
+    pid=${pid%%.*}
+    [ "$pid" = "$WATCHER_PID" ] || ! fm_pid_alive "$pid" || continue
+    rm -f -- "$f" 2>/dev/null || true
+  done
+}
+
+watcher_capture_files_cleanup() {
+  [ -z "$WATCHER_PANE_CAPTURE_PREFIX" ] || fm_rm_present "$WATCHER_PANE_CAPTURE_PREFIX"* 2>/dev/null || true
 }
 
 # watcher_waited: <command...> into WATCHER_CAPTURE with its exit status. The
@@ -3772,7 +3858,13 @@ watcher_waited() {  # <command...>
   local rc pgid
   fm_capture_output_cleanup
   WATCHER_CAPTURE=
-  FM_CAPTURE_OUTPUT=$(mktemp "$STATE/.fm-capture-output.XXXXXX") || return 2
+  if [ -n "$WATCHER_CAPTURE_REUSE" ]; then
+    watcher_capture_file_reset "$WATCHER_CAPTURE_REUSE" || return 2
+    FM_CAPTURE_OUTPUT=$WATCHER_CAPTURE_REUSE
+    FM_CAPTURE_REUSED=1
+  else
+    FM_CAPTURE_OUTPUT=$(mktemp "$STATE/.fm-capture-output.XXXXXX") || return 2
+  fi
   FM_CHECK_SIGNAL_PENDING=
   trap 'FM_CHECK_SIGNAL_PENDING=1' HUP INT TERM
   # The group's stderr is redirected before the fork: bash 3.2 on macOS can
@@ -3785,20 +3877,37 @@ watcher_waited() {  # <command...>
   set +m
   watcher_stop_signals
   [ -z "$FM_CHECK_SIGNAL_PENDING" ] || exit 1
-  # Builtin whitespace strip and file read: the same answers as `| tr` and cat
-  # without two more program starts on every pane read.
-  pgid=$(ps -o pgid= -p "$FM_ACTIVE_CHECK_PID" 2>/dev/null)
-  pgid=${pgid//[[:space:]]/}
-  if [ -n "$pgid" ] && [ "$pgid" != "$FM_ACTIVE_CHECK_PGID" ]; then
-    fm_active_check_stop || true
-    fm_capture_output_cleanup
-    return 2
+  # The builtin group probe settles the common case without ps: a live process
+  # group whose id is the child's pid can only be the one the child leads,
+  # because that pid stays the child's until the wait below reaps it, and
+  # signalling that group is all watcher_cleanup needs. When the probe finds
+  # no group (the child already exited, or set -m failed to make one) the ps
+  # check below decides exactly as before. Builtin whitespace strip and file
+  # read: the same answers as `| tr` and cat without two more program starts.
+  if ! kill -0 -- "-$FM_ACTIVE_CHECK_PID" 2>/dev/null; then
+    pgid=$(ps -o pgid= -p "$FM_ACTIVE_CHECK_PID" 2>/dev/null)
+    pgid=${pgid//[[:space:]]/}
+    if [ -n "$pgid" ] && [ "$pgid" != "$FM_ACTIVE_CHECK_PGID" ]; then
+      fm_active_check_stop || true
+      fm_capture_output_cleanup
+      return 2
+    fi
   fi
   wait "$FM_ACTIVE_CHECK_PID"
   rc=$?
   FM_ACTIVE_CHECK_PID=
   fm_active_check_stop || { fm_capture_output_cleanup; return 2; }
-  { WATCHER_CAPTURE=$(< "$FM_CAPTURE_OUTPUT"); } 2>/dev/null || WATCHER_CAPTURE=
+  if [ -n "$FM_CAPTURE_REUSED" ]; then
+    # A reused file that is gone, replaced, or unreadable is a failed read.
+    if [ ! -f "$FM_CAPTURE_OUTPUT" ] || [ -L "$FM_CAPTURE_OUTPUT" ] \
+      || ! { WATCHER_CAPTURE=$(< "$FM_CAPTURE_OUTPUT"); } 2>/dev/null; then
+      WATCHER_CAPTURE=
+      fm_capture_output_cleanup
+      return 2
+    fi
+  else
+    { WATCHER_CAPTURE=$(< "$FM_CAPTURE_OUTPUT"); } 2>/dev/null || WATCHER_CAPTURE=
+  fi
   fm_capture_output_cleanup
   return "$rc"
 }
@@ -4194,6 +4303,7 @@ watcher_cleanup() {
   fm_active_check_stop 2>/dev/null || cleanup_status=1
   fm_check_output_cleanup
   fm_capture_output_cleanup
+  watcher_capture_files_cleanup
   fm_wait_tmp_cleanup
   fm_custom_check_snapshot_cleanup
   # A stop can land inside a marker or queue critical section, leaving locks
@@ -4308,6 +4418,9 @@ lane_capacity_publish_detached() {
 }
 
 [ -e "$STATE/.last-heartbeat" ] || touch "$STATE/.last-heartbeat"
+
+WATCHER_PANE_CAPTURE_PREFIX="$STATE/.fm-pane-capture.$WATCHER_PID."
+watcher_capture_files_sweep
 
 # A merged poll may have queued its terminal wake and then lost the process
 # between receipt publication and fixed-path removal.
@@ -4929,7 +5042,7 @@ EOF
     if [ "$kind" = secondmate ] && ! status_is_paused_or_captain_held "$last"; then
       continue
     fi
-    watcher_capture "$(window_backend "$w")" "$w" 40 "$(window_label "$w")" || continue
+    watcher_capture_window "$key" "$(window_backend "$w")" "$w" 40 "$(window_label "$w")" || continue
     tail40=$WATCHER_CAPTURE
     # The matcher is already defined in this shell. It reads the capture this
     # poll already takes, and a miss drops a name the away daemon saved.
@@ -5182,6 +5295,7 @@ EOF
       fi
     fi
   done < <(recorded_windows)
+  watcher_capture_files_prune
 
   # Collect a completed hygiene scan before launching another one. The report
   # child keeps endpoint/backlog reads out of the polling path. Only a home

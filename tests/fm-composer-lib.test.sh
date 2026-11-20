@@ -1928,8 +1928,84 @@ test_quoted_exit_picker_text_is_not_a_dialog() {
   pass "picker text quoted above a normal composer is not read as a live picker"
 }
 
+# The dialog matcher's builtin pre-gate must answer exactly as the full
+# strip-and-scan it guards. The reference below is that full scan, run on every
+# screen without the gate; each corpus screen must get the same name and exit
+# status from both, and the corpus must hold both answers so it cannot pass
+# vacuously. A plain screen missing a phrase must be settled with no program
+# start at all, which an empty PATH makes observable, while a screen the gate
+# passes on (all phrases present, or any escape byte) must still reach sed and
+# awk.
+ref_blocking_dialog() {  # <screen>
+  local screen=${1-}
+  [ -n "$screen" ] || return 1
+  if printf '%s\n' "$screen" | fm_composer_strip_ansi | LC_ALL=C awk '
+    /^[ \t]*Background work is running[ \t\r]*$/ { heading = 1 }
+    heading && /^[ \t]*❯ 1\. Exit and stop tasks[ \t\r]*$/ { selected = 1 }
+    /[^ \t\r]/ { last = $0 }
+    END { exit !(selected && last ~ /^[ \t]*Enter to confirm · Esc to cancel[ \t\r]*$/) }
+  '; then
+    printf '%s' 'Claude background-task exit picker'
+    return 0
+  fi
+  return 1
+}
+
+dialog_gate_corpus() {  # prints each corpus screen, NUL-terminated
+  local esc picker cr
+  esc=$(printf '\033'); cr=$(printf '\r')
+  picker=$(exit_picker_screen)
+  printf '%s\0' \
+    "$picker" \
+    "$(printf '%s\n' "$picker" '' '')" \
+    "$(quoted_exit_picker_screen)" \
+    "${picker/Background work/Backgr0und work}" \
+    "${picker/Exit and stop/Exit and st0p}" \
+    "${picker/Enter to confirm/Enter to c0nfirm}" \
+    "${picker/· Esc/- Esc}" \
+    "${picker/❯ 1./> 1.}" \
+    "${picker/Background work is running/Back${esc}[1mground work is running}" \
+    "${picker/Exit and stop tasks/Exit and ${esc}[2mstop${esc}[0m tasks}" \
+    "${esc}[32m${picker}${esc}[0m" \
+    "${picker/Background/Back${esc}[1mXground}" \
+    "$(printf '%s\n' 'Background work is running' '❯ 1. Exit and stop tasks' 'Enter to confirm · Esc to cancel')" \
+    "$(printf '%s\n' "Background work is running$cr" "❯ 1. Exit and stop tasks$cr" "Enter to confirm · Esc to cancel$cr")" \
+    "$(printf '%s\n' "$picker" "$(printf '\377\376 tail')")" \
+    "$(printf '\377%s\n' "$picker")" \
+    "$(printf '%s\n' 'Background work is running' 'Enter to confirm · Esc to cancel' '❯ 1. Exit and stop tasks')" \
+    "$(printf '%s\n' 'Enter to confirm · Esc to cancel' 'Background work is running' '❯ 1. Exit and stop tasks')" \
+    'Background work is running' \
+    "$(printf '%s\n' '╭──────╮' '│ > hi │' '╰──────╯' '  esc to interrupt')" \
+    "$(printf '%s\n' 'Working... (12s)' "$(printf '\303\251\342\224\200 plain')")" \
+    ' ' \
+    "$cr"
+}
+
+test_dialog_pregate_matches_the_full_scan() {
+  local screen want want_rc got got_rc n=0 hits=0 misses=0 err
+  while IFS= read -r -d '' screen; do
+    n=$((n + 1))
+    want=$(ref_blocking_dialog "$screen"); want_rc=$?
+    got=$(fm_composer_blocking_dialog "$screen"); got_rc=$?
+    [ "$got_rc" -eq "$want_rc" ] && [ "$got" = "$want" ] \
+      || fail "corpus screen $n: the gated matcher said rc=$got_rc '$got', the full scan rc=$want_rc '$want'"
+    if [ "$want_rc" -eq 0 ]; then hits=$((hits + 1)); else misses=$((misses + 1)); fi
+  done < <(dialog_gate_corpus)
+  [ "$n" -ge 20 ] || fail "the dialog corpus held only $n screens"
+  [ "$hits" -ge 5 ] && [ "$misses" -ge 10 ] \
+    || fail "the dialog corpus must hold both answers, got $hits matches and $misses misses"
+  err=$(PATH=/nonexistent fm_composer_blocking_dialog "$(printf '%s\n' 'Working... (3s)' '  esc to interrupt')" 2>&1 >/dev/null)
+  [ -z "$err" ] || fail "a plain screen without the phrases started a program: $err"
+  err=$(PATH=/nonexistent fm_composer_blocking_dialog "$(exit_picker_screen)" 2>&1 >/dev/null)
+  [ -n "$err" ] || fail "a screen with every phrase did not reach the full scan"
+  err=$(PATH=/nonexistent fm_composer_blocking_dialog "$(printf '\033[1mplain\033[0m')" 2>&1 >/dev/null)
+  [ -n "$err" ] || fail "a styled screen did not reach the full scan"
+  pass "the dialog pre-gate gives the full scan's answer on $n screens ($hits matches) and skips sed and awk only on plain screens missing a phrase"
+}
+
 test_background_exit_picker_stays_pending_and_blocks_retry
 test_dialog_heading_and_footer_must_be_the_recorded_lines
+test_dialog_pregate_matches_the_full_scan
 test_dialog_note_skips_the_match_when_no_sink_is_set
 test_quoted_exit_picker_text_is_not_a_dialog
 test_kiro_near_gray_ghost_is_stripped_and_real_text_survives

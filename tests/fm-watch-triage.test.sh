@@ -5926,6 +5926,213 @@ if [ -n "${FM_TEST_ONLY:-}" ]; then
   exit 0
 fi
 
+# --- per-window pane capture files --------------------------------------------
+# The pane loop reads each window into one private file it reuses across polls
+# (bin/fm-watch.sh watcher_capture_window) instead of creating and removing a
+# temp file on every read. These pin both halves of that trade. Ownership: one
+# 0600 file per window, kept across polls, dropped when its window leaves and
+# when the watcher stops, and a startup sweep that clears a dead watcher's
+# leftovers but never a live process's. Freshness: a file that is gone after the
+# read is a failed read, never an empty pane, while a pane that really is empty
+# is still read and judged on the same poll. The group probe that replaced the
+# per-read ps check is pinned by a ps that would refuse every group.
+
+pane_capture_names() {  # <state>
+  local f
+  for f in "$1"/.fm-pane-capture.*; do
+    [ -e "$f" ] || [ -L "$f" ] || continue
+    printf '%s\n' "${f##*/}"
+  done
+}
+
+pane_capture_stat() {  # <mode|inode> <file>
+  local fmt
+  if [ "$(uname)" = Darwin ]; then
+    case "$1" in mode) fmt=%Lp ;; *) fmt=%i ;; esac
+    stat -f "$fmt" "$2" 2>/dev/null
+  else
+    case "$1" in mode) fmt=%a ;; *) fmt=%i ;; esac
+    stat -c "$fmt" "$2" 2>/dev/null
+  fi
+}
+
+# A working lane whose idle pane the wedge timer absorbs, so the watcher keeps
+# polling it without a wake. Prints the window key.
+prime_capture_lane() {  # <state> <id> <window>
+  local state=$1 id=$2 window=$3
+  printf 'window=%s\nkind=ship\nbackend=tmux\n' "$window" > "$state/$id.meta"
+  printf 'working: implementing\n' > "$state/$id.status"
+  printf '%s' "$(seen_sig "$state/$id.status")" > "$state/.seen-${id}_status"
+  watch_window_key "$window"
+}
+
+# A lane on a terminal record whose pane already sat at <text>'s hash last
+# poll, so the first poll that reads <text> again surfaces it. Prints the key.
+prime_capture_terminal_lane() {  # <state> <id> <window> <text>
+  local state=$1 id=$2 window=$3 text=$4 key
+  printf 'window=%s\nkind=ship\n' "$window" > "$state/$id.meta"
+  printf 'done: PR https://example.test/pr/9\n' > "$state/$id.status"
+  printf '%s' "$(seen_sig "$state/$id.status")" > "$state/.seen-${id}_status"
+  key=$(watch_window_key "$window")
+  printf '%s' "$(hash_text "$text")" > "$state/.hash-$key"
+  printf '1\n' > "$state/.count-$key"
+  printf '%s' "$key"
+}
+
+capture_watch_bg() {  # <dir> <tmux-window-names> [path-prefix]
+  local dir=$1 windows=$2 prefix=${3:-}
+  PATH="$prefix${prefix:+:}$dir/fakebin:$PATH" FM_FAKE_TMUX_WINDOWS="$windows" \
+    FM_FAKE_TMUX_CAPTURE="$dir/pane.txt" FM_FAKE_REAL_TMUX="$dir/fakebin/tmux" \
+    FM_FAKE_CREW_STATE="${CAPTURE_CREW_STATE:-state: working · source: run-step · validating (running)}" \
+    FM_STATE_OVERRIDE="$dir/state" FM_CREW_STATE_BIN="$dir/fakebin/fm-crew-state.sh" \
+    FM_STALE_ESCALATE_SECS=999 FM_POLL=1 FM_SIGNAL_GRACE=1 \
+    FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$WATCH" > "$dir/watch.out" &
+}
+
+test_pane_capture_is_one_private_reused_file_per_window() {
+  local dir state pid a_key b_key a_file b_file inode
+  dir=$(make_case pane-capture-reuse); state="$dir/state"
+  printf 'idle at the prompt' > "$dir/pane.txt"
+  a_key=$(prime_capture_lane "$state" capa "test:fm-capa")
+  b_key=$(prime_capture_lane "$state" capb "test:fm-capb")
+  capture_watch_bg "$dir" "$(printf 'fm-capa\nfm-capb')"
+  pid=$!
+  wait_poll_cycle "$state" "$pid" || { reap "$pid"; fail "the two-window watcher stopped: $(cat "$dir/watch.out")"; }
+  a_file="$state/.fm-pane-capture.$pid.$a_key"; b_file="$state/.fm-pane-capture.$pid.$b_key"
+  [ -f "$a_file" ] && [ -f "$b_file" ] \
+    || { reap "$pid"; fail "each window did not get its own capture file: $(pane_capture_names "$state")"; }
+  [ "$(pane_capture_names "$state" | wc -l | tr -d '[:space:]')" -eq 2 ] \
+    || { reap "$pid"; fail "two windows left other capture files: $(pane_capture_names "$state")"; }
+  [ "$(pane_capture_stat mode "$a_file")" = 600 ] \
+    || { reap "$pid"; fail "a capture file was not private: mode $(pane_capture_stat mode "$a_file")"; }
+  [ "$(cat "$a_file")" = 'idle at the prompt' ] \
+    || { reap "$pid"; fail "a capture file did not hold the pane just read: $(cat "$a_file")"; }
+  inode=$(pane_capture_stat inode "$a_file")
+  wait_poll_cycle "$state" "$pid" || { reap "$pid"; fail "the two-window watcher stopped: $(cat "$dir/watch.out")"; }
+  [ "$(pane_capture_stat inode "$a_file")" = "$inode" ] \
+    || { reap "$pid"; fail "a window's capture file was not reused across polls"; }
+  rm -f "$state/capb.meta"
+  wait_poll_cycle "$state" "$pid" || { reap "$pid"; fail "the watcher stopped after a window left: $(cat "$dir/watch.out")"; }
+  [ ! -e "$b_file" ] || { reap "$pid"; fail "a window that left kept its capture file"; }
+  [ -f "$a_file" ] || { reap "$pid"; fail "the remaining window lost its capture file"; }
+  [ ! -s "$dir/watch.out" ] || { reap "$pid"; fail "the working lanes woke: $(cat "$dir/watch.out")"; }
+  reap "$pid"
+  [ -z "$(pane_capture_names "$state")" ] || fail "a stopped watcher left capture files: $(pane_capture_names "$state")"
+  ack_stopped_cycle "$state" || fail "could not acknowledge the capture-reuse watcher's stop"
+  pass "each window reads into one private file reused across polls, dropped when the window leaves and when the watcher stops"
+}
+
+test_pane_capture_startup_sweep_clears_only_dead_owners() {
+  local dir state pid key holder dead=99999999 own
+  dir=$(make_case pane-capture-sweep); state="$dir/state"
+  printf 'idle at the prompt' > "$dir/pane.txt"
+  key=$(prime_capture_lane "$state" sweep "test:fm-capsweep")
+  sleep 300 &
+  holder=$!
+  # A killed watcher's file for this very window, which comes back with it, a
+  # live process's file, and a name with no pid at all.
+  printf 'Working... esc to interrupt' > "$state/.fm-pane-capture.$dead.$key"
+  printf 'live' > "$state/.fm-pane-capture.$holder.$key"
+  printf 'junk' > "$state/.fm-pane-capture.not-a-pid"
+  capture_watch_bg "$dir" fm-capsweep
+  pid=$!
+  wait_poll_cycle "$state" "$pid" || { reap "$pid"; kill "$holder"; fail "the sweep watcher stopped: $(cat "$dir/watch.out")"; }
+  own="$state/.fm-pane-capture.$pid.$key"
+  [ ! -e "$state/.fm-pane-capture.$dead.$key" ] || { reap "$pid"; kill "$holder"; fail "the sweep kept a dead watcher's capture file"; }
+  [ ! -e "$state/.fm-pane-capture.not-a-pid" ] || { reap "$pid"; kill "$holder"; fail "the sweep kept a capture file with no owner pid"; }
+  [ "$(cat "$state/.fm-pane-capture.$holder.$key" 2>/dev/null)" = live ] \
+    || { reap "$pid"; kill "$holder"; fail "the sweep touched a live process's capture file"; }
+  [ "$(cat "$own" 2>/dev/null)" = 'idle at the prompt' ] \
+    || { reap "$pid"; kill "$holder"; fail "the returning window was not read fresh into this watcher's own file: $(cat "$own" 2>/dev/null)"; }
+  [ ! -s "$dir/watch.out" ] || { reap "$pid"; kill "$holder"; fail "the working lane woke: $(cat "$dir/watch.out")"; }
+  reap "$pid"
+  [ ! -e "$own" ] || { kill "$holder"; fail "the stopped watcher kept its own capture file"; }
+  [ -e "$state/.fm-pane-capture.$holder.$key" ] || { kill "$holder"; fail "the stopped watcher removed a live process's capture file"; }
+  kill "$holder" 2>/dev/null || true
+  wait "$holder" 2>/dev/null || true
+  ack_stopped_cycle "$state" || fail "could not acknowledge the sweep watcher's stop"
+  pass "the startup sweep clears a dead watcher's capture files, a returning window is read fresh, and a live process's file is kept"
+}
+
+test_pane_capture_vanished_file_is_a_failed_read_not_an_empty_pane() {
+  local dir state pid wrap log n CAPTURE_CREW_STATE='state: unknown · source: none · no current-state source available'
+  # Control: a pane that really is empty is a successful read, and a terminal
+  # lane whose pane was empty last poll too surfaces on this poll.
+  dir=$(make_case pane-capture-empty); state="$dir/state"
+  : > "$dir/pane.txt"
+  prime_capture_terminal_lane "$state" empty "test:fm-capempty" '' >/dev/null
+  capture_watch_bg "$dir" fm-capempty
+  pid=$!
+  wait_for_exit "$pid" 100 || { reap "$pid"; fail "an empty pane on a terminal record was not surfaced: $(cat "$dir/watch.out")"; }
+  grep -Fx 'stale: test:fm-capempty' "$dir/watch.out" >/dev/null \
+    || fail "an empty pane did not raise the plain stale wake: $(cat "$dir/watch.out")"
+  ack_stopped_cycle "$state" || fail "could not acknowledge the empty-pane wake"
+  # The same lane, but each read's file is removed before the watcher reads it
+  # back: that is no evidence about the pane, so the window is not judged.
+  dir=$(make_case pane-capture-vanished); state="$dir/state"
+  : > "$dir/pane.txt"
+  prime_capture_terminal_lane "$state" gone "test:fm-capgone" '' >/dev/null
+  wrap="$dir/wrapbin"; log="$dir/captures.log"
+  mkdir -p "$wrap"
+  cat > "$wrap/tmux" <<'SH'
+#!/usr/bin/env bash
+if [ "${1:-}" = capture-pane ]; then
+  printf 'capture\n' >> "$FM_TEST_CAPTURE_LOG"
+  rm -f "$FM_STATE_OVERRIDE"/.fm-pane-capture.*
+  exit 0
+fi
+exec "$FM_FAKE_REAL_TMUX" "$@"
+SH
+  chmod +x "$wrap/tmux"
+  export FM_TEST_CAPTURE_LOG=$log
+  capture_watch_bg "$dir" fm-capgone "$wrap"
+  pid=$!
+  unset FM_TEST_CAPTURE_LOG
+  if ! wait_poll_cycle "$state" "$pid" || ! wait_poll_cycle "$state" "$pid"; then
+    reap "$pid"; fail "a read whose file vanished was taken as an empty pane: $(cat "$dir/watch.out")"
+  fi
+  n=$(grep -c '^capture$' "$log" 2>/dev/null || true)
+  [ "${n:-0}" -ge 2 ] || { reap "$pid"; fail "the vanished-file case never read the pane (captures: ${n:-0})"; }
+  [ ! -s "$dir/watch.out" ] || { reap "$pid"; fail "a vanished capture file woke the lane: $(cat "$dir/watch.out")"; }
+  reap "$pid"
+  ack_stopped_cycle "$state" || fail "could not acknowledge the vanished-file watcher's stop"
+  pass "a capture file gone after the read is a failed read, while a really empty pane is still judged on the same poll"
+}
+
+test_pane_capture_group_probe_needs_no_ps() {
+  local dir state pid wrap CAPTURE_CREW_STATE='state: unknown · source: none · no current-state source available'
+  # Every pgid lookup through this ps names a group that is not the read's, so
+  # the old per-read ps check would fail every capture and the stale pane
+  # below would never be judged. The read is slow enough that its group is
+  # alive when the builtin probe looks for it.
+  dir=$(make_case pane-capture-probe); state="$dir/state"
+  printf 'finished, awaiting review' > "$dir/pane.txt"
+  prime_capture_terminal_lane "$state" probe "test:fm-capprobe" 'finished, awaiting review' >/dev/null
+  wrap="$dir/wrapbin"
+  mkdir -p "$wrap"
+  cat > "$wrap/ps" <<'SH'
+#!/usr/bin/env bash
+case " $* " in
+  *" -o pgid= "*) printf '1\n'; exit 0 ;;
+esac
+exec /bin/ps "$@"
+SH
+  cat > "$wrap/tmux" <<'SH'
+#!/usr/bin/env bash
+[ "${1:-}" != capture-pane ] || sleep 0.3
+exec "$FM_FAKE_REAL_TMUX" "$@"
+SH
+  chmod +x "$wrap/ps" "$wrap/tmux"
+  [ "$(PATH="$wrap:$PATH" ps -o pgid= -p $$)" = 1 ] || fail "the refusing ps stub is not on PATH"
+  capture_watch_bg "$dir" fm-capprobe "$wrap"
+  pid=$!
+  wait_for_exit "$pid" 100 || { reap "$pid"; fail "a stale pane was not judged when ps refuses every group: $(cat "$dir/watch.out")"; }
+  grep -Fx 'stale: test:fm-capprobe' "$dir/watch.out" >/dev/null \
+    || fail "the probed read did not raise the stale wake: $(cat "$dir/watch.out")"
+  ack_stopped_cycle "$state" || fail "could not acknowledge the probed stale wake"
+  pass "a pane read whose process group the builtin probe proves needs no ps check"
+}
+
 fm_test_run \
   test_colliding_endpoints_keep_independent_stale_history \
   test_long_endpoint_keeps_stale_history \
@@ -6066,4 +6273,8 @@ fm_test_run \
   test_ordinary_turn_end_keeps_the_plain_stale \
   test_repeated_drops_stop_redriving_and_surface_once \
   test_settled_lane_past_its_declared_wait_is_resumed \
-  test_closed_exit_picker_drops_saved_dialog_name
+  test_closed_exit_picker_drops_saved_dialog_name \
+  test_pane_capture_is_one_private_reused_file_per_window \
+  test_pane_capture_startup_sweep_clears_only_dead_owners \
+  test_pane_capture_vanished_file_is_a_failed_read_not_an_empty_pane \
+  test_pane_capture_group_probe_needs_no_ps
