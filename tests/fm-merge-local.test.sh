@@ -11,16 +11,9 @@ set -u
 
 TMP_ROOT=$(fm_test_tmproot fm-merge-local)
 
-# fm-merge-local.sh deliberately refuses the supervision branch actor, because
-# local-only landing is main-owned, so an ambient FM_SUPERVISION_ACTOR=branch
-# would turn every landing case red. Pin the main actor for the whole suite and
-# say so; the branch-actor case below sets the actor per call, so every case
-# still runs under the actor it is about.
-if [ -n "${FM_SUPERVISION_ACTOR:-}" ]; then
-  printf '# note: ambient FM_SUPERVISION_ACTOR=%s ignored; landing cases pin the main actor, the branch-actor case sets it per call\n' \
-    "$FM_SUPERVISION_ACTOR"
-  unset FM_SUPERVISION_ACTOR
-fi
+# fm-merge-local.sh refuses the supervision branch actor, because local-only
+# landing is main-owned; tests/lib.sh pins the main actor, and the branch-actor
+# case below sets it per call.
 fm_git_identity fmtest fmtest@example.invalid
 
 make_case() {

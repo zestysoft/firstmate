@@ -13,6 +13,13 @@ set -u
 # which the no-mistakes gate runs from a gate worktree, must be exempt).
 export FM_GATE_REFUSE_BYPASS=1
 
+# The same main-actor pin tests/lib.sh owns and explains: these suites spawn and
+# tear down as the main session, which the supervision branch actor may not do.
+if [ -n "${FM_SUPERVISION_ACTOR:-}" ]; then
+  printf '# note: ambient FM_SUPERVISION_ACTOR=%s ignored; fixtures run as the main actor\n' "$FM_SUPERVISION_ACTOR"
+  unset FM_SUPERVISION_ACTOR
+fi
+
 HERDR_TEST_SAFETY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=/dev/null
 . "$HERDR_TEST_SAFETY_DIR/bin/fm-herdr-lab.sh"

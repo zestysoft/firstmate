@@ -98,6 +98,21 @@ unset TASKS_AXI_FILE TASKS_AXI_BACKEND
 # can find the CLI; a case that verifies detection sets these itself.
 unset REX_SESSION REX_BLOCK
 
+# Pin the main supervision actor. The Pi supervision branch's shell exports
+# FM_SUPERVISION_ACTOR=branch (bin/fm-lease-lib.sh's fm_lease_actor owns that
+# identity), and the code under test genuinely acts differently for it: spawn,
+# forced teardown, PR and local-only landing, and decision answers refuse at the
+# role partition, a wake drain consumes only the rows granted to the branch, and
+# the guard keeps the watcher banner silent. Every fixture plays the main session,
+# as CI does, so a suite started from a branch shell would otherwise fail on its
+# environment rather than on what it asserts. A case about the branch actor sets
+# FM_SUPERVISION_ACTOR=branch itself, after this point or in its own call.
+if [ -n "${FM_SUPERVISION_ACTOR:-}" ]; then
+  printf '# note: ambient FM_SUPERVISION_ACTOR=%s ignored; fixtures run as the main actor, branch-actor cases set it per call\n' \
+    "$FM_SUPERVISION_ACTOR"
+  unset FM_SUPERVISION_ACTOR
+fi
+
 # Write the tracked default backlog configuration into a fixture home. Never copy
 # "$ROOT/.tasks.toml": an operator's primary checkout keeps a gitignored override
 # there (for example a beads backend at its live backlog), so a copy points the
