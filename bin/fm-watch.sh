@@ -5042,6 +5042,17 @@ EOF
     if [ "$kind" = secondmate ] && ! status_is_paused_or_captain_held "$last"; then
       continue
     fi
+    # The window list above is read once per pass, so a record retired while an
+    # earlier window is being read (a cleanup, a close-out, a relaunch that
+    # rewrote window=) leaves a window here that no task record claims any more;
+    # window_to_task would then invent a task id from the window name. With no
+    # record there is nothing to supervise, so skip it. A window whose record
+    # still exists - dead or missing agent, finished but not landed - is not
+    # `unknown` and keeps every notice below.
+    if [ "$kind" = unknown ]; then
+      triage_log "skipped stale scan (no task record claims this window): $w"
+      continue
+    fi
     watcher_capture_window "$key" "$(window_backend "$w")" "$w" 40 "$(window_label "$w")" || continue
     tail40=$WATCHER_CAPTURE
     # The matcher is already defined in this shell. It reads the capture this

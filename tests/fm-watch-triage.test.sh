@@ -2542,6 +2542,98 @@ test_finished_parked_rereported_head_stays_quiet_across_restart() {
   pass "a finished lane that re-reports a newer local head stays quiet across a watcher restart, read by the real crew state"
 }
 
+# --- a window whose task record is gone mid-scan: nothing to supervise ---------
+# The stale scan lists recorded windows once and then works through them, so a
+# record retired while an earlier window is being read (a cleanup, a close-out,
+# a relaunch that rewrote window=) leaves a window in the pass that no record
+# claims any more. window_to_task then invents a task id from the window name,
+# and the pane went on to surface as an ordinary stale alarm for work that no
+# longer exists. The race is reproduced exactly: reading the first window's pane
+# retires the second window's record. The same fixture with the record kept must
+# still alarm for a worker that went quiet, for a finished worker whose result
+# waits to be landed, and for a record whose status log is absent.
+orphan_window_round() {  # <name> <bbb-status-or-empty> <retire:0|1> <exit|absorb>
+  local name=$1 status=$2 retire=$3 mode=$4 dir state fakebin out text key pid cycles=0
+  dir=$(make_case "$name"); state="$dir/state"; fakebin="$dir/fakebin"; out="$dir/watch.out"
+  ORPHAN_ROUND_DIR=$dir
+  text='quiet at the prompt'
+  printf '%s' "$text" > "$dir/pane.txt"
+  mv "$fakebin/tmux" "$fakebin/tmux.fake"
+  cat > "$fakebin/tmux" <<'SH'
+#!/usr/bin/env bash
+if [ "${1:-}" = capture-pane ] && [ -n "${FM_TEST_RETIRE_ON_CAPTURE:-}" ]; then
+  case " $* " in
+    *" -t test:fm-aaa "*) rm -f "$FM_TEST_RETIRE_ON_CAPTURE".meta "$FM_TEST_RETIRE_ON_CAPTURE".status ;;
+  esac
+fi
+exec "$(dirname "$0")/tmux.fake" "$@"
+SH
+  chmod +x "$fakebin/tmux"
+  # aaa sorts first and is a first sight, then provably working, so it never
+  # alarms; it is the window whose read retires bbb's record in the race rounds.
+  printf 'window=test:fm-aaa\nkind=ship\n' > "$state/aaa.meta"
+  printf 'window=test:fm-bbb\nkind=ship\n' > "$state/bbb.meta"
+  if [ -n "$status" ]; then
+    printf '%s\n' "$status" > "$state/bbb.status"
+    printf '%s' "$(seen_sig "$state/bbb.status")" > "$state/.seen-bbb_status"
+  fi
+  # bbb is already stably idle at its recorded hash, so this pass decides it.
+  key=$(watch_window_key "test:fm-bbb")
+  printf '%s' "$(hash_text "$text")" > "$state/.hash-$key"
+  printf '1\n' > "$state/.count-$key"
+  if [ "$retire" = 1 ]; then
+    export FM_TEST_RETIRE_ON_CAPTURE="$state/bbb"
+  else
+    unset FM_TEST_RETIRE_ON_CAPTURE
+  fi
+  FM_FAKE_CREW_STATE_aaa='state: working · source: run-step · running' \
+    FM_FAKE_TMUX_WINDOWS=$'fm-aaa\nfm-bbb' FM_FAKE_TMUX_CAPTURE="$dir/pane.txt" \
+    watch_bg "$state" "$fakebin" "$out"
+  pid=$!
+  if [ "$mode" = exit ]; then
+    wait_for_exit "$pid" 100 || { reap "$pid"; unset FM_TEST_RETIRE_ON_CAPTURE; return 1; }
+  else
+    while [ "$cycles" -lt 3 ]; do
+      wait_poll_cycle "$state" "$pid" 300 || { reap "$pid"; unset FM_TEST_RETIRE_ON_CAPTURE; return 1; }
+      cycles=$((cycles + 1))
+    done
+    reap "$pid"
+  fi
+  unset FM_TEST_RETIRE_ON_CAPTURE
+  return 0
+}
+
+test_window_without_task_record_is_not_reported() {
+  local dir state status
+  for status in 'working: still compiling' 'done: ready in branch fm/bbb'; do
+    orphan_window_round "orphan-window-${status%%:*}" "$status" 1 absorb \
+      || fail "[$status] a window whose record was retired mid-scan still alarmed: $(cat "$ORPHAN_ROUND_DIR/watch.out" 2>/dev/null)"
+    dir=$ORPHAN_ROUND_DIR; state="$dir/state"
+    [ ! -e "$state/bbb.meta" ] || fail "[$status] the race never ran: bbb's record was not retired mid-scan"
+    [ ! -s "$dir/watch.out" ] || fail "[$status] the record-less window printed a wake: $(cat "$dir/watch.out")"
+    [ "$(wedge_stale_wakes "$state" test:fm-bbb)" -eq 0 ] \
+      || fail "[$status] the record-less window queued a stale wake: $(cat "$state/.wake-queue")"
+    grep -F 'skipped stale scan (no task record claims this window): test:fm-bbb' "$state/.watch-triage.log" >/dev/null \
+      || fail "[$status] the skip was not logged: $(cat "$state/.watch-triage.log" 2>/dev/null)"
+  done
+  pass "a window no task record claims any more is passed over without a stale alarm"
+}
+
+test_window_with_task_record_still_reported() {
+  local dir state status label
+  for status in 'working: still compiling' 'done: ready in branch fm/bbb' ''; do
+    label=${status%%:*}; label=${label:-no-status}
+    orphan_window_round "kept-window-$label" "$status" 0 exit \
+      || fail "[$label] a quiet window with its record kept was not reported: $(cat "$ORPHAN_ROUND_DIR/watch.out" 2>/dev/null)"
+    dir=$ORPHAN_ROUND_DIR; state="$dir/state"
+    grep -Fx 'stale: test:fm-bbb' "$dir/watch.out" >/dev/null \
+      || fail "[$label] the kept-record window's alarm changed: $(cat "$dir/watch.out")"
+    [ "$(wedge_stale_wakes "$state" test:fm-bbb)" -eq 1 ] \
+      || fail "[$label] the kept-record window queued $(wedge_stale_wakes "$state" test:fm-bbb) stale wakes instead of one"
+  done
+  pass "a quiet window whose record exists - working, finished awaiting landing, or with no status log - is still reported"
+}
+
 # --- stale pane, STALE terminal status overridden by an active run: absorbed ---
 # Regression for the 2026-07 herdr false-surface incidents: a crew's own status
 # log gets no new entry once firstmate hands it to a no-mistakes validation
@@ -6214,6 +6306,8 @@ fm_test_run \
   test_finished_parked_wedges_still_alarm \
   test_finished_parked_refusals_name_their_signal \
   test_finished_parked_rereported_head_stays_quiet_across_restart \
+  test_window_without_task_record_is_not_reported \
+  test_window_with_task_record_still_reported \
   test_stale_terminal_status_overridden_by_active_run \
   test_nonterminal_stale_provably_working_absorbed_then_escalated \
   test_wedge_escalation_marks_demand_deep_inspection_after_threshold \
