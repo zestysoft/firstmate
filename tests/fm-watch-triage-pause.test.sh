@@ -1659,12 +1659,24 @@ test_undated_pause_overdue_bound() {
   wait_poll_cycle "$state" "$UNTIL_PID" || { reap "$UNTIL_PID"; fail "fresh undated pause exited before its ceiling"; }
   wait_poll_cycle "$state" "$UNTIL_PID" || { reap "$UNTIL_PID"; fail "undated pause exited before its ceiling"; }
   [ -z "$(status_open_decisions "$statusf")" ] || fail "undated pause opened a decision before its bound"
+  # Stop the watcher before aging the status and classifying it directly. A live
+  # poll could otherwise see the new mtime before the .seen-* rewrite (a signal
+  # wake, no decision), or publish its blocker line before its overdue marker (a
+  # direct read in between answers none). A fresh watcher below owns the surface,
+  # armed as the handled-wake successor so it does not re-announce this stop as
+  # downtime (`check: rearm-resurface`) before reaching the stale path.
+  reap "$UNTIL_PID"
 
   set_mtime "$(( $(date +%s) - 61 ))" "$statusf"
   printf '%s' "$(seen_sig "$statusf")" > "$state/.seen-until_status"
+  [ ! -e "$state/.paused-overdue-until" ] || fail "undated pause wrote an overdue marker before its bound"
   class=$(FM_STATE_OVERRIDE="$state" FM_HOME="$dir" FM_PAUSE_UNDATED_MAX_SECS=60 FM_CREW_STATE_BIN="$dir/fakebin/fm-crew-state.sh" FM_FAKE_CREW_STATE='state: working · source: active run' bash -c '. "$1"; pause_state_class test:fm-until until' _ "$WATCH")
   [ "$class" = paused ] || fail "overdue undated pause classified as working: $class"
+  : > "$dir/watch.out"
+  FM_WATCH_HANDLING_SUCCESSOR=1 until_watch "$dir" 240
   wait_for_exit "$UNTIL_PID" 100 || { reap "$UNTIL_PID"; fail "overdue undated pause did not surface"; }
+  grep -F 'wait overdue - decide or release' "$dir/watch.out" >/dev/null \
+    || fail "overdue undated pause surfaced without an overdue decision request: $(cat "$dir/watch.out")"
   grep -Fq 'paused-overdue-until' < <(status_open_decisions "$statusf") || fail "overdue undated pause did not open a decision"
   class=$(FM_STATE_OVERRIDE="$state" FM_HOME="$dir" bash -c '. "$1"; status_open_decisions() { printf called > "$3"; return 1; }; pause_state_class test:fm-until until' _ "$WATCH" "$state" "$dir/open-fold-called")
   [ "$class" = paused ] || fail "unchanged overdue pause did not stay classified as paused: $class"
