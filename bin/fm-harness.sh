@@ -70,7 +70,7 @@
 # verbs never consult it.
 set -u
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(d=${BASH_SOURCE[0]%/*}; [ "$d" != "${BASH_SOURCE[0]}" ] || d=.; cd "${d:-/}" && pwd)"
 FM_ROOT="${FM_ROOT_OVERRIDE:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 CONFIG="${FM_CONFIG_OVERRIDE:-$FM_HOME/config}"
@@ -190,7 +190,7 @@ ancestry_names_omp() {
 #          (any node process holding a harness-shaped path matches it), so it is
 #          used only when no marker is present.
 harness_process_verdict() {  # <pid>
-  local pid=$1 comm args argv0
+  local pid=$1 comm comm_base args argv0
   comm=$(ps -o comm= -p "$pid" 2>/dev/null) || return 0
   argv0=$(fm_cursor_argv0_for_pid "$pid" "$comm" 2>/dev/null || true)
   if fm_cursor_process_matches "$comm" '' "$argv0"; then
@@ -215,7 +215,8 @@ harness_process_verdict() {  # <pid>
     echo "comm omp"
     return
   fi
-  case "$(basename -- "$comm")" in
+  fm_basename_to comm_base "$comm"
+  case "$comm_base" in
     # gemini precedes claude here for the same precedence reason as the
     # marker layer above, so a gemini worker under a claude primary is never
     # read as claude. This arm covers a natively-named gemini binary only.

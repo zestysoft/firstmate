@@ -48,6 +48,22 @@
 # adapter-local composer normalizer would be the second copy that owner exists
 # to prevent.
 
+# Fork-free fm_dirname_to/fm_basename_to for the ancestry and liveness paths
+# below; fm-path-lib.sh has no source-time side effects. This file must still
+# work, silently, when copied without its siblings, so a missing helper falls
+# back to the dirname/basename programs with the same results.
+if ! declare -F fm_basename_to >/dev/null; then
+  # shellcheck source=bin/fm-path-lib.sh
+  # shellcheck disable=SC1091
+  case ${BASH_SOURCE[0]} in
+    */*) . "${BASH_SOURCE[0]%/*}/fm-path-lib.sh" 2>/dev/null || true ;;
+  esac
+fi
+if ! declare -F fm_basename_to >/dev/null; then
+  fm_dirname_to() { printf -v "$1" '%s' "$(dirname -- "$2")"; }
+  fm_basename_to() { printf -v "$1" '%s' "$(basename -- "$2")"; }
+fi
+
 # Bounded probe budget in seconds. Cursor's --help is local and returns
 # immediately; the bound exists so a hung or interactive impostor cannot wedge
 # a spawn or a readiness check.
@@ -78,8 +94,9 @@ fm_cursor_run_timed() {  # <seconds> <command...>
 fm_cursor_canonical_path() {  # <path>
   local path=$1 dir base
   [ -n "$path" ] || return 1
-  dir=$(CDPATH='' cd -- "$(dirname -- "$path")" 2>/dev/null && pwd -P) || { printf '%s\n' "$path"; return 0; }
-  base=$(basename -- "$path")
+  fm_dirname_to dir "$path"
+  dir=$(CDPATH='' cd -- "$dir" 2>/dev/null && pwd -P) || { printf '%s\n' "$path"; return 0; }
+  fm_basename_to base "$path"
   # Follow the symlink chain by hand: readlink -f is GNU-only and realpath is
   # not guaranteed on macOS, and this needs no new dependency.
   local hops=0 target
@@ -274,7 +291,7 @@ fm_cursor_process_matches() {  # <comm> <args> [argv0]
   local comm=$1 argv0=${3:-} base
   [ -n "$comm" ] || [ -n "$argv0" ] || return 1
   argv0=${argv0:-$comm}
-  base=$(basename -- "$comm")
+  fm_basename_to base "$comm"
   base=${base#-}
   case "$base" in
     cursor-agent) return 0 ;;

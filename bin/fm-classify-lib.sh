@@ -73,6 +73,8 @@ case $- in *u*) _fm_classify_nounset=on ;; *) _fm_classify_nounset=off ;; esac
 . "$_FM_CLASSIFY_LIB_DIR/fm-timeout-lib.sh"
 [ "$_fm_classify_nounset" = on ] || set +u
 unset _fm_classify_nounset
+# shellcheck source=bin/fm-path-lib.sh
+. "$_FM_CLASSIFY_LIB_DIR/fm-path-lib.sh"
 
 # Captain-relevant status verbs. A status line carrying any of these is work
 # firstmate must see. Lines without these verbs are no-verb signals: the watcher
@@ -1336,8 +1338,8 @@ EOF
 # re-derives from whatever offset actually landed on disk.
 _fm_open_decisions_cursor_path() {  # <status-file>
   local f=$1 dir base
-  dir=$(dirname "$f")
-  base=$(basename "$f")
+  fm_dirname_to dir "$f"
+  fm_basename_to base "$f"
   printf '%s/.%s.open-decisions-cursor' "$dir" "${base%.status}"
 }
 
@@ -1474,7 +1476,7 @@ status_open_decisions_incremental() {  # <status-file> [<captured-end-offset>] [
   offset=0
   ident=''
   if [ -f "$cf" ] && [ -r "$cf" ] && [ ! -L "$cf" ]; then
-    cursor_data=$(LC_ALL=C command cat "$cf" 2>/dev/null) || cursor_data=''
+    { cursor_data=$(<"$cf"); } 2>/dev/null || cursor_data=''
   fi
   if [ -n "${cursor_data:-}" ]; then
       first=${cursor_data%%$'\n'*}
@@ -1608,7 +1610,7 @@ status_presentation_snapshot() {  # <state>
     [ -e "$f" ] || continue
     [ "$f" = "$exclude" ] && continue
     [ -f "$f" ] && [ -r "$f" ] && [ ! -L "$f" ] || continue
-    task=$(basename "$f"); task="${task%.status}"
+    fm_basename_to task "$f"; task="${task%.status}"
     size=$(_fm_status_file_size "$f") || return 1
     size=${size//[[:space:]]/}
     ident=$(_fm_open_decisions_file_ident "$f") || return 1
@@ -1699,7 +1701,7 @@ status_presentation_cursor_offset() {  # <status-file>
   manifest="$state/.status-presentation-cursor"
   if [ -e "$manifest" ] || [ -L "$manifest" ]; then
     [ -f "$manifest" ] && [ -r "$manifest" ] && [ ! -L "$manifest" ] || return 1
-    data=$(LC_ALL=C command cat "$manifest" 2>/dev/null) || return 1
+    { data=$(<"$manifest"); } 2>/dev/null || return 1
     offset=
     while IFS=$(printf '\t') read -r row_task ident legacy backstop extra; do
       [ -n "$row_task" ] || continue
@@ -1743,7 +1745,7 @@ status_outcome_backstop_cursor_offset() {  # <status-file>
   manifest="$state/.status-presentation-cursor"
   [ -e "$manifest" ] || { printf '0'; return 0; }
   [ -f "$manifest" ] && [ -r "$manifest" ] && [ ! -L "$manifest" ] || return 1
-  data=$(LC_ALL=C command cat "$manifest" 2>/dev/null) || return 1
+  { data=$(<"$manifest"); } 2>/dev/null || return 1
   backstop=0
   while IFS=$(printf '\t') read -r row_task ident presented row_backstop extra; do
     [ -n "$row_task" ] || continue
