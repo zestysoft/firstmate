@@ -3,6 +3,8 @@
 # Once main moves past that head, a branch tip lands only when its content
 # equals the recorded change applied to the current main.
 # A landing that removes paths main has refuses unless each is confirmed.
+# A newer report may move the recorded head only to a rebase, a continuation,
+# or a re-application through a resolved conflict of the recorded change.
 set -u
 # shellcheck source=tests/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -893,6 +895,250 @@ test_missing_record_or_report_refuses() {
   pass 'a stampless record never moves, and a task with no report or no record refuses'
 }
 
+# The re-application shape: main and the change both append to a shared ledger,
+# so once main moves the recorded change conflicts and the worker resolves it
+# by hand. Main also holds doomed.txt for the deletion case.
+write_ledger() {  # <dir> <row>...
+  local dir=$1 row sep=''
+  shift
+  {
+    printf '[\n'
+    for row in "$@"; do
+      printf '%b  {"row": "%s"}' "$sep" "$row"
+      sep=',\n'
+    done
+    printf '\n]\n'
+  } > "$dir/ledger.json"
+}
+
+make_ledger_case() {  # <name>
+  make_case "$1"
+  write_ledger "$PROJ" base
+  printf 'kept\n' > "$PROJ/doomed.txt"
+  git -C "$PROJ" add ledger.json doomed.txt
+  git -C "$PROJ" commit -q -m 'main keeps a ledger'
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+  git -C "$WT" reset -q --hard main
+  printf 'approved X\n' > "$WT/approved.txt"
+  write_ledger "$WT" base X
+  git -C "$WT" add approved.txt ledger.json
+  git -C "$WT" commit -q -m X
+  X=$(git -C "$WT" rev-parse HEAD)
+}
+
+main_ledger() {  # <row>...: main moves with its own ledger rows
+  write_ledger "$PROJ" "$@"
+  git -C "$PROJ" commit -q -am 'main records a row'
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+}
+
+# reapply <row>...: rebuild the change by hand on the current main, resolving
+# the ledger to the given rows; REAPPLY_DELETES names a file the change removes.
+reapply() {
+  git -C "$WT" reset -q --hard main
+  printf 'approved X\n' > "$WT/approved.txt"
+  write_ledger "$WT" "$@"
+  git -C "$WT" add approved.txt ledger.json
+  [ -z "${REAPPLY_DELETES:-}" ] || git -C "$WT" rm -q -- "$REAPPLY_DELETES"
+  git -C "$WT" commit -q -m 'X re-applied'
+  Y=$(git -C "$WT" rev-parse HEAD)
+}
+
+# Proves a case is the conflicted shape the older checks cannot accept, so the
+# acceptance or refusal below is the re-application rule's own verdict.
+assert_conflicting_reapplication() {  # <label> <recorded>
+  git -C "$PROJ" merge-tree --write-tree "$BASE" "$2" >/dev/null 2>&1 \
+    && fail "$1: the recorded change does not conflict with main"
+  fm_dod_local_done_head_rebased "$META" local-task "$2" "$Y" \
+    && fail "$1: the rebase check already accepts this head"
+  fm_dod_local_done_head_continues "$META" local-task "$2" "$Y" \
+    && fail "$1: the continuation check already accepts this head"
+  return 0
+}
+
+assert_ledger() {  # <label> <row>...
+  local label=$1
+  shift
+  write_ledger "$CASE" "$@"
+  cmp -s -- "$CASE/ledger.json" "$PROJ/ledger.json" || fail "$label: landed ledger differs: $(cat "$PROJ/ledger.json")"
+}
+
+test_newer_report_of_reapplied_change_replaces_head() {
+  local first
+  make_ledger_case reapplied
+  record_done 1790000100 || fail 'first ready report was not accepted'
+  main_ledger base main1
+  reapply base main1 X
+  assert_conflicting_reapplication reapplied "$X"
+  record_done 1790000200 || fail 'a newer report of the change re-applied through a resolved conflict was refused'
+  [ "$(fm_dod_local_done_head "$META")" = "$Y" ] || fail 'the record still names the superseded head'
+  [ "$(fm_dod_local_done_at "$META")" = 1790000200 ] || fail 'the record did not bind the newer report'
+  # The worker then records its replay in the ledger, and main moves again:
+  # the second re-application supersedes the first one in turn.
+  write_ledger "$WT" base main1 X 'X replay'
+  git -C "$WT" commit -q -am 'record the replay'
+  first=$(git -C "$WT" rev-parse HEAD)
+  record_done 1790000300 || fail 'a newer report with a ledger note on the re-application was refused'
+  [ "$(fm_dod_local_done_head "$META")" = "$first" ] || fail 'the ledger note did not replace the head'
+  main_ledger base main1 main2
+  reapply base main1 main2 X 'X replay'
+  assert_conflicting_reapplication 'second reapplication' "$first"
+  record_done 1790000400 || fail 'a second re-application was refused'
+  [ "$(fm_dod_local_done_head "$META")" = "$Y" ] || fail 'the second re-application did not replace the head'
+  land >/dev/null || fail 'the re-applied head did not land'
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$Y" ] || fail 'landing did not use the re-applied head'
+  [ "$(cat "$PROJ/approved.txt")" = 'approved X' ] || fail 'landing did not bring the change'
+  assert_ledger reapplied base main1 main2 X 'X replay'
+  [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail 'landing left a dirty checkout'
+  pass 'a newer report of the change re-applied through a resolved conflict replaces the head, twice, and lands exactly it'
+}
+
+test_newer_report_of_reapplication_refusals() {
+  local label mid side
+  for label in revised extra-path dropped-main-row dropped-change-row older-fork merge-commit; do
+    make_ledger_case "reapplied-$label"
+    record_done 1790000100 || fail "$label: first ready report was not accepted"
+    main_ledger base main1
+    case "$label" in
+      revised)
+        reapply base main1 X
+        printf 'approved X, revised\n' > "$WT/approved.txt"
+        git -C "$WT" commit -q -a --amend -m 'X revised'
+        ;;
+      extra-path)
+        reapply base main1 X
+        printf 'unapproved\n' > "$WT/extra.txt"
+        git -C "$WT" add extra.txt
+        git -C "$WT" commit -q -m extra
+        ;;
+      dropped-main-row) reapply base X ;;
+      dropped-change-row) reapply base main1 ;;
+      older-fork)
+        mid=$BASE
+        main_ledger base main1 main2
+        git -C "$WT" reset -q --hard "$mid"
+        # The content equals a re-application on the current main; only the
+        # fork point differs, so landing it would not be a fast-forward.
+        printf 'approved X\n' > "$WT/approved.txt"
+        write_ledger "$WT" base main1 main2 X
+        git -C "$WT" add approved.txt ledger.json
+        git -C "$WT" commit -q -m 'X re-applied on an older main'
+        ;;
+      merge-commit)
+        side=$(git -C "$WT" commit-tree "main^{tree}" -p main -m side)
+        reapply base main1 X
+        git -C "$WT" merge -q --no-ff --no-edit "$side"
+        [ "$(git -C "$WT" rev-parse 'HEAD^{tree}')" = "$(git -C "$WT" rev-parse "$Y^{tree}")" ] \
+          || fail 'merge-commit: the merge changed the re-applied content'
+        ;;
+    esac
+    Y=$(git -C "$WT" rev-parse HEAD)
+    record_done 1790000200 >/dev/null 2>&1 && fail "$label: a newer report replaced the record"
+    assert_head_kept "$label"
+    assert_refused
+  done
+  pass 'a re-application that revises a path, adds one, drops a row from either side, forks from an older main, or merges keeps the recorded head and refuses'
+}
+
+# Line-shaped blobs holding NUL bytes would pass the line rule, so only the
+# text-file rule refuses a hand resolution of a conflict git cannot merge as text.
+test_reapplied_binary_conflict_refuses() {
+  make_case reapplied-binary
+  printf 'A\0\n' > "$PROJ/blob.bin"
+  git -C "$PROJ" add blob.bin
+  git -C "$PROJ" commit -q -m 'main keeps a blob'
+  git -C "$WT" reset -q --hard main
+  printf 'A\0\nB\0\n' > "$WT/blob.bin"
+  git -C "$WT" commit -q -am 'X edits the blob'
+  X=$(git -C "$WT" rev-parse HEAD)
+  record_done 1790000100 || fail 'first ready report was not accepted'
+  printf 'A\0\nC\0\n' > "$PROJ/blob.bin"
+  git -C "$PROJ" commit -q -am 'main edits the blob'
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+  git -C "$WT" reset -q --hard main
+  printf 'A\0\nB\0\nC\0\n' > "$WT/blob.bin"
+  git -C "$WT" commit -q -am 'blob resolved by hand'
+  Y=$(git -C "$WT" rev-parse HEAD)
+  assert_conflicting_reapplication binary "$X"
+  record_done 1790000200 >/dev/null 2>&1 && fail 'binary: a hand-resolved binary conflict replaced the record'
+  assert_head_kept binary
+  assert_refused
+  pass 'a re-application through a hand-resolved binary conflict keeps the recorded head and refuses'
+}
+
+test_reapplied_deletion_needs_confirmation() {
+  make_ledger_case reapplied-delete
+  git -C "$WT" rm -q doomed.txt
+  git -C "$WT" commit -q --amend -m 'X deletes doomed.txt'
+  X=$(git -C "$WT" rev-parse HEAD)
+  record_done 1790000100 || fail 'first ready report was not accepted'
+  main_ledger base main1
+  REAPPLY_DELETES=doomed.txt reapply base main1 X
+  record_done 1790000200 || fail 'a newer report of the re-applied deletion was refused'
+  [ "$(fm_dod_local_done_head "$META")" = "$Y" ] || fail 'the re-applied deletion did not replace the head'
+  assert_deletion_refused 'unconfirmed re-applied deletion'
+  assert_contains "$LAST_OUT" '--confirm-deletion doomed.txt' 'the refusal did not offer the confirmation'
+  LAST_OUT=$(land_confirming --confirm-deletion doomed.txt 2>&1) || fail "confirmed re-applied deletion refused: $LAST_OUT"
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$Y" ] || fail 'the confirmed deletion did not land the re-applied head'
+  [ ! -e "$PROJ/doomed.txt" ] || fail 'the confirmed deletion kept the file'
+  pass 'a re-application that deletes a path main has replaces the head, then lands only once the deletion is confirmed'
+}
+
+test_reapplication_without_a_movable_record_refuses() {
+  local out rc
+  make_ledger_case reapplied-stampless
+  printf 'local_done_head=%s\n' "$X" >> "$META"
+  main_ledger base main1
+  reapply base main1 X
+  record_done 1790000200 >/dev/null 2>&1 && fail 'a stampless record moved to a re-application'
+  assert_head_kept stampless
+  assert_refused
+
+  make_ledger_case reapplied-no-head
+  main_ledger base main1
+  reapply base main1 X
+  assert_refused
+
+  make_ledger_case reapplied-already-on-main
+  record_done 1790000100 || fail 'first ready report was not accepted'
+  printf 'approved X\n' > "$PROJ/approved.txt"
+  write_ledger "$PROJ" base main1 X
+  git -C "$PROJ" add approved.txt ledger.json
+  git -C "$PROJ" commit -q -m 'the same change lands another way'
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+  git -C "$WT" reset -q --hard main
+  record_done 1790000200 >/dev/null 2>&1 && fail 'a report whose content is already on main replaced the record'
+  assert_head_kept already-on-main
+  rc=0
+  out=$(land 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail "already-on-main: landing succeeded: $out"
+  assert_no_record_violation
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'already-on-main: refusal moved main'
+  # The change only removes a row main replaced, so main already holds it and a
+  # branch at main passes every line check; only its equal tree refuses.
+  make_ledger_case reapplied-absorbed
+  write_ledger "$PROJ" base a b
+  git -C "$PROJ" commit -q -am 'main adds rows a and b'
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+  git -C "$WT" reset -q --hard main
+  write_ledger "$WT" base b
+  git -C "$WT" commit -q -am 'X drops row a'
+  X=$(git -C "$WT" rev-parse HEAD)
+  record_done 1790000100 || fail 'absorbed: first ready report was not accepted'
+  main_ledger base a2 b
+  git -C "$WT" reset -q --hard main
+  Y=$BASE
+  assert_conflicting_reapplication absorbed "$X"
+  record_done 1790000200 >/dev/null 2>&1 && fail 'absorbed: a branch at main replaced the record'
+  assert_head_kept absorbed
+  rc=0
+  out=$(land 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail "absorbed: landing succeeded: $out"
+  assert_no_record_violation
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'absorbed: refusal moved main'
+  pass 'a stampless record, a task with no head, or a report whose content main already has never takes a re-application'
+}
+
 # Runs last: every refused landing above left its task record byte-identical.
 test_no_refused_landing_changed_its_record() {
   assert_no_record_violation
@@ -916,4 +1162,7 @@ fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_d
   test_newer_report_of_continued_branch_replaces_head test_two_commit_change_is_never_half_landed \
   test_rereading_a_bound_report_cannot_take_later_work test_newer_report_with_changed_tree_refuses \
   test_newer_report_off_fast_forward_refuses test_missing_record_or_report_refuses \
+  test_newer_report_of_reapplied_change_replaces_head test_newer_report_of_reapplication_refusals \
+  test_reapplied_binary_conflict_refuses test_reapplied_deletion_needs_confirmation \
+  test_reapplication_without_a_movable_record_refuses \
   test_no_refused_landing_changed_its_record

@@ -2594,6 +2594,66 @@ test_codex_local_only_done_latches_head() {
   pass "a proven Codex local-only done reads done and latches its head"
 }
 
+# A worker re-applies its finished change onto a moved main through a ledger
+# conflict it resolves by hand, then reports ready again: the state reader must
+# move the latched head to the re-application, and must keep it when the
+# resolution drops a row main added.
+reapplied_ledger() {  # <dir> <row>...
+  local dir=$1 row sep=''
+  shift
+  { printf '[\n'; for row in "$@"; do printf '%b  {"row": "%s"}' "$sep" "$row"; sep=',\n'; done; printf '\n]\n'; } > "$dir/ledger.json"
+}
+
+test_local_only_reapplied_done_relatches_head() {
+  reset_fakes
+  local d id kept out first resolution
+  for resolution in kept dropped; do
+    id=reapplied$resolution
+    d=$(new_case "reapplied-$resolution")
+    fm_git_worktree "$d/proj" "$d/wt" "fm/$id"
+    reapplied_ledger "$d/proj" base
+    git -C "$d/proj" add ledger.json
+    git -C "$d/proj" commit -q -m 'main keeps a ledger'
+    git -C "$d/wt" reset -q --hard main
+    reapplied_ledger "$d/wt" base X
+    git -C "$d/wt" commit -q -am X
+    first=$(git -C "$d/wt" rev-parse HEAD)
+    make_fakebin "$d" >/dev/null
+    fm_write_meta "$d/state/$id.meta" "window=fm:fm-$id" "worktree=$d/wt" "project=$d/proj" \
+      "kind=ship" "mode=local-only" "harness=codex" "branch=fm/$id"
+    printf 'done [at=1790000100]: ready in branch fm/%s\n' "$id" > "$d/state/$id.status"
+    out=$(run_crew_state "$d" "$id")
+    assert_contains "$out" "state: done" "$resolution: the first ready report must read done"
+    reapplied_ledger "$d/proj" base main1
+    git -C "$d/proj" commit -q -am 'main records a row'
+    git -C "$d/wt" reset -q --hard main
+    if [ "$resolution" = kept ]; then
+      reapplied_ledger "$d/wt" base main1 X
+    else
+      reapplied_ledger "$d/wt" base X
+    fi
+    git -C "$d/wt" commit -q -am 'X re-applied'
+    git -C "$d/proj" merge-tree --write-tree "$first" main >/dev/null 2>&1 \
+      && fail "$resolution: the recorded change does not conflict with the moved main"
+    printf 'done [at=1790000200]: ready in branch fm/%s\n' "$id" >> "$d/state/$id.status"
+    out=$(run_crew_state "$d" "$id")
+    if [ "$resolution" = kept ]; then
+      assert_contains "$out" "state: done" "a re-applied ready report must read done"
+      kept=$(git -C "$d/wt" rev-parse HEAD)
+    else
+      assert_not_contains "$out" "state: done" "a resolution that drops main's row must not read done"
+      assert_contains "$out" "done claim refused: local-only done head could not be recorded" \
+        "the refusal must name the head it kept"
+      kept=$first
+    fi
+    FM_STATE_OVERRIDE="$d/state" FM_ROOT_OVERRIDE="$d" bash -c \
+      '. "$1/bin/fm-dod-lib.sh"; [ "$(fm_dod_local_done_head "$2")" = "$3" ]' \
+      _ "$ROOT" "$d/state/$id.meta" "$kept" \
+      || fail "$resolution: the latched head must be $kept: $(cat "$d/state/$id.meta")"
+  done
+  pass "a re-applied ready report re-latches the head, and one that drops a main row keeps the first head"
+}
+
 test_codex_unfinished_records_no_head() {
   reset_fakes
   local d out
@@ -7033,6 +7093,7 @@ test_coarse_run_does_not_probe_other_branch_ci_log_for_ready_status
 test_other_branch_run_ignored
 test_unpushed_ship_done_is_blocked
 test_codex_local_only_done_latches_head
+test_local_only_reapplied_done_relatches_head
 test_codex_unfinished_records_no_head
 test_codex_unproven_done_stays_unknown
 test_codex_unreadable_pane_still_reports_unreachable

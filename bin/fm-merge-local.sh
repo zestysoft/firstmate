@@ -14,7 +14,8 @@
 # lands when it is a linear (merge-free) fast-forward of the default branch
 # whose tree equals that merge result. A conflicting merge, a missing recorded
 # commit, a branch tree that differs, or merge commits above the default branch
-# refuse; a resolved conflict is new content that needs a new readiness record.
+# refuse; a resolved conflict is new content that needs a newer readiness
+# report to re-record the head.
 # A merge result equal to the default branch's own tree means the change is
 # already there, so it refuses rather than landing the same content twice.
 # Either way, a landing that would remove any path the default branch has
@@ -30,10 +31,13 @@
 # runs for mode=local-only tasks, only after the captain approves (or yolo=on
 # auto-approves), and only as a clean fast-forward. A diverged branch needs a
 # rebase onto the default branch before landing. A newer ready report may then
-# re-record the head when it is the same change on a newer default branch, or
-# when its branch still carries the recorded content with further commits on
-# top (bin/fm-dod-lib.sh); without it, the content check above lands a rebase
-# whose tree matches. Every refusal here leaves the task record untouched. Revised work needs a new task/approval record. See AGENTS.md prime directives,
+# re-record the head; fm_dod_pin_local_done_head in bin/fm-dod-lib.sh owns which
+# heads qualify (a rebase of the same change, a continuation of the recorded
+# content, or a re-application through a resolved conflict that fast-forwards
+# the default branch). A re-recorded head lands by the same rules as any
+# recorded head. Without a newer report, the content check above lands a rebase
+# whose tree matches. Every refusal here leaves the task record untouched.
+# Revised work needs a new task/approval record. See AGENTS.md prime directives,
 # project management, and task lifecycle.
 # The task's existing per-task control lock serializes the captain-hold check
 # through that fast-forward. A still-held or unreadable row refuses before the
@@ -42,8 +46,9 @@
 # docs/captain-hold-lifecycle.md owns the accepted merge-to-cleanup residual.
 # A per-checkout lock in the project's Git directory serializes different
 # tasks across the checks, checkout update, ref transaction, and rollback.
-# tests/fm-merge-local.test.sh covers pinned-head landing, content-equal
-# landing after the default branch moved, deletion refusals, and race refusals.
+# tests/fm-merge-local.test.sh covers pinned-head landing, re-recorded heads,
+# content-equal landing after the default branch moved, deletion refusals, and
+# race refusals.
 # Usage: fm-merge-local.sh <task-id> [--confirm-deletion <path>]...
 set -eu
 

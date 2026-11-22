@@ -12,11 +12,15 @@
 # contract.
 # For local-only tasks, the first accepted done head is latched as exactly one
 # local_done_head= full commit id in the live task metadata. Only a newer ready
-# report moves that identity, and only to the same change rebased onto a newer
-# default branch, at the head the ship branch points at
-# (fm_dod_local_done_head_rebased), or to a head whose branch still carries the
-# recorded content (fm_dod_local_done_head_continues). Any other revised work
-# needs a new task/approval record.
+# report moves that identity, and only to the head the ship branch points at
+# when that head is: the same change rebased onto a newer default branch
+# (fm_dod_local_done_head_rebased); a branch that still carries the recorded
+# content (fm_dod_local_done_head_continues); or the recorded change
+# re-applied onto the current default branch, whose tip it fast-forwards,
+# through a conflict resolved without dropping a line from either side and
+# with every unconflicted path exactly as the merge leaves it
+# (fm_dod_local_done_head_reapplied). Any other revised work needs a new
+# task/approval record.
 # The optional third argument is the task's full ship-branch name (a project's
 # registered prefix may replace the legacy `fm/` one); it defaults to `fm/<task-id>`
 # and is the immutable task branch rendered in every delivery contract.
@@ -699,7 +703,7 @@ $(fm_dod_commit_first)
 $(fm_dod_unverified_results)
 A \`done:\` is accepted when the named head is on this project's shared local branch, not only on a detached copy; the check tests that head, not merely that a branch moved.
 Keep your branch a clean fast-forward onto the current default branch - if \`main\` has advanced, rebase onto it so the eventual merge stays a fast-forward.
-After a rebase or a further commit, report \`done\` again with a new stamp; the new head replaces the one you reported only when your branch still holds that reported change unaltered, with any new commits on top of it.
+After a rebase or a further commit, report \`done\` again with a new stamp; the new head replaces the one you reported only when your branch still holds that reported change unaltered, with any new commits on top of it, or re-applies it onto the current default branch with a conflict resolved by keeping every line both sides have and leaving every other path as the merge does.
 When it is implemented and committed, append \`done [at=<epoch>]: ready in branch $branch\` to the status file and stop.
 The configured merge authority approves the ready branch, then firstmate merges it into local \`main\` through the guarded fast-forward path.
 EOF
@@ -1011,16 +1015,102 @@ EOF
   return 0
 }
 
+# 1 when <path> is not a regular text file in <commit>: absent, a symlink,
+# a submodule, or a blob holding a NUL byte.
+fm_dod_text_file_at() {  # <project> <commit> <path>
+  local mode nuls
+  mode=$(git -C "$1" --literal-pathspecs ls-tree --format='%(objectmode)' "$2" -- "$3" 2>/dev/null) || return 1
+  case "$mode" in 100644|100755) ;; *) return 1 ;; esac
+  nuls=$(git -C "$1" cat-file blob "$2:$3" | LC_ALL=C tr -dc '\000' | wc -c) || return 1
+  [ "$nuls" -eq 0 ]
+}
+
+# 0 when <new> re-applies the recorded <old> change onto the current default
+# branch through a conflict the worker resolved by hand, which neither
+# fm_dod_local_done_head_rebased nor fm_dod_local_done_head_continues can
+# accept: no commit can hold the conflicted merge's exact tree, and the
+# resolution moves the patch id. Merging <old>'s change (from its fork point)
+# onto the default tip must conflict; <new> must be the ship branch tip, a
+# linear (merge-free) descendant of that tip that does not descend from <old>,
+# from a strictly newer fork point than <old>'s, and its tree must differ from
+# the tip's. Outside the conflicted paths <new>'s tree must equal the merge's
+# result exactly, so every path only one side changed carries that side's
+# content byte for byte. Each conflicted path must be a regular text file in
+# <old>, the tip, and <new>, and may only gain lines: for every distinct line,
+# <new> holds at least as many copies as <old> plus the tip minus their fork
+# point (absent there counts as empty), so nothing either side added or both
+# kept is dropped. Lines compare without trailing whitespace or one trailing
+# comma, so a list entry that stops being last (a JSON ledger row) still
+# counts. A clean merge (the two checks above judge it), a revised path outside
+# the conflict, a dropped line, or a deleted, binary, or non-regular conflicted
+# path refuses.
+fm_dod_local_done_head_reapplied() {  # <meta> <id> <old> <new>
+  local meta=$1 id=$2 old=$3 new=$4 project branch default tip old_base status merged='' path conflicted=() known
+  project=$(fm_dod_meta_value "$meta" project)
+  [ -n "$project" ] && [ -d "$project" ] || return 1
+  branch=$(fm_dod_meta_value "$meta" branch)
+  [ -n "$branch" ] || branch="fm/$id"
+  git check-ref-format --branch "$branch" >/dev/null 2>&1 || return 1
+  [ "$(git -C "$project" rev-parse --verify --quiet "refs/heads/$branch^{commit}")" = "$new" ] || return 1
+  git -C "$project" cat-file -e "$old^{commit}" 2>/dev/null || return 1
+  default=$(fm_dod_project_default_branch "$project") || return 1
+  tip=$(git -C "$project" rev-parse --verify --quiet "refs/heads/$default^{commit}") || return 1
+  git -C "$project" merge-base --is-ancestor "$tip" "$new" || return 1
+  ! git -C "$project" merge-base --is-ancestor "$old" "$new" || return 1
+  old_base=$(git -C "$project" merge-base "$old" "$tip" 2>/dev/null) || return 1
+  [ "$old_base" != "$tip" ] || return 1
+  [ "$(git -C "$project" rev-parse "$old^{tree}")" != "$(git -C "$project" rev-parse "$old_base^{tree}")" ] || return 1
+  [ "$(git -C "$project" rev-parse "$new^{tree}")" != "$(git -C "$project" rev-parse "$tip^{tree}")" ] || return 1
+  [ -z "$(git -C "$project" rev-list --min-parents=2 "$tip..$new")" ] || return 1
+  # Exit 1 is a conflict; 0 is clean and anything else is an error.
+  status=0
+  git -C "$project" merge-tree --write-tree --merge-base="$old_base" "$tip" "$old" >/dev/null 2>&1 || status=$?
+  [ "$status" = 1 ] || return 1
+  while IFS= read -r -d '' path; do
+    if [ -z "$merged" ]; then merged=$path; else conflicted+=("$path"); fi
+  done < <(git -C "$project" merge-tree --write-tree -z --name-only --no-messages \
+    --merge-base="$old_base" "$tip" "$old" 2>/dev/null)
+  case "$merged" in ''|*[!0-9a-f]*) return 1 ;; esac
+  [ "${#conflicted[@]}" -gt 0 ] || return 1
+  while IFS= read -r -d '' path; do
+    for known in "${conflicted[@]}"; do
+      [ "$known" != "$path" ] || continue 2
+    done
+    return 1
+  done < <(git -C "$project" diff-tree -r -z --no-renames --name-only "$merged" "$new")
+  for path in "${conflicted[@]}"; do
+    fm_dod_text_file_at "$project" "$old" "$path" && fm_dod_text_file_at "$project" "$tip" "$path" \
+      && fm_dod_text_file_at "$project" "$new" "$path" || return 1
+    {
+      git -C "$project" cat-file blob "$old_base:$path" 2>/dev/null | awk '{ print "b " $0 }'
+      git -C "$project" cat-file blob "$old:$path" | awk '{ print "o " $0 }'
+      git -C "$project" cat-file blob "$tip:$path" | awk '{ print "t " $0 }'
+      git -C "$project" cat-file blob "$new:$path" | awk '{ print "n " $0 }'
+    } | LC_ALL=C awk '
+      {
+        side = substr($0, 1, 1); line = substr($0, 3)
+        sub(/[ \t\r]+$/, "", line); sub(/,$/, "", line); sub(/[ \t\r]+$/, "", line)
+        seen[line] = 1; count[side, line]++
+      }
+      END {
+        for (line in seen)
+          if (count["n", line] + 0 < count["o", line] + count["t", line] - count["b", line]) exit 1
+      }' || return 1
+  done
+  return 0
+}
+
 # Latch the head before reporting readiness, not at landing time. Snapshot
 # callers may supply captured meta; compare it with the live record under the
 # existing control/meta locks before publishing to the live owner only. A caller
 # already holding the live meta lock passes meta-locked and retains its locks.
 # A head that differs from the latched one replaces it only when <report-at> is
 # strictly newer than the recorded local_done_at= and
-# fm_dod_local_done_head_rebased or fm_dod_local_done_head_continues accepts it;
-# otherwise the latch stands. local_done_at= is the newest accepted report's at=
-# stamp, so re-reading an already-bound report never moves the head, neither to
-# a rebase nor to work the worker committed after it. An empty <report-at>
+# fm_dod_local_done_head_rebased, fm_dod_local_done_head_continues, or
+# fm_dod_local_done_head_reapplied accepts it; otherwise the latch stands.
+# local_done_at= is the newest accepted report's at= stamp, so re-reading an
+# already-bound report never moves the head, neither to a rebase nor to work the
+# worker committed after it. An empty <report-at>
 # records no stamp.
 fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> <report-at> [meta-locked]
   local state=$1 id=$2 meta=$3 sha=$4 captured=$5 at=$6 script_dir live control='' lock='' tmp='' pinned recorded_at newer=0
@@ -1058,7 +1148,8 @@ fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> <rep
     else
       [ "$newer" = 1 ] && [ -n "$recorded_at" ] || return 1
       fm_dod_local_done_head_rebased "$live" "$id" "$pinned" "$sha" \
-        || fm_dod_local_done_head_continues "$live" "$id" "$pinned" "$sha" || return 1
+        || fm_dod_local_done_head_continues "$live" "$id" "$pinned" "$sha" \
+        || fm_dod_local_done_head_reapplied "$live" "$id" "$pinned" "$sha" || return 1
     fi
     tmp=$(mktemp "$state/.local-done-$id.XXXXXX") || return 1
     awk -F= -v sha="$sha" -v at="$at" -v newer="$newer" '
@@ -1339,7 +1430,7 @@ fm_dod_accept_ship_done() {  # <kind> <mode> <worktree> <project> <line> [<state
       if [ -z "$state" ] || [ -z "$id" ] \
         || ! fm_dod_pin_local_done_head "$state" "$id" "$meta" "$sha" "$captured" \
           "$(status_line_at_epoch "$line" 2>/dev/null || true)" "${9:-}"; then
-        printf '%s\n' "local-only done head could not be recorded, or differs from the recorded head by more than, on a newer stamped report, a rebase of the same change or further commits above the unchanged recorded content at the ship branch head; revised work requires a new task/approval record"
+        printf '%s\n' "local-only done head could not be recorded, or differs from the recorded head by more than, on a newer stamped report, a rebase of the same change, further commits above the unchanged recorded content, or a re-application onto the current default branch that resolves its conflict without dropping a line, at the ship branch head; revised work requires a new task/approval record"
         return 1
       fi
     fi
