@@ -4139,6 +4139,121 @@ EOF
 # with no watcher and no retry.
 # Issue 7032 restores per-close succession while keeping branch settlement
 # serialized. Real arm processes expose the ordering; Pi callbacks are mocked.
+# While main is idle, Pi resolves sendUserMessage only after the run it started
+# settles, so closes printed during that run wait behind it. By the time they
+# are handed over, the supervisor may have cleaned up the worker a close names.
+# This holds the first delivery open the way an idle Pi run does, retires one
+# worker's record meanwhile, then requires every close naming a live record to
+# arrive in order and every close naming no record at all to be absorbed and
+# logged. A path outside this state directory and a check are never judged. The bin scripts are the real ones, so the ownership test is too.
+test_pi_late_close_naming_only_retired_records_is_absorbed() {
+  local repo home state plugin log stop reasons out status absorbed
+  repo="$TMP_ROOT/pi-late-ownerless-root"
+  home="$TMP_ROOT/pi-late-ownerless-home"
+  state="$home/state"
+  log="$TMP_ROOT/pi-late-ownerless.log"
+  stop="$TMP_ROOT/pi-late-ownerless.stop"
+  reasons="$TMP_ROOT/pi-late-ownerless.reasons"
+  mkdir -p "$repo/bin" "$state" "$home/config"
+  install_pi_watch_extension_fixture "$repo"
+  cp -R "$ROOT/bin/." "$repo/bin/"
+  plugin="$repo/.pi/extensions/fm-primary-pi-watch.ts"
+  printf 'window=default:wWait:p2\nkind=ship\n' > "$state/waiting.meta"
+  printf 'window=default:wDone:p2\nkind=ship\n' > "$state/finished.meta"
+  printf 'window=default:wStuck:p2\nkind=ship\n' > "$state/stuck.meta"
+  printf 'window=default:wLive:p2\nkind=ship\n' > "$state/live.meta"
+  printf 'window=default:wGone:p2\nkind=ship\n' > "$state/gone.meta"
+  cat > "$reasons" <<EOF
+signal: $state/waiting.status
+signal: $state/gone.status $state/gone.turn-ended
+stale: default:wGone:p2
+signal: $state/finished.status $state/finished.turn-ended
+stale: default:wStuck:p2 (escalation 2)
+signal: $state/live.status
+signal: $state/gone.status $state/live.turn-ended
+stale: default:wNever:p2
+signal: /nonexistent-elsewhere/gone.status
+check: custom note
+EOF
+  cat > "$repo/bin/fm-watch-arm.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'arm=%s\n' "$$" >> "${FM_ARM_LOG:?}"
+count=$(grep -c '^arm=' "$FM_ARM_LOG")
+printf 'watcher: started pid=%s (beacon fresh)\n' "$$"
+reason=$(sed -n "${count}p" "$FM_REASONS")
+if [ -n "$reason" ]; then
+  printf '%s\n' "$reason"
+  exit 0
+fi
+printf 'idle=%s\n' "$count" >> "$FM_ARM_LOG"
+trap 'exit 0' TERM INT
+while [ ! -e "$FM_STOP_FILE" ] && [ -e "$0" ]; do sleep 0.02; done
+SH
+  chmod +x "$repo/bin/fm-watch-arm.sh"
+  out=$(PLUGIN="$plugin" FM_HOME="$home" FM_ROOT_OVERRIDE="$repo" FM_ARM_LOG="$log" FM_STOP_FILE="$stop" FM_REASONS="$reasons" node --input-type=module 2>&1 <<'EOF'
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
+
+const handlers = new Map();
+const sent = [];
+let tool;
+let releaseFirst = () => {};
+const firstHeld = new Promise((resolve) => { releaseFirst = resolve; });
+const rows = () => existsSync(process.env.FM_ARM_LOG) ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n") : [];
+async function waitFor(predicate, label) {
+  for (let i = 0; i < 1000; i += 1) {
+    if (predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error(`timeout waiting for ${label}; rows=${rows().join(" | ")} sent=${sent.length}`);
+}
+const reasonOf = (content) => {
+  const text = typeof content === "string" ? content : content.map((part) => part.text || "").join("");
+  const match = /FIRSTMATE WATCHER WAKE: ([^\n]*)/.exec(text);
+  return match ? match[1] : `unparsed: ${text}`;
+};
+const pi = {
+  on(event, handler) { handlers.set(event, handler); },
+  registerCommand() {},
+  registerTool(candidate) { if (candidate.name === "fm_watch_arm_pi") tool = candidate; },
+  sendUserMessage: async (content) => {
+    sent.push(reasonOf(content));
+    if (sent.length === 1) await firstHeld;
+  },
+};
+const state = `${process.env.FM_HOME}/state`;
+writeFileSync(`${state}/.lock`, `${process.pid}\n`);
+const mod = await import(pathToFileURL(process.env.PLUGIN).href);
+mod.default(pi);
+try {
+  await tool.execute("late-ownerless", {}, undefined, undefined, {});
+  await waitFor(() => rows().some((row) => row.startsWith("idle=")), "every close printed behind the held first delivery");
+  if (sent.length !== 1) throw new Error(`later closes were handed over while the first was held: ${JSON.stringify(sent)}`);
+  rmSync(`${state}/gone.meta`);
+  releaseFirst();
+  await waitFor(() => sent.length >= 7, "the closes naming live records or other subjects");
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  const reasons = readFileSync(process.env.FM_REASONS, "utf8").trim().split("\n");
+  const expected = [reasons[0], reasons[3], reasons[4], reasons[5], reasons[6], reasons[8], reasons[9]];
+  if (JSON.stringify(sent) !== JSON.stringify(expected)) {
+    throw new Error(`delivered closes differ:\n got ${JSON.stringify(sent)}\nwant ${JSON.stringify(expected)}`);
+  }
+} finally {
+  writeFileSync(process.env.FM_STOP_FILE, "stop\n");
+  await handlers.get("session_shutdown")?.({ type: "session_shutdown", reason: "quit" }, {});
+}
+EOF
+)
+  status=$?
+  expect_code 0 "$status" "Pi must absorb a late close whose every subject lost its record: $out"
+  [ -z "$out" ] || fail "Pi late-ownerless test printed output: $out"
+  absorbed=$(grep -c 'absorbed late .* wake at delivery (no task record owns any subject)' "$state/.watch-triage.log" 2>/dev/null)
+  [ "$absorbed" = 3 ] || fail "Pi late-ownerless test logged $absorbed absorbed closes, want 3: $(cat "$state/.watch-triage.log" 2>/dev/null)"
+  [ -e "$state/waiting.meta" ] && [ -e "$state/live.meta" ] && [ -e "$state/stuck.meta" ] && [ -e "$state/finished.meta" ] \
+    || fail "Pi late-ownerless test lost a live record"
+  pass "Pi absorbs late closes naming only retired records and delivers waiting, finished, stopped, live, mixed, foreign-path, and check closes"
+}
+
 test_pi_actionable_closes_restore_while_branch_delivery_is_held() {
   local repo home plugin log trigger out status mode
   mode=${1:-serial}
@@ -6349,6 +6464,7 @@ test_pi_session_transition_generation_owner
 test_pi_session_replacement_carries_inflight_actionable_close
 test_pi_streaming_followup_is_replayed_after_replacement
 test_pi_streaming_time_delivery_keeps_the_successor_chain
+test_pi_late_close_naming_only_retired_records_is_absorbed
 test_pi_actionable_closes_restore_while_branch_delivery_is_held
 test_pi_actionable_closes_restore_while_branch_delivery_is_held replacement
 test_pi_actionable_closes_restore_while_branch_delivery_is_held quit

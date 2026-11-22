@@ -18,6 +18,10 @@
 // independently of serialized wake delivery. Delivery uses that close token's
 // captured restoration outcome; branch settlement never holds the arm owner.
 // A main follow-up is delivered once Pi accepts it (sendUserMessage resolves).
+// While main is idle Pi resolves only when the run that follow-up started has
+// settled, so later closes wait their turn and can arrive long after the
+// watcher printed them; one whose subjects no task record owns by then is
+// absorbed at delivery (bin/fm-wake-ownerless.sh).
 // The successor pipeline never waits for the model to read it: a follow-up
 // queued while main is streaming joins the running run without ever raising
 // before_agent_start, so waiting on that event stalls every later close.
@@ -166,6 +170,7 @@ const fmRoot = process.env.FM_ROOT_OVERRIDE || root;
 const state = process.env.FM_STATE_OVERRIDE || `${fmHome}/state`;
 const config = process.env.FM_CONFIG_OVERRIDE || `${fmHome}/config`;
 const armScript = `${fmRoot}/bin/fm-watch-arm.sh`;
+const ownerlessScript = `${fmRoot}/bin/fm-wake-ownerless.sh`;
 const marker = `${state}/.pi-watch-extension-loaded`;
 const handoffDir = `${state}/extensions/pi-primary-watch`;
 const actionableHandoff = `${handoffDir}/session-replacement-actionable.json`;
@@ -771,6 +776,21 @@ export default function (pi: ExtensionAPI) {
     return confirmHandlingDelivery(recovery);
   }
 
+  function wakeSubjectsOwnerless(message: string): boolean {
+    try {
+      const result = spawnSync("bash", [ownerlessScript, message], {
+        cwd: fmRoot,
+        encoding: "utf8",
+        env: { ...process.env, FM_HOME: fmHome, FM_STATE_OVERRIDE: state, FM_ROOT_OVERRIDE: fmRoot },
+      });
+      if (result.status !== 0) return false;
+      appendExtensionLog(`absorbed ownerless wake at delivery: ${message}`);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function offerWakeToBranch(message: string): Promise<void> | null {
     // lib/fm-branch-dispatch.ts owns the offer rule for one close, shared with
     // the supervision host off Pi (bin/fm-branch-dispatch.mjs offer).
@@ -807,6 +827,9 @@ export default function (pi: ExtensionAPI) {
         return await sendWake(owner, `${message}\n\n${confirmed.detail}`, pending);
       }
     }
+    // Late ownerless closes ("Delivery versus consumption" above); any doubt
+    // delivers the wake unchanged.
+    if (!repairFailed && wakeSubjectsOwnerless(message)) return true;
     if (!repairFailed) {
       const branchDelivery = offerWakeToBranch(message);
       if (branchDelivery) {

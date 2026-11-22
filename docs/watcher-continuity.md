@@ -70,6 +70,11 @@ A main follow-up counts as delivered once Pi accepts it, never once the model re
 The reason is that a follow-up queued while main is streaming joins the running run without a `before_agent_start`.
 The extension header owns how consumption is observed and why it only decides what a replacement replays.
 
+While main is idle, Pi accepts a follow-up only when the run it started has settled, so closes printed during that run wait their turn and can reach main long after the watcher printed them.
+By then the supervisor has usually drained their rows and may have cleaned up the worker they name, so a late close and a live one look identical in the transcript.
+To tell them apart, find the reason in `state/.watch-deliveries.log`: a late close was printed there well before it arrived, and its worker's `<id>.meta` may already be gone.
+A late close whose every subject has no task record at delivery is absorbed instead of delivered and logged to `state/.watch-triage.log` as `absorbed late <class> wake at delivery`; `bin/fm-wake-ownerless.sh` owns that test, and a close naming any live record is delivered unchanged.
+
 ### omp session replacement
 
 omp's replacement follows its own generation-owner contract in `.omp/extensions/fm-primary-omp-watch.ts`, whose header owns its differences from Pi:
