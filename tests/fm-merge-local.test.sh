@@ -472,6 +472,8 @@ assert_landed_tip() {
   [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail "$label: landing left a dirty checkout"
   [ "$(fm_dod_local_done_head "$META")" = "$X" ] || fail "$label: landing changed the recorded head"
   assert_contains "$out" "whose tree equals recorded done head $X" "$label: landing did not name the recorded head"
+  assert_contains "$out" "file(s) in the landed main index and checkout are byte-identical to branch fm/local-task at $tip" "$label: no landed-files proof"
+  assert_contains "$out" "are present after it except 0 confirmed deletion(s); none missing" "$label: no main-paths proof"
 }
 
 test_stale_commit_name_lands_rebased_branch() {
@@ -682,7 +684,8 @@ test_content_equal_rebase_with_deletion_needs_confirmation() {
   git -C "$WT" -c advice.skippedCherryPicks=false rebase -q main
   assert_moved_main_refused 'unconfirmed rebased deletion'
   assert_contains "$LAST_OUT" '  doomed.txt' 'rebased deletion refusal did not name the path'
-  land_confirming --confirm-deletion doomed.txt >/dev/null 2>&1 || fail 'confirmed rebased deletion refused'
+  LAST_OUT=$(land_confirming --confirm-deletion doomed.txt 2>&1) || fail "confirmed rebased deletion refused: $LAST_OUT"
+  assert_contains "$LAST_OUT" 'except 1 confirmed deletion(s); none missing' 'rebased deletion proof did not count the confirmed deletion'
   [ "$(git -C "$PROJ" rev-parse HEAD)" = "$(git -C "$WT" rev-parse HEAD)" ] || fail 'rebased deletion did not land'
   [ ! -e "$PROJ/doomed.txt" ] || fail 'rebased deletion kept the file'
   [ "$(cat "$PROJ/other.txt")" = 'other work' ] || fail "rebased deletion lost main's newer content"

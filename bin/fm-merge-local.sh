@@ -342,4 +342,31 @@ MERGE_PROJECT_LOCK=
   || echo "note: landing deleted ${#REMOVED_PATHS[@]} path(s) the operator confirmed as deliberate" >&2
 [ "$MERGE_LAND" = "$MERGE_HEAD" ] \
   || echo "note: landed $BRANCH at $MERGE_LAND, whose tree equals recorded done head $MERGE_HEAD applied to $DEFAULT" >&2
+# A content-equal landing proves both directions from the landed state: the
+# checkout and index are byte-identical to the landed branch tip, and every path
+# the default branch had before is still there unless confirmed as deleted.
+content_equal_landing_proof() {
+  local files before_paths path lost=()
+  if [ "$(git -C "$PROJ" rev-parse --verify --quiet "$DEFAULT^{tree}")" != "$(git -C "$PROJ" rev-parse --verify --quiet "$MERGE_LAND^{tree}")" ] \
+    || ! git -C "$PROJ" diff --quiet --no-ext-diff --no-textconv "$MERGE_LAND" -- \
+    || ! git -C "$PROJ" diff --cached --quiet --no-ext-diff "$MERGE_LAND" --; then
+    echo "error: landed $MERGE_LAND on $DEFAULT, but the checkout in $PROJ is not byte-identical to branch $BRANCH; inspect it before anything else lands" >&2
+    return 1
+  fi
+  files=$(git -C "$PROJ" ls-tree -r -z --name-only "$MERGE_LAND" | tr -cd '\0' | wc -c | tr -d ' ')
+  echo "proof: all $files file(s) in the landed $DEFAULT index and checkout are byte-identical to branch $BRANCH at $MERGE_LAND"
+  before_paths=$(git -C "$PROJ" ls-tree -r -z --name-only "$before" | tr -cd '\0' | wc -c | tr -d ' ')
+  while IFS= read -r -d '' path; do
+    path_listed "$path" ${REMOVED_PATHS[@]+"${REMOVED_PATHS[@]}"} || lost+=("$path")
+  done < <(git -C "$PROJ" diff-tree -r -z --no-renames --diff-filter=D --name-only "$before" "$DEFAULT")
+  if [ "${#lost[@]}" -gt 0 ]; then
+    echo "error: landed $MERGE_LAND on $DEFAULT, but ${#lost[@]} path(s) present before the landing are missing:" >&2
+    printf '  %q\n' "${lost[@]}" >&2
+    return 1
+  fi
+  echo "proof: all $before_paths path(s) on $DEFAULT before the landing ($before) are present after it except ${#REMOVED_PATHS[@]} confirmed deletion(s); none missing"
+}
+proof_status=0
+[ "$MERGE_LAND" = "$MERGE_HEAD" ] || content_equal_landing_proof || proof_status=$?
 echo "merged $BRANCH into local $DEFAULT ($before -> $after) in $PROJ"
+exit "$proof_status"
