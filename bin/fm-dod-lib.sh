@@ -925,6 +925,76 @@ fm_dod_project_default_branch() {  # <project>
   return 1
 }
 
+# Why the last supersede rule below refused, one short clause; each rule sets it
+# through fm_dod_supersede_refuse before returning 1, and
+# fm_dod_pin_local_done_head names it in its refusal. It never changes a verdict.
+FM_DOD_SUPERSEDE_REFUSAL=
+
+fm_dod_supersede_refuse() {  # <clause>; always returns 1
+  FM_DOD_SUPERSEDE_REFUSAL=$1
+  return 1
+}
+
+# Names the first line where two changes differ, for a refusal message only:
+# "<path> drops recorded line '<line>'" when the named change (<new_base>..<new>)
+# carries fewer copies of a line the recorded change (<old_base>..<old>) added,
+# else "<path> adds line '<line>'" for a line only the named change added, else
+# "<path>" when only bytes the line view cannot show differ. Prints nothing when
+# the two changes touch the same paths with the same lines. Never a verdict.
+fm_dod_change_difference() {  # <project> <old_base> <old> <new_base> <new>
+  local project=$1 path found
+  while IFS= read -r path; do
+    [ -n "$path" ] || continue
+    found=$({
+      git -C "$project" cat-file blob "$2:$path" 2>/dev/null | awk '{ print "b " $0 }'
+      git -C "$project" cat-file blob "$3:$path" 2>/dev/null | awk '{ print "o " $0 }'
+      git -C "$project" cat-file blob "$4:$path" 2>/dev/null | awk '{ print "c " $0 }'
+      git -C "$project" cat-file blob "$5:$path" 2>/dev/null | awk '{ print "n " $0 }'
+    } | LC_ALL=C awk '
+      { side = substr($0, 1, 1); line = substr($0, 3); if (!(line in seen)) order[++n] = line; seen[line] = 1; count[side, line]++ }
+      END {
+        for (i = 1; i <= n; i++) { l = order[i]
+          if (count["n", l] - count["c", l] < count["o", l] - count["b", l]) { print "drops recorded line \047" substr(l, 1, 120) "\047"; exit } }
+        for (i = 1; i <= n; i++) { l = order[i]
+          if (count["n", l] - count["c", l] > count["o", l] - count["b", l]) { print "adds line \047" substr(l, 1, 120) "\047"; exit } }
+      }')
+    if [ -n "$found" ]; then
+      printf '%s %s' "$path" "$found"
+      return 0
+    fi
+    [ "$(git -C "$project" diff --binary --full-index "$2" "$3" -- "$path" | git patch-id --stable | cut -d' ' -f1)" \
+      = "$(git -C "$project" diff --binary --full-index "$4" "$5" -- "$path" | git patch-id --stable | cut -d' ' -f1)" ] || {
+      printf '%s' "$path"
+      return 0
+    }
+  done <<EOF
+$( { git -C "$project" diff --name-only --no-renames "$2" "$3"; git -C "$project" diff --name-only --no-renames "$4" "$5"; } | LC_ALL=C sort -u)
+EOF
+}
+
+# The preconditions every supersede rule shares: the project clone exists, the
+# task's ship branch points at <new>, and the default branch resolves. Sets
+# FM_DOD_SUPERSEDE_PROJECT, _DEFAULT, and _TIP; refuses through
+# fm_dod_supersede_refuse otherwise.
+fm_dod_supersede_common() {  # <meta> <id> <new>
+  local branch at
+  FM_DOD_SUPERSEDE_REFUSAL='its git history could not be read'
+  FM_DOD_SUPERSEDE_PROJECT=$(fm_dod_meta_value "$1" project)
+  [ -n "$FM_DOD_SUPERSEDE_PROJECT" ] && [ -d "$FM_DOD_SUPERSEDE_PROJECT" ] \
+    || fm_dod_supersede_refuse "the project clone is missing" || return 1
+  branch=$(fm_dod_meta_value "$1" branch)
+  [ -n "$branch" ] || branch="fm/$2"
+  git check-ref-format --branch "$branch" >/dev/null 2>&1 \
+    || fm_dod_supersede_refuse "the ship branch name is invalid" || return 1
+  at=$(git -C "$FM_DOD_SUPERSEDE_PROJECT" rev-parse --verify --quiet "refs/heads/$branch^{commit}") || at=
+  [ "$at" = "$3" ] \
+    || fm_dod_supersede_refuse "ship branch $branch in the project clone is at ${at:-nothing}, not the named head" || return 1
+  FM_DOD_SUPERSEDE_DEFAULT=$(fm_dod_project_default_branch "$FM_DOD_SUPERSEDE_PROJECT") \
+    || fm_dod_supersede_refuse "the project's default branch could not be resolved" || return 1
+  FM_DOD_SUPERSEDE_TIP=$(git -C "$FM_DOD_SUPERSEDE_PROJECT" rev-parse --verify --quiet "refs/heads/$FM_DOD_SUPERSEDE_DEFAULT^{commit}") \
+    || fm_dod_supersede_refuse "the project's default branch could not be resolved"
+}
+
 # 0 when <new> is the recorded <old> head rebased onto a newer default branch
 # with the same change. The task's ship branch must point at <new>; <old>'s fork
 # point from the project's default branch must be a strict ancestor of <new>'s;
@@ -933,24 +1003,25 @@ fm_dod_project_default_branch() {  # <project>
 # (including a conflict resolved differently), an extra or amended commit on the
 # same base, a head the branch does not point at, or an empty change.
 fm_dod_local_done_head_rebased() {  # <meta> <id> <old> <new>
-  local meta=$1 id=$2 old=$3 new=$4 project branch default tip old_base new_base old_id new_id
-  project=$(fm_dod_meta_value "$meta" project)
-  [ -n "$project" ] && [ -d "$project" ] || return 1
-  branch=$(fm_dod_meta_value "$meta" branch)
-  [ -n "$branch" ] || branch="fm/$id"
-  git check-ref-format --branch "$branch" >/dev/null 2>&1 || return 1
-  [ "$(git -C "$project" rev-parse --verify --quiet "refs/heads/$branch^{commit}")" = "$new" ] || return 1
-  default=$(fm_dod_project_default_branch "$project") || return 1
-  tip=$(git -C "$project" rev-parse --verify --quiet "refs/heads/$default^{commit}") || return 1
-  old_base=$(git -C "$project" merge-base "$old" "$tip" 2>/dev/null) || return 1
-  new_base=$(git -C "$project" merge-base "$new" "$tip" 2>/dev/null) || return 1
-  [ "$old_base" != "$new_base" ] || return 1
-  git -C "$project" merge-base --is-ancestor "$old_base" "$new_base" || return 1
+  local meta=$1 id=$2 old=$3 new=$4 project default tip old_base new_base old_id new_id diff
+  fm_dod_supersede_common "$meta" "$id" "$new" || return 1
+  project=$FM_DOD_SUPERSEDE_PROJECT default=$FM_DOD_SUPERSEDE_DEFAULT tip=$FM_DOD_SUPERSEDE_TIP
+  old_base=$(git -C "$project" merge-base "$old" "$tip" 2>/dev/null) \
+    || fm_dod_supersede_refuse "the recorded head shares no history with $default" || return 1
+  new_base=$(git -C "$project" merge-base "$new" "$tip" 2>/dev/null) \
+    || fm_dod_supersede_refuse "the named head shares no history with $default" || return 1
+  [ "$old_base" != "$new_base" ] \
+    || fm_dod_supersede_refuse "both heads fork from $default at the same commit" || return 1
+  git -C "$project" merge-base --is-ancestor "$old_base" "$new_base" \
+    || fm_dod_supersede_refuse "the named head forks from $default at an older commit" || return 1
   old_id=$(git -C "$project" diff --binary --full-index "$old_base" "$old" | git patch-id --stable)
   new_id=$(git -C "$project" diff --binary --full-index "$new_base" "$new" | git patch-id --stable)
   old_id=${old_id%% *}
   new_id=${new_id%% *}
-  [ -n "$old_id" ] && [ "$old_id" = "$new_id" ]
+  [ -n "$old_id" ] && [ "$old_id" = "$new_id" ] && return 0
+  [ -n "$old_id" ] || { fm_dod_supersede_refuse "the recorded change is empty"; return 1; }
+  diff=$(fm_dod_change_difference "$project" "$old_base" "$old" "$new_base" "$new")
+  fm_dod_supersede_refuse "the named change differs from the recorded change${diff:+: $diff}"
 }
 
 # The recorded local_done_at= stamp: the at= epoch of the newest ready report
@@ -976,39 +1047,43 @@ fm_dod_local_done_at() {  # <meta>
 # rewritten recorded change, a conflict, an older fork point, merge commits, a
 # recorded path put back to its base version, or an empty change refuses.
 fm_dod_local_done_head_continues() {  # <meta> <id> <old> <new>
-  local meta=$1 id=$2 old=$3 new=$4 project branch default tip old_base new_base target base_tree commit tree path found=0
-  project=$(fm_dod_meta_value "$meta" project)
-  [ -n "$project" ] && [ -d "$project" ] || return 1
-  branch=$(fm_dod_meta_value "$meta" branch)
-  [ -n "$branch" ] || branch="fm/$id"
-  git check-ref-format --branch "$branch" >/dev/null 2>&1 || return 1
-  [ "$(git -C "$project" rev-parse --verify --quiet "refs/heads/$branch^{commit}")" = "$new" ] || return 1
-  git -C "$project" cat-file -e "$old^{commit}" 2>/dev/null || return 1
-  default=$(fm_dod_project_default_branch "$project") || return 1
-  tip=$(git -C "$project" rev-parse --verify --quiet "refs/heads/$default^{commit}") || return 1
-  old_base=$(git -C "$project" merge-base "$old" "$tip" 2>/dev/null) || return 1
-  new_base=$(git -C "$project" merge-base "$new" "$tip" 2>/dev/null) || return 1
-  git -C "$project" merge-base --is-ancestor "$old_base" "$new_base" || return 1
-  [ "$(git -C "$project" rev-parse "$old^{tree}")" != "$(git -C "$project" rev-parse "$old_base^{tree}")" ] || return 1
+  local meta=$1 id=$2 old=$3 new=$4 project default tip old_base new_base target base_tree commit tree path found=0
+  fm_dod_supersede_common "$meta" "$id" "$new" || return 1
+  project=$FM_DOD_SUPERSEDE_PROJECT default=$FM_DOD_SUPERSEDE_DEFAULT tip=$FM_DOD_SUPERSEDE_TIP
+  git -C "$project" cat-file -e "$old^{commit}" 2>/dev/null \
+    || fm_dod_supersede_refuse "the recorded head is not in the project clone" || return 1
+  old_base=$(git -C "$project" merge-base "$old" "$tip" 2>/dev/null) \
+    || fm_dod_supersede_refuse "the recorded head shares no history with $default" || return 1
+  new_base=$(git -C "$project" merge-base "$new" "$tip" 2>/dev/null) \
+    || fm_dod_supersede_refuse "the named head shares no history with $default" || return 1
+  git -C "$project" merge-base --is-ancestor "$old_base" "$new_base" \
+    || fm_dod_supersede_refuse "the named head forks from $default at an older commit" || return 1
+  [ "$(git -C "$project" rev-parse "$old^{tree}")" != "$(git -C "$project" rev-parse "$old_base^{tree}")" ] \
+    || fm_dod_supersede_refuse "the recorded change is empty" || return 1
   if [ "$old_base" = "$new_base" ]; then
     target=$(git -C "$project" rev-parse "$old^{tree}") || return 1
   else
-    target=$(git -C "$project" merge-tree --write-tree --merge-base="$old_base" "$new_base" "$old" 2>/dev/null) || return 1
+    target=$(git -C "$project" merge-tree --write-tree --merge-base="$old_base" "$new_base" "$old" 2>/dev/null) \
+      || fm_dod_supersede_refuse "the recorded change conflicts with the named head's fork point" || return 1
     target=$(printf '%s\n' "$target" | head -1)
   fi
   base_tree=$(git -C "$project" rev-parse "$new_base^{tree}") || return 1
-  [ -n "$target" ] && [ "$target" != "$base_tree" ] || return 1
-  [ -z "$(git -C "$project" rev-list --min-parents=2 "$new_base..$new")" ] || return 1
+  [ -n "$target" ] && [ "$target" != "$base_tree" ] \
+    || fm_dod_supersede_refuse "the recorded change is already in the named head's fork point" || return 1
+  [ -z "$(git -C "$project" rev-list --min-parents=2 "$new_base..$new")" ] \
+    || fm_dod_supersede_refuse "the named head has merge commits above its fork point" || return 1
   while read -r commit tree; do
     [ "$tree" != "$target" ] || { found=1; break; }
   done <<EOF
 $(git -C "$project" log --format='%H %T' "$new_base..$new")
 EOF
-  [ "$found" = 1 ] || return 1
+  [ "$found" = 1 ] \
+    || fm_dod_supersede_refuse "no commit above the named head's fork point holds exactly the recorded content" || return 1
   while IFS= read -r path; do
     [ -n "$path" ] || continue
     [ "$(git -C "$project" rev-parse --verify --quiet "$new:$path" 2>/dev/null)" \
-      != "$(git -C "$project" rev-parse --verify --quiet "$new_base:$path" 2>/dev/null)" ] || return 1
+      != "$(git -C "$project" rev-parse --verify --quiet "$new_base:$path" 2>/dev/null)" ] \
+      || fm_dod_supersede_refuse "recorded path $path is back to its fork-point version" || return 1
   done <<EOF
 $(git -C "$project" diff --name-only --no-renames "$base_tree" "$target")
 EOF
@@ -1045,27 +1120,33 @@ fm_dod_text_file_at() {  # <project> <commit> <path>
 # the conflict, a dropped line, or a deleted, binary, or non-regular conflicted
 # path refuses.
 fm_dod_local_done_head_reapplied() {  # <meta> <id> <old> <new>
-  local meta=$1 id=$2 old=$3 new=$4 project branch default tip old_base status merged='' path conflicted=() known
-  project=$(fm_dod_meta_value "$meta" project)
-  [ -n "$project" ] && [ -d "$project" ] || return 1
-  branch=$(fm_dod_meta_value "$meta" branch)
-  [ -n "$branch" ] || branch="fm/$id"
-  git check-ref-format --branch "$branch" >/dev/null 2>&1 || return 1
-  [ "$(git -C "$project" rev-parse --verify --quiet "refs/heads/$branch^{commit}")" = "$new" ] || return 1
-  git -C "$project" cat-file -e "$old^{commit}" 2>/dev/null || return 1
-  default=$(fm_dod_project_default_branch "$project") || return 1
-  tip=$(git -C "$project" rev-parse --verify --quiet "refs/heads/$default^{commit}") || return 1
-  git -C "$project" merge-base --is-ancestor "$tip" "$new" || return 1
-  ! git -C "$project" merge-base --is-ancestor "$old" "$new" || return 1
-  old_base=$(git -C "$project" merge-base "$old" "$tip" 2>/dev/null) || return 1
-  [ "$old_base" != "$tip" ] || return 1
-  [ "$(git -C "$project" rev-parse "$old^{tree}")" != "$(git -C "$project" rev-parse "$old_base^{tree}")" ] || return 1
-  [ "$(git -C "$project" rev-parse "$new^{tree}")" != "$(git -C "$project" rev-parse "$tip^{tree}")" ] || return 1
-  [ -z "$(git -C "$project" rev-list --min-parents=2 "$tip..$new")" ] || return 1
+  local meta=$1 id=$2 old=$3 new=$4 project default tip old_base status merged='' path conflicted=() known
+  fm_dod_supersede_common "$meta" "$id" "$new" || return 1
+  project=$FM_DOD_SUPERSEDE_PROJECT default=$FM_DOD_SUPERSEDE_DEFAULT tip=$FM_DOD_SUPERSEDE_TIP
+  git -C "$project" cat-file -e "$old^{commit}" 2>/dev/null \
+    || fm_dod_supersede_refuse "the recorded head is not in the project clone" || return 1
+  git -C "$project" merge-base --is-ancestor "$tip" "$new" \
+    || fm_dod_supersede_refuse "$default's tip $tip is not under the named head" || return 1
+  ! git -C "$project" merge-base --is-ancestor "$old" "$new" \
+    || fm_dod_supersede_refuse "the named head descends from the recorded head" || return 1
+  old_base=$(git -C "$project" merge-base "$old" "$tip" 2>/dev/null) \
+    || fm_dod_supersede_refuse "the recorded head shares no history with $default" || return 1
+  [ "$old_base" != "$tip" ] \
+    || fm_dod_supersede_refuse "the recorded head already forks from $default's tip" || return 1
+  [ "$(git -C "$project" rev-parse "$old^{tree}")" != "$(git -C "$project" rev-parse "$old_base^{tree}")" ] \
+    || fm_dod_supersede_refuse "the recorded change is empty" || return 1
+  [ "$(git -C "$project" rev-parse "$new^{tree}")" != "$(git -C "$project" rev-parse "$tip^{tree}")" ] \
+    || fm_dod_supersede_refuse "the named head adds nothing to $default" || return 1
+  [ -z "$(git -C "$project" rev-list --min-parents=2 "$tip..$new")" ] \
+    || fm_dod_supersede_refuse "the named head has merge commits above $default's tip" || return 1
   # Exit 1 is a conflict; 0 is clean and anything else is an error.
   status=0
   git -C "$project" merge-tree --write-tree --merge-base="$old_base" "$tip" "$old" >/dev/null 2>&1 || status=$?
-  [ "$status" = 1 ] || return 1
+  case "$status" in
+    1) ;;
+    0) fm_dod_supersede_refuse "the recorded change merges onto $default's tip without a conflict"; return 1 ;;
+    *) fm_dod_supersede_refuse "the recorded change could not be test-merged onto $default's tip"; return 1 ;;
+  esac
   while IFS= read -r -d '' path; do
     if [ -z "$merged" ]; then merged=$path; else conflicted+=("$path"); fi
   done < <(git -C "$project" merge-tree --write-tree -z --name-only --no-messages \
@@ -1076,11 +1157,13 @@ fm_dod_local_done_head_reapplied() {  # <meta> <id> <old> <new>
     for known in "${conflicted[@]}"; do
       [ "$known" != "$path" ] || continue 2
     done
+    fm_dod_supersede_refuse "path $path outside the conflict differs from the merge"
     return 1
   done < <(git -C "$project" diff-tree -r -z --no-renames --name-only "$merged" "$new")
   for path in "${conflicted[@]}"; do
     fm_dod_text_file_at "$project" "$old" "$path" && fm_dod_text_file_at "$project" "$tip" "$path" \
-      && fm_dod_text_file_at "$project" "$new" "$path" || return 1
+      && fm_dod_text_file_at "$project" "$new" "$path" \
+      || fm_dod_supersede_refuse "conflicted path $path is not a text file on every side" || return 1
     {
       git -C "$project" cat-file blob "$old_base:$path" 2>/dev/null | awk '{ print "b " $0 }'
       git -C "$project" cat-file blob "$old:$path" | awk '{ print "o " $0 }'
@@ -1095,7 +1178,7 @@ fm_dod_local_done_head_reapplied() {  # <meta> <id> <old> <new>
       END {
         for (line in seen)
           if (count["n", line] + 0 < count["o", line] + count["t", line] - count["b", line]) exit 1
-      }' || return 1
+      }' || fm_dod_supersede_refuse "conflicted path $path drops a line the recorded change or $default holds" || return 1
   done
   return 0
 }
@@ -1111,7 +1194,11 @@ fm_dod_local_done_head_reapplied() {  # <meta> <id> <old> <new>
 # local_done_at= is the newest accepted report's at= stamp, so re-reading an
 # already-bound report never moves the head, neither to a rebase nor to work the
 # worker committed after it. An empty <report-at>
-# records no stamp.
+# records no stamp. On refusal stdout holds one clause naming what it saw: a
+# held lock, a changed or malformed record, a report not newer than the recorded
+# stamp, or, for each supersede rule, the first condition that rule refused
+# (FM_DOD_SUPERSEDE_REFUSAL), such as the file and recorded line a rewritten
+# change dropped. It prints nothing on success.
 fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> <report-at> [meta-locked]
   local state=$1 id=$2 meta=$3 sha=$4 captured=$5 at=$6 script_dir live control='' lock='' tmp='' pinned recorded_at newer=0
   script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -1125,17 +1212,19 @@ fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> <rep
   case "$at" in *[!0-9]*) at= ;; esac
   if [ "${7:-}" != meta-locked ]; then
     control="$state/.control-$id.lock"
-    lock=$(fm_meta_lock_path "$live") || return 1
-    fm_lock_try_acquire "$control" || return 1
+    lock=$(fm_meta_lock_path "$live") || { printf 'its metadata lock could not be located'; return 1; }
+    fm_lock_try_acquire "$control" || { printf 'its control lock is held by another writer; retry'; return 1; }
     trap 'fm_lock_release "$control" || true' EXIT
-    fm_lock_try_acquire "$lock" || return 1
+    fm_lock_try_acquire "$lock" || { printf 'its metadata lock is held by another writer; retry'; return 1; }
   fi
   trap '[ -z "$tmp" ] || rm -f -- "$tmp"; [ -z "$lock" ] || fm_lock_release "$lock" || true; [ -z "$control" ] || fm_lock_release "$control" || true' EXIT
-  fm_backlog_record_present "$live" 'local readiness metadata' "$state" || return 1
-  cmp -s "$meta" "$live" || return 1
-  [ "$(cat "$live")" = "$captured" ] || return 1
+  fm_backlog_record_present "$live" 'local readiness metadata' "$state" >/dev/null \
+    || { printf 'its metadata record is missing'; return 1; }
+  { cmp -s "$meta" "$live" && [ "$(cat "$live")" = "$captured" ]; } \
+    || { printf 'its metadata changed while it was being read; retry'; return 1; }
   if grep -q '^local_done_head=' "$live"; then
-    pinned=$(fm_dod_local_done_head "$live") || return 1
+    pinned=$(fm_dod_local_done_head "$live") \
+      || { printf 'its recorded local_done_head= is malformed or duplicated'; return 1; }
     if recorded_at=$(fm_dod_local_done_at "$live"); then
       [ -z "$at" ] || [ "$at" -le "$recorded_at" ] || newer=1
     elif ! grep -q '^local_done_at=' "$live"; then
@@ -1146,10 +1235,27 @@ fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> <rep
     if [ "$pinned" = "$sha" ]; then
       [ "$newer" = 1 ] || return 0
     else
-      [ "$newer" = 1 ] && [ -n "$recorded_at" ] || return 1
-      fm_dod_local_done_head_rebased "$live" "$id" "$pinned" "$sha" \
-        || fm_dod_local_done_head_continues "$live" "$id" "$pinned" "$sha" \
-        || fm_dod_local_done_head_reapplied "$live" "$id" "$pinned" "$sha" || return 1
+      if [ -z "$recorded_at" ]; then
+        printf 'it differs from recorded head %s, whose record carries no local_done_at= stamp' "$pinned"
+        return 1
+      fi
+      if [ "$newer" != 1 ]; then
+        printf 'it differs from recorded head %s, and the report at=%s is not newer than the recorded at=%s' \
+          "$pinned" "${at:-none}" "$recorded_at"
+        return 1
+      fi
+      local why_rebase why_continue
+      fm_dod_local_done_head_rebased "$live" "$id" "$pinned" "$sha" && why_rebase='' \
+        || why_rebase=$FM_DOD_SUPERSEDE_REFUSAL
+      if [ -n "$why_rebase" ]; then
+        fm_dod_local_done_head_continues "$live" "$id" "$pinned" "$sha" && why_continue='' \
+          || why_continue=$FM_DOD_SUPERSEDE_REFUSAL
+        if [ -n "$why_continue" ] && ! fm_dod_local_done_head_reapplied "$live" "$id" "$pinned" "$sha"; then
+          printf 'it differs from recorded head %s and carries it forward by none of the accepted ways: not a rebase (%s); not a continuation (%s); not a re-application (%s)' \
+            "$pinned" "$why_rebase" "$why_continue" "$FM_DOD_SUPERSEDE_REFUSAL"
+          return 1
+        fi
+      fi
     fi
     tmp=$(mktemp "$state/.local-done-$id.XXXXXX") || return 1
     awk -F= -v sha="$sha" -v at="$at" -v newer="$newer" '
@@ -1161,7 +1267,8 @@ fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> <rep
     { cat "$live" && printf '\nlocal_done_head=%s\n' "$sha" \
       && { [ -z "$at" ] || printf 'local_done_at=%s\n' "$at"; }; } > "$tmp" || return 1
   fi
-  fm_backlog_record_publish "$tmp" "$live" 'local readiness metadata' "$state"
+  fm_backlog_record_publish "$tmp" "$live" 'local readiness metadata' "$state" >/dev/null \
+    || { printf 'its metadata record could not be written'; return 1; }
 )
 
 # 0 when the forge's head for a PR is the head the done names. In no-mistakes
@@ -1427,10 +1534,11 @@ fm_dod_accept_ship_done() {  # <kind> <mode> <worktree> <project> <line> [<state
   fi
   if fm_dod_named_head_reachable_outside_worktree "$wt" "$project" "$mode" "$sha"; then
     if [ "$mode" = local-only ] && [ -n "$meta" ]; then
+      local why='no state record was supplied'
       if [ -z "$state" ] || [ -z "$id" ] \
-        || ! fm_dod_pin_local_done_head "$state" "$id" "$meta" "$sha" "$captured" \
-          "$(status_line_at_epoch "$line" 2>/dev/null || true)" "${9:-}"; then
-        printf '%s\n' "local-only done head could not be recorded, or differs from the recorded head by more than, on a newer stamped report, a rebase of the same change, further commits above the unchanged recorded content, or a re-application onto the current default branch that resolves its conflict without dropping a line, at the ship branch head; revised work requires a new task/approval record"
+        || ! why=$(fm_dod_pin_local_done_head "$state" "$id" "$meta" "$sha" "$captured" \
+          "$(status_line_at_epoch "$line" 2>/dev/null || true)" "${9:-}"); then
+        printf '%s\n' "local-only done head could not be recorded: named head $sha: ${why:-its record could not be updated}; revised work requires a new task/approval record"
         return 1
       fi
     fi

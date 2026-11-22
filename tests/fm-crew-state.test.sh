@@ -2654,6 +2654,164 @@ test_local_only_reapplied_done_relatches_head() {
   pass "a re-applied ready report re-latches the head, and one that drops a main row keeps the first head"
 }
 
+# The shape that stuck a real local-only Codex landing: the worker re-applied its
+# finished record onto a moved main and, while resolving the conflict, rewrote a
+# line its recorded change had added (the record's own "starting main" pointer).
+# That is revised work, so the latch must keep refusing; the refusal must name
+# the file and the recorded line it saw change rather than a generic sentence.
+# A main that moves again after the re-application, and a report that is not
+# newer than the recorded one, must refuse and say so in the same way.
+rewritten_record_case() {  # <name> <id> -> echoes case dir; first head latched
+  local d id=$2 first out
+  d=$(new_case "$1")
+  fm_git_worktree "$d/proj" "$d/wt" "fm/$id"
+  printf 'handoff\n' > "$d/proj/HANDOFF.md"
+  git -C "$d/proj" add HANDOFF.md
+  git -C "$d/proj" commit -q -m 'main keeps a handoff'
+  git -C "$d/wt" reset -q --hard main
+  printf 'handoff\nrecord: starting main one\n' > "$d/wt/HANDOFF.md"
+  git -C "$d/wt" commit -q -am 'record'
+  first=$(git -C "$d/wt" rev-parse HEAD)
+  make_fakebin "$d" >/dev/null
+  fm_write_meta "$d/state/$id.meta" "window=fm:fm-$id" "worktree=$d/wt" "project=$d/proj" \
+    "kind=ship" "mode=local-only" "harness=codex" "branch=fm/$id"
+  printf 'done [at=1790000100]: ready in branch fm/%s\n' "$id" > "$d/state/$id.status"
+  out=$(run_crew_state "$d" "$id")
+  assert_contains "$out" "state: done" "$1: the first ready report must read done"
+  printf 'handoff\nmain: witness row\n' > "$d/proj/HANDOFF.md"
+  git -C "$d/proj" commit -q -am 'main records a row'
+  git -C "$d/wt" reset -q --hard main
+  printf '%s\n' "$first" > "$d/first"
+  printf '%s\n' "$d"
+}
+
+latched_head_is() {  # <case-dir> <id> <sha> <label>
+  FM_STATE_OVERRIDE="$1/state" FM_ROOT_OVERRIDE="$1" bash -c \
+    '. "$1/bin/fm-dod-lib.sh"; [ "$(fm_dod_local_done_head "$2")" = "$3" ]' \
+    _ "$ROOT" "$1/state/$2.meta" "$3" \
+    || fail "$4: the latched head must stay $3: $(cat "$1/state/$2.meta")"
+}
+
+test_local_only_rewritten_record_refusal_names_line() {
+  reset_fakes
+  local d id=rewritten out
+  d=$(rewritten_record_case rewritten "$id")
+  printf 'handoff\nmain: witness row\nrecord: starting main two\n' > "$d/wt/HANDOFF.md"
+  git -C "$d/wt" commit -q -am 'record re-applied with a new pointer'
+  printf 'done [at=1790000200]: ready in branch fm/%s\n' "$id" >> "$d/state/$id.status"
+  out=$(run_crew_state "$d" "$id")
+  assert_not_contains "$out" "state: done" "a re-application that rewrites a recorded line must not read done"
+  assert_contains "$out" "done claim refused: local-only done head could not be recorded: named head $(git -C "$d/wt" rev-parse HEAD)" \
+    "the refusal names the head it examined"
+  assert_contains "$out" "recorded head $(cat "$d/first")" "the refusal names the head it kept"
+  assert_contains "$out" "HANDOFF.md drops recorded line 'record: starting main one'" \
+    "the refusal names the file and the recorded line that changed"
+  assert_contains "$out" "not a re-application (conflicted path HANDOFF.md drops a line" \
+    "the re-application rule names the conflicted path it refused"
+  latched_head_is "$d" "$id" "$(cat "$d/first")" rewritten
+  pass "a re-application that rewrites a recorded line keeps refusing and names the file and line"
+}
+
+test_local_only_reapplied_behind_moved_main_refuses() {
+  reset_fakes
+  local d id=movedagain out tip
+  d=$(rewritten_record_case movedagain "$id")
+  printf 'handoff\nmain: witness row\nrecord: starting main one\n' > "$d/wt/HANDOFF.md"
+  git -C "$d/wt" commit -q -am 'record re-applied unchanged'
+  printf 'handoff\nmain: witness row\nmain: second row\n' > "$d/proj/HANDOFF.md"
+  git -C "$d/proj" commit -q -am 'main moves again'
+  tip=$(git -C "$d/proj" rev-parse main)
+  printf 'done [at=1790000200]: ready in branch fm/%s\n' "$id" >> "$d/state/$id.status"
+  out=$(run_crew_state "$d" "$id")
+  assert_not_contains "$out" "state: done" "a re-application main has moved past must not read done"
+  assert_contains "$out" "not a re-application (main's tip $tip is not under the named head)" \
+    "the refusal names the default tip the re-application is behind"
+  latched_head_is "$d" "$id" "$(cat "$d/first")" movedagain
+  pass "a re-application that main moved past keeps refusing and names the moved tip"
+}
+
+test_local_only_stale_report_refusal_names_stamps() {
+  reset_fakes
+  local d id=stalereport out
+  d=$(rewritten_record_case stalereport "$id")
+  printf 'handoff\nmain: witness row\nrecord: starting main one\n' > "$d/wt/HANDOFF.md"
+  git -C "$d/wt" commit -q -am 'record re-applied unchanged'
+  printf 'done [at=1790000100]: ready in branch fm/%s\n' "$id" >> "$d/state/$id.status"
+  out=$(run_crew_state "$d" "$id")
+  assert_not_contains "$out" "state: done" "a moved head under an already-bound report must not read done"
+  assert_contains "$out" "the report at=1790000100 is not newer than the recorded at=1790000100" \
+    "the refusal names the stamps it compared"
+  latched_head_is "$d" "$id" "$(cat "$d/first")" stalereport
+  pass "a moved head under an already-bound report keeps refusing and names the stamps"
+}
+
+# A Codex worker that reported done and then went back to work, one parked on an
+# approval prompt without a done claim, a launch parked on a trust dialog with a
+# done line, and a done claim whose recorded window is no longer there must all
+# leave no landing head behind.
+test_codex_back_at_work_records_no_head() {
+  reset_fakes
+  local d out
+  d=$(codex_local_only_case codex-backatwork codexback codex 'done: ready in branch fm/codexback')
+  printf '%s\n' 'working: picking up a follow-up' >> "$d/state/codexback.status"
+  out=$(run_crew_state "$d" codexback)
+  assert_not_contains "$out" "state: done" "a Codex worker back at work must not read done"
+  assert_not_contains "$out" "done claim refused" "a working line is not judged as a done claim"
+  ! grep -q '^local_done_head=' "$d/state/codexback.meta" \
+    || fail "a Codex worker back at work must not latch a head"
+  pass "a Codex worker that went back to work records no head"
+}
+
+test_codex_approval_prompt_records_no_head() {
+  reset_fakes
+  local d out
+  d=$(codex_local_only_case codex-approval codexapprove codex 'working: running the suite')
+  FM_FAKE_BUSY=1
+  FM_FAKE_BUSY_TEXT='Would you like to run the following command?
+  $ git push origin main
+> 1. Yes, proceed
+  2. No, and tell Codex what to do differently'
+  export FM_FAKE_BUSY_TEXT
+  out=$(run_crew_state "$d" codexapprove)
+  assert_contains "$out" "state: unknown" "a Codex worker on an approval prompt stays unknown"
+  assert_not_contains "$out" "state: done" "a Codex worker on an approval prompt must not read done"
+  ! grep -q '^local_done_head=' "$d/state/codexapprove.meta" \
+    || fail "a Codex worker on an approval prompt must not latch a head"
+  pass "a Codex worker on an approval prompt records no head"
+}
+
+test_trust_prompt_done_line_records_no_head() {
+  reset_fakes
+  local d out
+  d=$(codex_local_only_case claude-trust claudetrust claude 'done: ready in branch fm/claudetrust')
+  FM_FAKE_BUSY=1
+  FM_FAKE_BUSY_TEXT='Quick safety check: Is this a project you created or one you trust? ...
+> No, exit
+  Yes, I trust this folder
+Enter to confirm . Esc to cancel'
+  export FM_FAKE_BUSY_TEXT
+  "$ROOT/bin/fm-busy-event.sh" arm "$d/state" claudetrust >/dev/null
+  out=$(run_crew_state "$d" claudetrust)
+  assert_contains "$out" "launch-prompt" "a launch parked on its trust dialog names the prompt backstop"
+  assert_not_contains "$out" "state: done" "a launch parked on its trust dialog must not read done"
+  ! grep -q '^local_done_head=' "$d/state/claudetrust.meta" \
+    || fail "a launch parked on its trust dialog must not latch a head"
+  pass "a done line under a parked trust dialog records no head"
+}
+
+test_codex_done_on_gone_window_records_no_head() {
+  reset_fakes
+  local d out
+  d=$(codex_local_only_case codex-gone codexgone codex 'done: ready in branch fm/codexgone')
+  FM_FAKE_TMUX_WINDOW_GONE=1
+  out=$(run_crew_state "$d" codexgone)
+  assert_contains "$out" "backend target gone" "a done claim over a window that is not there reads gone"
+  assert_not_contains "$out" "state: done" "a done claim over a window that is not there must not read done"
+  ! grep -q '^local_done_head=' "$d/state/codexgone.meta" \
+    || fail "a done claim over a window that is not there must not latch a head"
+  pass "a Codex done claim over a window that is not there records no head"
+}
+
 test_codex_unfinished_records_no_head() {
   reset_fakes
   local d out
@@ -7094,7 +7252,14 @@ test_other_branch_run_ignored
 test_unpushed_ship_done_is_blocked
 test_codex_local_only_done_latches_head
 test_local_only_reapplied_done_relatches_head
+test_local_only_rewritten_record_refusal_names_line
+test_local_only_reapplied_behind_moved_main_refuses
+test_local_only_stale_report_refusal_names_stamps
 test_codex_unfinished_records_no_head
+test_codex_back_at_work_records_no_head
+test_codex_approval_prompt_records_no_head
+test_trust_prompt_done_line_records_no_head
+test_codex_done_on_gone_window_records_no_head
 test_codex_unproven_done_stays_unknown
 test_codex_unreadable_pane_still_reports_unreachable
 test_other_unclassified_harnesses_keep_unknown_done

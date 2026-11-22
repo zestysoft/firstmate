@@ -213,7 +213,10 @@
 #      when its verb maps to a recognized run-state. Decision-only events such as
 #      `resolved` never become current state or detail. A Codex pane, which is
 #      unverified by design, stays unknown except that a ship `done:` the
-#      named-head gate accepts reads done from the status log. A crew whose
+#      named-head gate accepts reads done from the status log; a claim the gate
+#      refuses keeps the unknown pane reading and appends the gate's own reason
+#      (bin/fm-dod-lib.sh's fm_dod_accept_ship_done), which names what that gate
+#      examined - the pane is not what refused it. A crew whose
 #      status log is still empty is never counted as started: once its own
 #      lifecycle record reads idle (a whole turn ended with no status line) it
 #      reads blocked as a launch that never started, and an unverifiable pane
