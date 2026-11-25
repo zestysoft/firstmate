@@ -876,10 +876,11 @@ test_teardown_manual_backend_leaves_the_backlog_to_the_operator() {
 }
 
 test_local_only_truly_unpushed_refuses() {
-  local case_dir rc
+  local case_dir rc head
   case_dir=$(make_case truly-unpushed)
   write_meta "$case_dir" local-only ship
   wt_commit_file "$case_dir" unlanded.txt 'unlanded content' 'unpushed work'
+  head=$(git -C "$case_dir/wt" rev-parse HEAD)
   # No fork, no push to origin, not merged into main.
 
   set +e
@@ -891,6 +892,7 @@ test_local_only_truly_unpushed_refuses() {
   grep -q REFUSED "$case_dir/stderr" || fail "truly-unpushed: no REFUSED line in stderr"
   assert_present "$case_dir/state/task-x1.meta" 'truly-unpushed: refusal removed metadata'
   [ "$(cat "$case_dir/wt/unlanded.txt")" = 'unlanded content' ] || fail 'truly-unpushed: refusal discarded work'
+  assert_grep "ancestry check failed: $head" "$case_dir/stderr" 'unlanded refusal must name the commit and failed check'
   pass "local-only worktree with truly unpushed work is refused (safety preserved)"
 }
 
@@ -914,6 +916,46 @@ test_local_only_merged_to_local_main_allows() {
   expect_code 0 "$rc" "merged-main: teardown should succeed when work is merged into local main"
   ! grep -q REFUSED "$case_dir/stderr" || fail "merged-main: teardown printed a REFUSED line"
   pass "local-only worktree with work merged into local main is torn down (no regression)"
+}
+
+# A pool clone has its own stale main. Only the owning checkout advances;
+# another landed commit makes its tree differ, excluding the replay fallback.
+test_owning_checkout_ancestry_not_pool_refs() {
+  local mode case_dir pool head rc
+  for mode in local-only direct-PR no-mistakes; do
+    case_dir=$(make_case "owning-checkout-$mode")
+    pool="$case_dir/pool"
+    git clone -q "$case_dir/origin.git" "$pool"
+    git -C "$pool" checkout -q -b fm/task-x1
+    write_meta "$case_dir" "$mode" ship "$pool"
+    printf 'landed feature\n' > "$pool/feature.txt"
+    git -C "$pool" add feature.txt
+    git -C "$pool" -c user.email=t@t -c user.name=t commit -q -m feature
+    head=$(git -C "$pool" rev-parse HEAD)
+    git -C "$case_dir/project" fetch -q "$pool" fm/task-x1
+    git -C "$case_dir/project" merge -q --ff-only FETCH_HEAD
+    printf 'later work\n' > "$case_dir/project/later.txt"
+    git -C "$case_dir/project" add later.txt
+    git -C "$case_dir/project" -c user.email=t@t -c user.name=t commit -q -m later
+    git -C "$case_dir/project" merge-base --is-ancestor "$head" main || fail 'fixture: not landed in owning checkout'
+    if git -C "$pool" merge-base --is-ancestor "$head" main; then
+      fail 'fixture: pool main already contains the work'
+    fi
+    [ "$(git -C "$pool" rev-parse 'HEAD^{tree}')" != "$(git -C "$case_dir/project" rev-parse 'main^{tree}')" ] \
+      || fail 'fixture: replay fallback could mask ancestry failure'
+    rc=0
+    run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+    if [ "$mode" = local-only ]; then
+      expect_code 0 "$rc" 'owning-checkout: local-only landed ancestry must allow cleanup'
+      assert_absent "$case_dir/state/task-x1.meta" 'landed cleanup retained metadata'
+      assert_grep 'teardown task-x1 complete' "$case_dir/stdout" 'missing close-out confirmation'
+    else
+      expect_code 1 "$rc" "owning-checkout-$mode: publishing still needs remote proof"
+      assert_grep 'not on any remote and not landed' "$case_dir/stderr" 'publishing mode used wrong refusal'
+      assert_present "$case_dir/state/task-x1.meta" 'publishing refusal lost metadata'
+    fi
+  done
+  pass 'owning-checkout ancestry allows local-only cleanup with stale pool refs; both publishing modes still refuse'
 }
 
 # Three original commits survive only in the task copy, while a single
@@ -6685,6 +6727,7 @@ test_teardown_closes_a_gitlab_task_with_its_merge_request_url_as_a_note
 test_teardown_manual_backend_leaves_the_backlog_to_the_operator
 test_local_only_truly_unpushed_refuses
 test_local_only_merged_to_local_main_allows
+test_owning_checkout_ancestry_not_pool_refs
 test_local_only_tree_identical_replay_allows
 test_local_only_differing_replay_refuses
 test_local_only_dirty_identical_replay_refuses

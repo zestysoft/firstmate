@@ -83,7 +83,8 @@
 # branch (firstmate performs that merge after configured approval), or a clean
 # worktree whose HEAD tree equals that branch's current tree byte for byte,
 # even when a replay landed the content under different commit identities.
-# The local branch, not origin's possibly older copy, owns this proof.
+# The owning checkout's local branch, not the worker copy's or origin's
+# possibly older branch, owns this proof.
 # Safety is proved again after task processes are reaped, before backlog-close
 # publication, branch deletion, or worktree return.
 # Scout tasks (kind=scout in meta) carve out of that check: their worktree is
@@ -2203,7 +2204,7 @@ read_worktree_dirt() {
 }
 
 validate_worktree_teardown_safety() {
-  local dirty unpushed_raw unpushed DEFAULT unmerged_raw unmerged branch head_tree default_tree
+  local dirty unpushed_raw unpushed DEFAULT unmerged branch head_tree default_tree work_head
   [ -d "$WT" ] || return 0
   [ "$FORCE" != "--force" ] || return 0
   case "$KIND" in
@@ -2239,15 +2240,13 @@ validate_worktree_teardown_safety() {
 
   if [ -n "$unpushed" ] && [ "$MODE" = local-only ]; then
     DEFAULT=$(default_branch) || { echo "REFUSED: cannot determine default branch for $PROJ; expected origin/HEAD, main, or master." >&2; return 1; }
-    if ! unmerged_raw=$(git -C "$WT" log --oneline HEAD --not "$DEFAULT" -- 2>/dev/null); then
-      if worktree_safety_blocked_by_lock "commits not on $DEFAULT"; then
-        return "$TEARDOWN_WORKTREE_SAFETY_LOCK_BLOCKED"
-      fi
-      echo "REFUSED: cannot inspect worktree $WT for commits not on $DEFAULT." >&2
-      echo "Restore the git index state, or get the captain's explicit OK to discard, then --force." >&2
-      return 1
+    # Pool copies can have independent refs. The owning checkout's default
+    # branch, rather than the worker copy's stale namesake, proves ancestry.
+    work_head=$(git -C "$WT" rev-parse --verify 'HEAD^{commit}') || return 1
+    unmerged=$unpushed
+    if git -C "$PROJ" merge-base --is-ancestor "$work_head" "refs/heads/$DEFAULT" 2>/dev/null; then
+      unmerged=
     fi
-    unmerged=$(printf '%s\n' "$unmerged_raw" | head -5)
     # A tree-identical replay may have landed without any of this copy's
     # commits. Only the entire committed tree, including modes and binary
     # bytes, is equivalent; dirty work and an unreadable proof still refuse.
@@ -2260,7 +2259,7 @@ validate_worktree_teardown_safety() {
     if [ -n "$dirty" ] || [ -n "$unmerged" ]; then
       echo "REFUSED: local-only worktree $WT has work not yet merged into $DEFAULT and not on any remote." >&2
       [ -n "$dirty" ] && report_worktree_dirt "$dirty"
-      [ -n "$unmerged" ] && printf 'commits not yet on %s:\n%s\n' "$DEFAULT" "$unmerged" >&2
+      [ -n "$unmerged" ] && printf 'ancestry check failed: %s is not proven on %s refs/heads/%s; commits not yet on %s:\n%s\n' "$work_head" "$PROJ" "$DEFAULT" "$DEFAULT" "$unmerged" >&2
       report_remote_refresh_failure
       echo "Merge the branch into local $DEFAULT first (bin/fm-merge-local.sh after the captain approves), or push to a fork/remote, or get the captain's explicit OK to discard, then --force." >&2
       return 1
