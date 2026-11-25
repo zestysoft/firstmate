@@ -532,6 +532,9 @@ test_conflicting_change_refuses_after_main_moves() {
   git -C "$WT" commit -q -am resolved
   assert_moved_main_refused 'conflict'
   assert_contains "$LAST_OUT" 'conflicts with the current main' 'conflict refusal reason'
+  assert_contains "$LAST_OUT" "$X conflicts with the current main ($BASE)" 'conflict refusal omitted the compared heads'
+  assert_contains "$LAST_OUT" 'carrier proof failed before approval' 'conflict refusal blamed the approval recheck'
+  assert_contains "$LAST_OUT" "FM_HOME=$HOME_DIR FM_STATE_OVERRIDE=$HOME_DIR/state $ROOT/bin/fm-crew-state.sh local-task" 'conflict refusal omitted the readiness reconciliation command'
   [ "$(cat "$PROJ/approved.txt")" = 'main version' ] || fail 'conflict refusal changed main content'
   pass 'a recorded change that conflicts with the moved main refuses even after a resolution'
 }

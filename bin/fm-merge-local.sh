@@ -120,6 +120,7 @@ MERGE_CONTROL_LOCK=
 MERGE_META_LOCK=
 MERGE_PROJECT_LOCK=
 MERGE_DELETIONS_TMP=
+# shellcheck disable=SC2329 # Invoked by the EXIT trap below.
 merge_control_cleanup() {
   [ -z "$MERGE_DELETIONS_TMP" ] || rm -f -- "$MERGE_DELETIONS_TMP"
   [ -z "$MERGE_PROJECT_LOCK" ] || fm_lock_release "$MERGE_PROJECT_LOCK" || true
@@ -203,7 +204,10 @@ content_equal_land_candidate() {
   merged=$(git -C "$PROJ" merge-tree --write-tree "$before" "$MERGE_HEAD" 2>/dev/null) || {
     merge_status=$?
     if [ "$merge_status" -eq 1 ]; then
-      echo "REFUSED: the recorded local done head conflicts with the current $DEFAULT; a resolved rebase is new content that needs a new readiness record and approval." >&2
+      echo "REFUSED: the recorded local done head $MERGE_HEAD conflicts with the current $DEFAULT ($before); the clean content-equal carrier proof failed before approval." >&2
+      echo "After resolving the rebase and reporting readiness with a newer at= stamp, reconcile that report with:" >&2
+      printf '  FM_HOME=%q FM_STATE_OVERRIDE=%q %q %q\n' "$FM_HOME" "$STATE" "$SCRIPT_DIR/fm-crew-state.sh" "$ID" >&2
+      echo "Then retry this merge after configured approval. If readiness refuses the revised content, it needs a new task/approval record; repeating the merge cannot clear that refusal." >&2
     else
       echo "error: could not merge the recorded local done head onto $DEFAULT (git merge-tree --write-tree exit $merge_status; Git 2.38 or newer required); refusing" >&2
     fi

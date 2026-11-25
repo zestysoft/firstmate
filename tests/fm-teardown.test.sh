@@ -879,7 +879,7 @@ test_local_only_truly_unpushed_refuses() {
   local case_dir rc
   case_dir=$(make_case truly-unpushed)
   write_meta "$case_dir" local-only ship
-  wt_commit "$case_dir" "unpushed work"
+  wt_commit_file "$case_dir" unlanded.txt 'unlanded content' 'unpushed work'
   # No fork, no push to origin, not merged into main.
 
   set +e
@@ -889,6 +889,8 @@ test_local_only_truly_unpushed_refuses() {
 
   expect_code 1 "$rc" "truly-unpushed: teardown should refuse"
   grep -q REFUSED "$case_dir/stderr" || fail "truly-unpushed: no REFUSED line in stderr"
+  assert_present "$case_dir/state/task-x1.meta" 'truly-unpushed: refusal removed metadata'
+  [ "$(cat "$case_dir/wt/unlanded.txt")" = 'unlanded content' ] || fail 'truly-unpushed: refusal discarded work'
   pass "local-only worktree with truly unpushed work is refused (safety preserved)"
 }
 
@@ -912,6 +914,91 @@ test_local_only_merged_to_local_main_allows() {
   expect_code 0 "$rc" "merged-main: teardown should succeed when work is merged into local main"
   ! grep -q REFUSED "$case_dir/stderr" || fail "merged-main: teardown printed a REFUSED line"
   pass "local-only worktree with work merged into local main is torn down (no regression)"
+}
+
+# Three original commits survive only in the task copy, while a single
+# tree-identical replay has landed on local main.
+make_local_replay_case() {
+  local case_dir head replay
+  case_dir=$(make_case "$1")
+  write_meta "$case_dir" local-only ship
+  wt_commit_file "$case_dir" feature.txt accepted 'implement feature'
+  wt_commit_file "$case_dir" ledger.txt 'feature tested' 'record validation'
+  printf 'binary\0payload\n' > "$case_dir/wt/proof.bin"
+  git -C "$case_dir/wt" add proof.bin
+  git -C "$case_dir/wt" -c user.email=t@t -c user.name=t commit -q -m 'finish change'
+  head=$(git -C "$case_dir/wt" rev-parse HEAD)
+  replay=$(git -C "$case_dir/project" -c user.email=t@t -c user.name=t \
+    commit-tree "$head^{tree}" -p main -m 'replay accepted tree')
+  git -C "$case_dir/project" merge -q --ff-only "$replay"
+  git -C "$case_dir/wt" merge-base --is-ancestor "$head" main \
+    && fail 'replay fixture accidentally landed the original commits'
+  [ "$(git -C "$case_dir/wt" rev-list --count main..HEAD)" = 3 ] \
+    || fail 'replay fixture must leave three source commits off main'
+  [ "$(git -C "$case_dir/wt" rev-parse 'HEAD^{tree}')" = "$(git -C "$case_dir/project" rev-parse 'main^{tree}')" ] \
+    || fail 'replay fixture changed the tree'
+  printf '%s\n' "$case_dir"
+}
+
+test_local_only_tree_identical_replay_allows() {
+  local case_dir remote rc
+  for remote in stale-origin none; do
+    case_dir=$(make_local_replay_case "local-replay-$remote")
+    if [ "$remote" = none ]; then
+      git -C "$case_dir/project" remote remove origin
+    else
+      [ "$(git -C "$case_dir/project" rev-parse 'origin/main^{tree}')" != "$(git -C "$case_dir/wt" rev-parse 'HEAD^{tree}')" ] \
+        || fail 'replay fixture origin already contains the tree'
+    fi
+    rc=0
+    run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+    expect_code 0 "$rc" "local-replay-$remote: identical content must allow cleanup without --force"
+    assert_absent "$case_dir/state/task-x1.meta" 'replay cleanup retained metadata'
+  done
+  pass 'local-only tree-identical replay allows cleanup with a stale origin or no remote, despite three unmerged source commits'
+}
+
+test_local_only_differing_replay_refuses() {
+  local case_dir change rc
+  for change in whitespace mode binary missing-path extra-path; do
+    case_dir=$(make_local_replay_case "local-replay-diff-$change")
+    case "$change" in
+      whitespace) printf 'accepted \n' > "$case_dir/project/feature.txt" ;;
+      mode) chmod +x "$case_dir/project/feature.txt" ;;
+      binary) printf 'binary\0different\n' > "$case_dir/project/proof.bin" ;;
+      missing-path) git -C "$case_dir/project" rm -q ledger.txt ;;
+      extra-path) printf 'new main content\n' > "$case_dir/project/new.txt" ;;
+    esac
+    git -C "$case_dir/project" add -A
+    git -C "$case_dir/project" -c user.email=t@t -c user.name=t commit -q -m 'main differs'
+    rc=0
+    run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+    expect_code 1 "$rc" "local-replay-diff-$change: differing content must refuse"
+    assert_grep 'not yet merged into main' "$case_dir/stderr" 'differing replay reached the wrong refusal'
+    assert_present "$case_dir/state/task-x1.meta" 'differing replay lost metadata'
+    [ "$(cat "$case_dir/wt/feature.txt")" = accepted ] || fail 'differing replay discarded original work'
+  done
+  pass 'local-only replay proof refuses whitespace, mode, binary, missing-path and extra-path tree differences'
+}
+
+test_local_only_dirty_identical_replay_refuses() {
+  local case_dir change rc
+  for change in tracked untracked; do
+    case_dir=$(make_local_replay_case "local-replay-dirty-$change")
+    case "$change" in
+      tracked) printf 'uncommitted\n' >> "$case_dir/wt/feature.txt" ;;
+      untracked) printf 'uncommitted\n' > "$case_dir/wt/untracked.txt" ;;
+    esac
+    rc=0
+    run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+    expect_code 1 "$rc" "local-replay-dirty-$change: dirty work must refuse despite identical HEAD trees"
+    assert_present "$case_dir/state/task-x1.meta" 'dirty replay lost metadata'
+    case "$change" in
+      tracked) assert_grep uncommitted "$case_dir/wt/feature.txt" 'dirty replay discarded tracked work' ;;
+      untracked) assert_present "$case_dir/wt/untracked.txt" 'dirty replay discarded untracked work' ;;
+    esac
+  done
+  pass 'local-only replay proof never accepts uncommitted tracked or untracked work'
 }
 
 # A merge-time cleanup request belongs to the detached cleanup that runs this
@@ -3145,7 +3232,7 @@ test_local_only_force_overrides_unpushed() {
   local case_dir rc
   case_dir=$(make_case force-override)
   write_meta "$case_dir" local-only ship
-  wt_commit "$case_dir" "unpushed work"
+  wt_commit_file "$case_dir" unlanded.txt 'unlanded content' 'unpushed work'
 
   set +e
   run_teardown "$case_dir" --force > "$case_dir/stdout" 2> "$case_dir/stderr"
@@ -6598,6 +6685,9 @@ test_teardown_closes_a_gitlab_task_with_its_merge_request_url_as_a_note
 test_teardown_manual_backend_leaves_the_backlog_to_the_operator
 test_local_only_truly_unpushed_refuses
 test_local_only_merged_to_local_main_allows
+test_local_only_tree_identical_replay_allows
+test_local_only_differing_replay_refuses
+test_local_only_dirty_identical_replay_refuses
 test_teardown_leaves_the_merge_cleanup_request_to_its_cleanup
 test_landed_on_other_origin_branch_with_stale_refs_allows
 test_refresh_failure_does_not_read_as_landed

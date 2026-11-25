@@ -80,8 +80,10 @@
 # at most ten non-exempt untracked paths. tests/fm-teardown.test.sh covers hidden
 # untracked work and the clean return control.
 # local-only projects additionally accept work merged into the local default
-# branch (firstmate performs that merge after configured approval) as a fallback
-# for the common case where there is no remote at all.
+# branch (firstmate performs that merge after configured approval), or a clean
+# worktree whose HEAD tree equals that branch's current tree byte for byte,
+# even when a replay landed the content under different commit identities.
+# The local branch, not origin's possibly older copy, owns this proof.
 # Safety is proved again after task processes are reaped, before backlog-close
 # publication, branch deletion, or worktree return.
 # Scout tasks (kind=scout in meta) carve out of that check: their worktree is
@@ -2201,7 +2203,7 @@ read_worktree_dirt() {
 }
 
 validate_worktree_teardown_safety() {
-  local dirty unpushed_raw unpushed DEFAULT unmerged_raw unmerged branch
+  local dirty unpushed_raw unpushed DEFAULT unmerged_raw unmerged branch head_tree default_tree
   [ -d "$WT" ] || return 0
   [ "$FORCE" != "--force" ] || return 0
   case "$KIND" in
@@ -2246,6 +2248,15 @@ validate_worktree_teardown_safety() {
       return 1
     fi
     unmerged=$(printf '%s\n' "$unmerged_raw" | head -5)
+    # A tree-identical replay may have landed without any of this copy's
+    # commits. Only the entire committed tree, including modes and binary
+    # bytes, is equivalent; dirty work and an unreadable proof still refuse.
+    if [ -z "$dirty" ] && [ -n "$unmerged" ] \
+      && head_tree=$(git -C "$WT" rev-parse --verify --quiet 'HEAD^{tree}') \
+      && default_tree=$(git -C "$PROJ" rev-parse --verify --quiet "refs/heads/$DEFAULT^{tree}") \
+      && [ -n "$head_tree" ] && [ "$head_tree" = "$default_tree" ]; then
+      unmerged=
+    fi
     if [ -n "$dirty" ] || [ -n "$unmerged" ]; then
       echo "REFUSED: local-only worktree $WT has work not yet merged into $DEFAULT and not on any remote." >&2
       [ -n "$dirty" ] && report_worktree_dirt "$dirty"
