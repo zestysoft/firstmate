@@ -431,6 +431,43 @@ ROWS
   pass "fm-brief.sh: --yolo and scout/secondmate --mode are refused, never silently dropped"
 }
 
+test_local_only_worker_replays_before_readiness() {
+  local home kind brief
+  home="$TMP_ROOT/carry-before-readiness-home"
+  mkdir -p "$home/data"
+  for kind in local-only no-mistakes direct-PR scout; do
+    if [ "$kind" = scout ]; then
+      FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$kind" sample --scout >/dev/null \
+        || fail "scout scaffold failed"
+    else
+      FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$kind" sample --mode "$kind" >/dev/null \
+        || fail "$kind scaffold failed"
+    fi
+    brief="$home/data/$kind/brief.md"
+    if [ "$kind" = local-only ]; then
+      assert_grep "Record your ship branch's starting commit before beginning work." "$brief" \
+        "local-only worker was not told to capture its starting commit"
+      assert_grep "As your last step before reporting readiness, compare that starting commit with the current default branch tip." "$brief" \
+        "local-only worker was not told to check for a moved line before readiness"
+      assert_grep "replay your own finished files as one fresh commit from the current tip on your ship branch" "$brief" \
+        "local-only worker was not assigned the fresh content replay"
+      assert_grep "including other tasks' record entries and every line both sides added; leave every other path as the merge does." "$brief" \
+        "local-only replay did not preserve the line's content"
+      assert_grep "if the line moves again, repeat this step before reporting readiness." "$brief" \
+        "local-only worker was not told to recheck the tip after replay"
+      assert_grep "Report the resulting commit as your readiness head; the worker owns this content replay" "$brief" \
+        "local-only readiness did not name the replayed head or its owner"
+      assert_grep "firstmate's landing replay carries only bookkeeping whose non-record content is already on the line." "$brief" \
+        "local-only brief broadened the landing replay"
+    else
+      assert_no_grep "starting commit" "$brief" "$kind received the local-only tip comparison"
+      assert_no_grep "one fresh commit from the current tip" "$brief" "$kind received local-only content replay"
+      assert_no_grep "worker owns this content replay" "$brief" "$kind received local-only readiness ownership"
+    fi
+  done
+  pass "fm-brief.sh: only local-only ships carry finished content before reporting the replayed readiness head"
+}
+
 test_faster_paths_use_configured_authority_without_stacked_review() {
   local home id brief
   home="$TMP_ROOT/configured-authority-home"
@@ -1706,6 +1743,7 @@ test_forge_external_renders_the_review_rail
 test_ship_mode_is_required_and_closed_set
 test_ship_mode_is_explicit_not_registry
 test_delivery_flags_are_refused_where_they_do_not_apply
+test_local_only_worker_replays_before_readiness
 test_faster_paths_use_configured_authority_without_stacked_review
 test_no_mistakes_dod_wording
 test_no_mistakes_dod_green_detection

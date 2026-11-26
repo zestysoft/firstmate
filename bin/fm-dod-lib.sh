@@ -704,7 +704,11 @@ The task is complete only when committed on your branch \`$branch\`. Do NOT push
 $(fm_dod_commit_first)
 $(fm_dod_unverified_results)
 A \`done:\` is accepted when the named head is on this project's shared local branch, not only on a detached copy; the check tests that head, not merely that a branch moved.
-Keep your branch a clean fast-forward onto the current default branch - if \`main\` has advanced, rebase onto it so the eventual merge stays a fast-forward.
+Record your ship branch's starting commit before beginning work.
+As your last step before reporting readiness, compare that starting commit with the current default branch tip.
+If the line moved, replay your own finished files as one fresh commit from the current tip on your ship branch, preserving the line's intervening changes, including other tasks' record entries and every line both sides added; leave every other path as the merge does.
+Check the replayed result and keep your branch a clean fast-forward onto the current default branch; if the line moves again, repeat this step before reporting readiness.
+Report the resulting commit as your readiness head; the worker owns this content replay, while firstmate's landing replay carries only bookkeeping whose non-record content is already on the line.
 After a rebase or a further commit, report \`done\` again with a new stamp; the new head replaces the one you reported only when your branch still holds that reported change unaltered, with any new commits on top of it, or re-applies it onto the current default branch with a conflict resolved by keeping every line both sides have and leaving every other path as the merge does.
 When it is implemented and committed, append \`done [at=<epoch>]: ready in branch $branch\` to the status file and stop.
 The configured merge authority approves the ready branch, then firstmate merges it into local \`main\` through the guarded fast-forward path.
