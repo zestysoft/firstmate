@@ -105,6 +105,33 @@ META="$STATE/$ID.meta"
 . "$SCRIPT_DIR/fm-lease-lib.sh"
 fm_lease_forbid_branch "local-only landing (fm-merge-local)"
 
+MERGE_CONTROL_LOCK=
+MERGE_META_LOCK=
+MERGE_PROJECT_LOCK=
+MERGE_DELETIONS_TMP=
+# shellcheck disable=SC2329 # Invoked by the EXIT trap below.
+merge_control_cleanup() {
+  local result=$? candidate=unresolved line=${before:-unresolved}
+  if [ "$result" -ne 0 ]; then
+    PROJ=${PROJ:-$(fm_dod_meta_value "$META" project 2>/dev/null || true)}
+    BRANCH=${BRANCH:-$(fm_dod_meta_value "$META" branch 2>/dev/null || true)}
+    DEFAULT=${DEFAULT:-$(fm_dod_project_default_branch "$PROJ" 2>/dev/null || true)}
+    if [ -n "${PROJ:-}" ] && [ -n "${BRANCH:-}" ]; then
+      candidate=$(git -C "$PROJ" rev-parse --verify "refs/heads/$BRANCH^{commit}" 2>/dev/null || echo missing)
+    fi
+    if [ "$line" = unresolved ] && [ -n "${PROJ:-}" ] && [ -n "${DEFAULT:-}" ]; then
+      line=$(git -C "$PROJ" rev-parse --verify "refs/heads/$DEFAULT^{commit}" 2>/dev/null || echo missing)
+    fi
+    printf 'comparison: recorded readiness %s; branch %s at %s; local line %s at %s; evaluated landing %s.\n' "${MERGE_HEAD:-${MERGE_EXPECTED_HEAD:-missing-or-malformed}}" "${BRANCH:-unresolved}" "$candidate" "${DEFAULT:-unresolved}" "$line" "${MERGE_LAND:-unresolved}" >&2
+    echo 'Resolve the refusal above, reconcile a fresh stamped readiness report with fm-crew-state.sh, and retry after configured approval; retain the branch meanwhile.' >&2
+  fi
+  [ -z "$MERGE_DELETIONS_TMP" ] || rm -f -- "$MERGE_DELETIONS_TMP"
+  [ -z "$MERGE_PROJECT_LOCK" ] || fm_lock_release "$MERGE_PROJECT_LOCK" || true
+  [ -z "$MERGE_META_LOCK" ] || fm_lock_release "$MERGE_META_LOCK" || true
+  [ -z "$MERGE_CONTROL_LOCK" ] || fm_lock_release "$MERGE_CONTROL_LOCK" || true
+}
+trap merge_control_cleanup EXIT
+
 [ -f "$META" ] || { echo "error: no meta for task $ID at $META" >&2; exit 1; }
 if ! fm_backlog_meta_spawn_gen_optional "$META" "$STATE"; then
   echo "error: local merge refused: $FM_BACKLOG_TRANSITION_ERROR" >&2
@@ -116,18 +143,6 @@ MERGE_EXPECTED_HEAD=$(fm_dod_local_done_head "$META") || {
   exit 1
 }
 
-MERGE_CONTROL_LOCK=
-MERGE_META_LOCK=
-MERGE_PROJECT_LOCK=
-MERGE_DELETIONS_TMP=
-# shellcheck disable=SC2329 # Invoked by the EXIT trap below.
-merge_control_cleanup() {
-  [ -z "$MERGE_DELETIONS_TMP" ] || rm -f -- "$MERGE_DELETIONS_TMP"
-  [ -z "$MERGE_PROJECT_LOCK" ] || fm_lock_release "$MERGE_PROJECT_LOCK" || true
-  [ -z "$MERGE_META_LOCK" ] || fm_lock_release "$MERGE_META_LOCK" || true
-  [ -z "$MERGE_CONTROL_LOCK" ] || fm_lock_release "$MERGE_CONTROL_LOCK" || true
-}
-trap merge_control_cleanup EXIT
 MERGE_CONTROL_LOCK="$STATE/.control-$ID.lock"
 fm_lock_acquire_wait "$MERGE_CONTROL_LOCK"
 MERGE_META_LOCK=$(fm_meta_lock_path "$META")

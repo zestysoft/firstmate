@@ -1002,14 +1002,13 @@ test_local_only_tree_identical_replay_allows() {
 
 test_local_only_differing_replay_refuses() {
   local case_dir change rc
-  for change in whitespace mode binary missing-path extra-path; do
+  for change in whitespace mode binary missing-path; do
     case_dir=$(make_local_replay_case "local-replay-diff-$change")
     case "$change" in
       whitespace) printf 'accepted \n' > "$case_dir/project/feature.txt" ;;
       mode) chmod +x "$case_dir/project/feature.txt" ;;
       binary) printf 'binary\0different\n' > "$case_dir/project/proof.bin" ;;
       missing-path) git -C "$case_dir/project" rm -q ledger.txt ;;
-      extra-path) printf 'new main content\n' > "$case_dir/project/new.txt" ;;
     esac
     git -C "$case_dir/project" add -A
     git -C "$case_dir/project" -c user.email=t@t -c user.name=t commit -q -m 'main differs'
@@ -1020,7 +1019,72 @@ test_local_only_differing_replay_refuses() {
     assert_present "$case_dir/state/task-x1.meta" 'differing replay lost metadata'
     [ "$(cat "$case_dir/wt/feature.txt")" = accepted ] || fail 'differing replay discarded original work'
   done
-  pass 'local-only replay proof refuses whitespace, mode, binary, missing-path and extra-path tree differences'
+  pass 'local-only replay proof refuses whitespace, mode, binary, and missing-path tree differences'
+}
+
+test_local_only_replay_with_later_line_work_allows() {
+  local case_dir rc
+  case_dir=$(make_local_replay_case replay-later-line)
+  printf 'another lane\n' > "$case_dir/project/another.txt"
+  git -C "$case_dir/project" add another.txt
+  git -C "$case_dir/project" -c user.email=t@t -c user.name=t commit -q -m later
+  [ "$(git -C "$case_dir/wt" rev-parse 'HEAD^{tree}')" != "$(git -C "$case_dir/project" rev-parse 'main^{tree}')" ] \
+    || fail 'later line fixture accidentally has equal trees'
+  rc=0
+  run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+  expect_code 0 "$rc" "replayed task with later unrelated line work should clean up: $(cat "$case_dir/stderr")"
+  assert_absent "$case_dir/state/task-x1.meta" 'content-landed cleanup retained metadata'
+  [ "$(cat "$case_dir/project/another.txt")" = 'another lane' ] || fail 'cleanup changed another lane'
+  pass 'local-only changed-path proof accepts a replay after unrelated work lands on the line'
+}
+
+test_local_only_pool_content_landed_allows() {
+  local case_dir pool rc head
+  case_dir=$(make_case pool-content-landed)
+  pool="$case_dir/pool"
+  git clone -q "$case_dir/origin.git" "$pool"
+  git -C "$pool" checkout -q -b fm/task-x1
+  write_meta "$case_dir" local-only ship "$pool"
+  printf 'landed feature\n' > "$pool/feature.txt"
+  git -C "$pool" add feature.txt
+  git -C "$pool" -c user.email=t@t -c user.name=t commit -q -m feature
+  head=$(git -C "$pool" rev-parse HEAD)
+  cp "$pool/feature.txt" "$case_dir/project/feature.txt"
+  printf 'other lane\n' > "$case_dir/project/other.txt"
+  git -C "$case_dir/project" add feature.txt other.txt
+  git -C "$case_dir/project" -c user.email=t@t -c user.name=t commit -q -m replay
+  git -C "$case_dir/project" cat-file -e "$head^{commit}" 2>/dev/null \
+    && fail 'pool fixture accidentally shares the source head'
+  rc=0
+  run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+  expect_code 0 "$rc" "independent pool content proof failed: $(cat "$case_dir/stderr")"
+  assert_absent "$case_dir/state/task-x1.meta" 'independent pool cleanup retained metadata'
+  pass 'local-only content proof reads the owning line across independent pool object stores'
+}
+
+test_local_only_stale_base_record_loss_refuses() {
+  local case_dir rc worker line
+  case_dir=$(make_local_replay_case stale-base-record)
+  printf 'landed record\n' > "$case_dir/project/line-record.txt"
+  git -C "$case_dir/project" add line-record.txt
+  git -C "$case_dir/project" -c user.email=t@t -c user.name=t commit -q -m record
+  line=$(git -C "$case_dir/project" rev-parse main)
+  # A descendant with an older snapshot looks fast-forwardable but deletes the
+  # newly landed record. Content containment must refuse this direction.
+  git -C "$case_dir/wt" rebase main >/dev/null 2>&1 || fail 'stale-base rebase failed'
+  git -C "$case_dir/wt" rm -q line-record.txt
+  git -C "$case_dir/wt" -c user.email=t@t -c user.name=t commit -q -m stale-snapshot
+  worker=$(git -C "$case_dir/wt" rev-parse HEAD)
+  git -C "$case_dir/project" merge-base --is-ancestor "$line" "$worker" || fail 'fixture is not fast-forwardable'
+  rc=0
+  run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+  expect_code 1 "$rc" 'fast-forwardable stale-base content must refuse'
+  assert_grep "$worker" "$case_dir/stderr" 'refusal omitted worker head'
+  assert_grep "$line" "$case_dir/stderr" 'refusal omitted owning line head'
+  assert_grep 'Merge the branch into local main first' "$case_dir/stderr" 'refusal omitted recovery action'
+  assert_present "$case_dir/state/task-x1.meta" 'stale-base refusal removed metadata'
+  [ "$(cat "$case_dir/project/line-record.txt")" = 'landed record' ] || fail 'stale-base cleanup deleted the landed record'
+  pass 'local-only content proof refuses a fast-forwardable stale-base snapshot that drops a landed record'
 }
 
 test_local_only_dirty_identical_replay_refuses() {
@@ -6730,6 +6794,9 @@ test_local_only_merged_to_local_main_allows
 test_owning_checkout_ancestry_not_pool_refs
 test_local_only_tree_identical_replay_allows
 test_local_only_differing_replay_refuses
+test_local_only_replay_with_later_line_work_allows
+test_local_only_pool_content_landed_allows
+test_local_only_stale_base_record_loss_refuses
 test_local_only_dirty_identical_replay_refuses
 test_teardown_leaves_the_merge_cleanup_request_to_its_cleanup
 test_landed_on_other_origin_branch_with_stale_refs_allows

@@ -21,6 +21,8 @@
 # with every unconflicted path exactly as the merge leaves it
 # (fm_dod_local_done_head_reapplied). Any other revised work needs a new
 # task/approval record.
+# A newer report also replaces the head when both heads are content-proven on
+# the owning local line by fm_dod_local_content_in_line.
 # The optional third argument is the task's full ship-branch name (a project's
 # registered prefix may replace the legacy `fm/` one); it defaults to `fm/<task-id>`
 # and is the immutable task branch rendered in every delivery contract.
@@ -925,6 +927,38 @@ fm_dod_project_default_branch() {  # <project>
   return 1
 }
 
+# Prove a worker head contributes nothing absent from the owning checkout's
+# local line. The three-way merge isolates the worker's changed paths, allowing
+# unrelated landed paths and additive edits on the line. Changed path modes
+# must still match. Use the owning object store as a read-only alternate for
+# independent pool copies; never fetch, move refs, or update a checkout.
+# stdout is a refusal clause; unreadable objects, conflicts and unsupported Git
+# fail closed. The merge writes only derived Git objects in the first copy.
+fm_dod_local_content_in_line() (  # <worker-copy> <owning-checkout> <head> <line-head>
+  local wt=$1 project=$2 head=$3 line=$4 objects merged tree path mode_head mode_line
+  objects=$(git -C "$project" rev-parse --path-format=absolute --git-path objects) || return 1
+  case "$objects" in *:*) printf 'owning object path cannot be represented as a Git alternate'; return 1 ;; esac
+  export GIT_ALTERNATE_OBJECT_DIRECTORIES="$objects${GIT_ALTERNATE_OBJECT_DIRECTORIES:+:$GIT_ALTERNATE_OBJECT_DIRECTORIES}"
+  tree=$(git -C "$wt" rev-parse --verify "$line^{tree}") || return 1
+  merged=$(git -C "$wt" merge-tree --write-tree "$line" "$head" 2>/dev/null) || {
+    printf 'content merge conflicted or could not run (Git 2.38 or newer required)'
+    return 1
+  }
+  [ "${merged%%$'\n'*}" = "$tree" ] || { printf 'worker changes are absent from the local line'; return 1; }
+  # merge-tree may silently adopt a mode change from the line. Preserve the
+  # same byte-and-mode proof as the exact-tree fallback for task-owned paths.
+  local base paths
+  paths=$(mktemp "${TMPDIR:-/tmp}/fm-local-content-paths.XXXXXX") || return 1
+  trap 'rm -f -- "$paths"' EXIT
+  base=$(git -C "$wt" merge-base "$head" "$line") || return 1
+  git -C "$wt" diff --name-only -z --no-renames "$base" "$head" > "$paths" || return 1
+  while IFS= read -r -d '' path; do
+    mode_head=$(git -C "$wt" --literal-pathspecs ls-tree --format='%(objectmode)' "$head" -- "$path") || return 1
+    mode_line=$(git -C "$wt" --literal-pathspecs ls-tree --format='%(objectmode)' "$line" -- "$path") || return 1
+    [ "$mode_head" = "$mode_line" ] || { printf 'worker path %s has a different mode on the local line' "$path"; return 1; }
+  done < "$paths"
+)
+
 # Why the last supersede rule below refused, one short clause; each rule sets it
 # through fm_dod_supersede_refuse before returning 1, and
 # fm_dod_pin_local_done_head names it in its refusal. It never changes a verdict.
@@ -1047,7 +1081,7 @@ fm_dod_local_done_at() {  # <meta>
 # rewritten recorded change, a conflict, an older fork point, merge commits, a
 # recorded path put back to its base version, or an empty change refuses.
 fm_dod_local_done_head_continues() {  # <meta> <id> <old> <new>
-  local meta=$1 id=$2 old=$3 new=$4 project default tip old_base new_base target base_tree commit tree path found=0
+  local meta=$1 id=$2 old=$3 new=$4 project default tip old_base new_base target base_tree _commit tree path found=0
   fm_dod_supersede_common "$meta" "$id" "$new" || return 1
   project=$FM_DOD_SUPERSEDE_PROJECT default=$FM_DOD_SUPERSEDE_DEFAULT tip=$FM_DOD_SUPERSEDE_TIP
   git -C "$project" cat-file -e "$old^{commit}" 2>/dev/null \
@@ -1072,7 +1106,7 @@ fm_dod_local_done_head_continues() {  # <meta> <id> <old> <new>
     || fm_dod_supersede_refuse "the recorded change is already in the named head's fork point" || return 1
   [ -z "$(git -C "$project" rev-list --min-parents=2 "$new_base..$new")" ] \
     || fm_dod_supersede_refuse "the named head has merge commits above its fork point" || return 1
-  while read -r commit tree; do
+  while read -r _commit tree; do
     [ "$tree" != "$target" ] || { found=1; break; }
   done <<EOF
 $(git -C "$project" log --format='%H %T' "$new_base..$new")
@@ -1244,16 +1278,29 @@ fm_dod_pin_local_done_head() (  # <state> <id> <meta> <sha> <captured-meta> <rep
           "$pinned" "${at:-none}" "$recorded_at"
         return 1
       fi
-      local why_rebase why_continue
-      fm_dod_local_done_head_rebased "$live" "$id" "$pinned" "$sha" && why_rebase='' \
-        || why_rebase=$FM_DOD_SUPERSEDE_REFUSAL
-      if [ -n "$why_rebase" ]; then
-        fm_dod_local_done_head_continues "$live" "$id" "$pinned" "$sha" && why_continue='' \
-          || why_continue=$FM_DOD_SUPERSEDE_REFUSAL
-        if [ -n "$why_continue" ] && ! fm_dod_local_done_head_reapplied "$live" "$id" "$pinned" "$sha"; then
-          printf 'it differs from recorded head %s and carries it forward by none of the accepted ways: not a rebase (%s); not a continuation (%s); not a re-application (%s)' \
-            "$pinned" "$why_rebase" "$why_continue" "$FM_DOD_SUPERSEDE_REFUSAL"
-          return 1
+      # A replay may already be on the line under another commit name. Both
+      # reported heads must be present there; a fresh report cannot bless a
+      # stale-base branch that removes a record the line gained.
+      local line_project line_default line_tip
+      line_project=$(fm_dod_meta_value "$live" project)
+      line_default=$(fm_dod_project_default_branch "$line_project") || return 1
+      line_tip=$(git -C "$line_project" rev-parse "refs/heads/$line_default") || return 1
+      if fm_dod_supersede_common "$live" "$id" "$sha" \
+        && fm_dod_local_content_in_line "$line_project" "$line_project" "$pinned" "$line_tip" >/dev/null \
+        && fm_dod_local_content_in_line "$line_project" "$line_project" "$sha" "$line_tip" >/dev/null; then
+        : # The line independently proves both reports' content landed.
+      else
+        local why_rebase why_continue
+        fm_dod_local_done_head_rebased "$live" "$id" "$pinned" "$sha" && why_rebase='' \
+          || why_rebase=$FM_DOD_SUPERSEDE_REFUSAL
+        if [ -n "$why_rebase" ]; then
+          fm_dod_local_done_head_continues "$live" "$id" "$pinned" "$sha" && why_continue='' \
+            || why_continue=$FM_DOD_SUPERSEDE_REFUSAL
+          if [ -n "$why_continue" ] && ! fm_dod_local_done_head_reapplied "$live" "$id" "$pinned" "$sha"; then
+            printf 'it differs from recorded head %s and carries it forward by none of the accepted ways: not a rebase (%s); not a continuation (%s); not a re-application (%s)' \
+              "$pinned" "$why_rebase" "$why_continue" "$FM_DOD_SUPERSEDE_REFUSAL"
+            return 1
+          fi
         fi
       fi
     fi
@@ -1538,7 +1585,7 @@ fm_dod_accept_ship_done() {  # <kind> <mode> <worktree> <project> <line> [<state
       if [ -z "$state" ] || [ -z "$id" ] \
         || ! why=$(fm_dod_pin_local_done_head "$state" "$id" "$meta" "$sha" "$captured" \
           "$(status_line_at_epoch "$line" 2>/dev/null || true)" "${9:-}"); then
-        printf '%s\n' "local-only done head could not be recorded: named head $sha: ${why:-its record could not be updated}; revised work requires a new task/approval record"
+        printf '%s\n' "local-only done head could not be recorded: named head $sha versus recorded head $(fm_dod_local_done_head "$meta" || printf missing-or-malformed): ${why:-its record could not be updated}; preserve the recorded changes, reconcile a newer stamped readiness report, and retry after approval; revised work requires a new task/approval record"
         return 1
       fi
     fi

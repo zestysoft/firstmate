@@ -81,8 +81,9 @@
 # untracked work and the clean return control.
 # local-only projects additionally accept work merged into the local default
 # branch (firstmate performs that merge after configured approval), or a clean
-# worktree whose HEAD tree equals that branch's current tree byte for byte,
-# even when a replay landed the content under different commit identities.
+# worktree whose content is proven present there under different commit names.
+# fm_dod_local_content_in_line owns the changed-path proof; unrelated paths
+# the line gained do not count against it.
 # The owning checkout's local branch, not the worker copy's or origin's
 # possibly older branch, owns this proof.
 # Safety is proved again after task processes are reaped, before backlog-close
@@ -2204,7 +2205,7 @@ read_worktree_dirt() {
 }
 
 validate_worktree_teardown_safety() {
-  local dirty unpushed_raw unpushed DEFAULT unmerged branch head_tree default_tree work_head
+  local dirty unpushed_raw unpushed DEFAULT unmerged branch head_tree default_tree work_head line_head content_reason
   [ -d "$WT" ] || return 0
   [ "$FORCE" != "--force" ] || return 0
   case "$KIND" in
@@ -2256,10 +2257,18 @@ validate_worktree_teardown_safety() {
       && [ -n "$head_tree" ] && [ "$head_tree" = "$default_tree" ]; then
       unmerged=
     fi
+    line_head=$(git -C "$PROJ" rev-parse --verify "refs/heads/$DEFAULT^{commit}") || return 1
+    content_reason='working tree is dirty'
+    if [ -z "$dirty" ] && [ -n "$unmerged" ]; then
+      if content_reason=$(fm_dod_local_content_in_line "$WT" "$PROJ" "$work_head" "$line_head"); then
+        unmerged=
+      fi
+    fi
     if [ -n "$dirty" ] || [ -n "$unmerged" ]; then
       echo "REFUSED: local-only worktree $WT has work not yet merged into $DEFAULT and not on any remote." >&2
       [ -n "$dirty" ] && report_worktree_dirt "$dirty"
       [ -n "$unmerged" ] && printf 'ancestry check failed: %s is not proven on %s refs/heads/%s; commits not yet on %s:\n%s\n' "$work_head" "$PROJ" "$DEFAULT" "$DEFAULT" "$unmerged" >&2
+      printf 'content check compared worker %s with owning %s refs/heads/%s (%s): %s.\n' "$work_head" "$PROJ" "$DEFAULT" "$line_head" "${content_reason:-proof unavailable}" >&2
       report_remote_refresh_failure
       echo "Merge the branch into local $DEFAULT first (bin/fm-merge-local.sh after the captain approves), or push to a fork/remote, or get the captain's explicit OK to discard, then --force." >&2
       return 1

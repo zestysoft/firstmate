@@ -92,6 +92,12 @@ assert_refused() {
   out=$(land 2>&1) || rc=$?
   [ "$rc" -ne 0 ] || fail "landing unexpectedly succeeded: $out"
   assert_no_record_violation
+  assert_contains "$out" 'comparison: recorded readiness' 'refusal omitted comparison context'
+  if [ -f "$META" ]; then
+    assert_contains "$out" "$(git -C "$PROJ" rev-parse refs/heads/fm/local-task)" 'refusal omitted candidate head'
+    assert_contains "$out" "$BASE" 'refusal omitted local line head'
+  fi
+  assert_contains "$out" 'retry after configured approval' 'refusal omitted recovery action'
   [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'refusal moved main'
   [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail 'refusal left a dirty checkout'
   [ ! -e "$PROJ/approved.txt" ] || fail 'refusal left approved files behind'
@@ -1142,13 +1148,36 @@ test_reapplication_without_a_movable_record_refuses() {
   pass 'a stampless record, a task with no head, or a report whose content main already has never takes a re-application'
 }
 
+test_newer_report_of_already_landed_rebase() {
+  local replay newer out rc=0
+  make_case already-landed-rebase
+  record_done || fail 'initial report refused'
+  replay=$(git -C "$PROJ" -c user.email=t@t -c user.name=t commit-tree "$X^{tree}" -p main -m replay)
+  git -C "$PROJ" merge -q --ff-only "$replay"
+  printf 'other lane\n' > "$PROJ/other.txt"
+  git -C "$PROJ" add other.txt
+  git -C "$PROJ" commit -q -m later
+  git -C "$WT" rebase --reapply-cherry-picks --empty=keep main >/dev/null 2>&1 || fail 'landed rebase failed'
+  newer=$(git -C "$WT" rev-parse HEAD)
+  [ "$newer" != "$X" ] || fail 'landed rebase did not rewrite head'
+  record_done 1790000001 || fail 'fresh report could not refresh already-landed content'
+  [ "$(fm_dod_local_done_head "$META")" = "$newer" ] || fail 'fresh report did not record rewritten head'
+  out=$(land 2>&1) || rc=$?
+  # No task changes remain to land; a no-op commit may fast-forward normally.
+  if [ "$rc" -ne 0 ]; then
+    assert_contains "$out" 'already on main' 'already-landed report reached the wrong refusal'
+  fi
+  [ "$(cat "$PROJ/other.txt")" = 'other lane' ] || fail 'readiness or landing lost another lane'
+  pass 'newer report refreshes a rebased head whose changed paths already landed under other names'
+}
+
 # Runs last: every refused landing above left its task record byte-identical.
 test_no_refused_landing_changed_its_record() {
   assert_no_record_violation
   pass 'every refused landing in this suite left its task record byte-identical'
 }
 
-fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
+fm_test_run test_newer_report_of_already_landed_rebase test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
   test_missing_and_malformed_head_refuse test_refused_then_accepted_landing_keeps_whole_record \
   test_change_after_hold_check_refuses \
   test_diverged_default_refuses test_change_during_approval_check_refuses \
