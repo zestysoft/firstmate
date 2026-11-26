@@ -1232,6 +1232,49 @@ test_portable_serial_hint_coverage_is_reported_and_bounded() {
   pass "coverage guard bounds the unmeasured share and serial packing within twenty minutes"
 }
 
+test_portable_serial_missing_hint_boundary() {
+  local tmp repo script serial_total missing allowed out rc
+  tmp=$(fm_test_tmproot fm-test-run-hint-boundary)
+  repo="$tmp/repo"
+  mkdir -p "$repo/bin" "$repo/tests"
+  while IFS= read -r script; do
+    printf '#!/usr/bin/env bash\nexit 0\n' >"$repo/$script"
+  done < <("$RUNNER" --list --all)
+  "$RUNNER" --list --lane portable-serial >"$tmp/serial"
+  serial_total=$(wc -l <"$tmp/serial" | tr -d ' ')
+  allowed=$((serial_total * 15 / 100))
+  for missing in "$allowed" "$((allowed + 1))"; do
+    cp "$RUNNER" "$repo/bin/fm-test-run.sh"
+    python3 - "$repo" "$tmp/serial" "$missing" <<'PYHINT' \
+      || fail "could not seed missing-hint fixture"
+from pathlib import Path
+import re, sys
+repo = Path(sys.argv[1])
+missing = set(Path(sys.argv[2]).read_text().splitlines()[:int(sys.argv[3])])
+rows = [f"tests/{p.name} 1" for p in sorted((repo / "tests").glob("*.test.sh"))
+        if f"tests/{p.name}" not in missing]
+runner = repo / "bin/fm-test-run.sh"
+text, n = re.subn(
+    r"(portable_serial_weight_hints\(\) \{\n  cat <<'EOF'\n).*?(\nEOF\n)",
+    lambda m: m[1] + "\n".join(rows) + m[2], runner.read_text(), count=1, flags=re.S)
+if n != 1:
+    sys.exit("serial hint table not found")
+runner.write_text(text)
+PYHINT
+    out=$(bash "$repo/bin/fm-test-run.sh" --check-coverage 2>&1) && rc=0 || rc=$?
+    if [ "$missing" -eq "$allowed" ]; then
+      expect_code 0 "$rc" "the largest integer share within 15% must pass"
+      assert_contains "$out" "serial_unhinted=$missing" "missing hints were miscounted"
+    else
+      expect_code 1 "$rc" "one missing hint beyond 15% must fail"
+      assert_contains "$out" "$missing of $serial_total portable serial scripts have no measured duration hint (max 15%)" \
+        "missing-hint refusal did not report the exact boundary"
+      assert_not_contains "$out" "FM_TEST_COVERAGE ok" "missing-hint overflow reported success"
+    fi
+  done
+  pass "serial hint coverage accepts the 15% integer boundary and refuses one more missing hint"
+}
+
 test_portable_serial_packing_budget_boundary() {
   local tmp repo script weight out rc
   tmp=$(fm_test_tmproot fm-test-run-packing-boundary)
@@ -1952,6 +1995,7 @@ test_portable_shard_union_and_coverage_guard
 test_portable_parallel_lanes_stay_duration_balanced
 test_portable_serial_shards_partition_the_serial_lane
 test_portable_serial_hint_coverage_is_reported_and_bounded
+test_portable_serial_missing_hint_boundary
 test_portable_serial_packing_budget_boundary
 test_portable_serial_shard_lane_refusals
 test_jobs_requires_proven_isolated
