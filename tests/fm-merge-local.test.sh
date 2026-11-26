@@ -1182,20 +1182,47 @@ make_record_case() {
   make_case "$1"
   HOFF=${2:-HANDOFF.md}
   TINDEX=${3:-orchestrator/tasks.json}
+  local shape=${4:-wrapped} action=${5:-append}
   git -C "$WT" reset -q --hard "$BASE"
   mkdir -p "$PROJ/$(dirname "$TINDEX")"
   printf '# Handover\n\n## lane-one\nKept first lane line.\n' > "$PROJ/$HOFF"
-  printf '{"version":1,"tasks":[{ "id" : "lane-one", "value" : "\\u0061" }] }\n' > "$PROJ/$TINDEX"
+  python3 - "$PROJ/$TINDEX" "$shape" "$action" <<'PYFIX'
+import pathlib, sys
+path, shape, action = sys.argv[1:]
+if shape == 'wrapped':
+    text = '{"version":1,"tasks":[{ "id" : "lane-one", "value" : "\\u0061" }] }'
+else:
+    one = '{ "task" : "lane-one", "value" : "\\u0061", "number": 1.00 }'
+    own = '{"task":"local-task","id":"not-the-task-name","value":"old"}'
+    entries = [one] if action == 'append' else [own, one]
+    if shape == 'object':
+        entries = ([('"record-own" : ' + own)] if action != 'append' else []) + ['"record-one" : ' + one]
+        entries += ['"revision" : 1.00', '"reports":[{"id":"report-a"}]',
+                    '"slices":["a","b"]', '"historical":{"status":"kept"}',
+                    '"record-one-history":{"task":"lane-one","value":"history"}']
+    text = ('{' if shape == 'object' else '[') + ','.join(entries) + ('}' if shape == 'object' else ']')
+pathlib.Path(path).write_text(text + '\n')
+PYFIX
   git -C "$PROJ" add .
   git -C "$PROJ" commit -qm records
   git -C "$WT" reset -q --hard main
   cp "$PROJ/$HOFF" "$CASE/base-note"
   printf 'approved X\n' > "$WT/approved.txt"
   printf '\n## local-task\nOnly this task entry.\n' >> "$WT/$HOFF"
-  python3 - "$WT/$TINDEX" <<'PYFIX'
+  python3 - "$WT/$TINDEX" "$shape" "$action" <<'PYFIX'
 import pathlib, sys
 p = pathlib.Path(sys.argv[1])
-p.write_text(p.read_text().replace('] }', ',{"id":"local-task","value":"own"}] }'))
+shape, action = sys.argv[2:]
+text = p.read_text()
+if shape == 'wrapped':
+    text = text.replace('] }', ',{"id":"local-task","value":"own"}] }')
+elif action == 'replace':
+    text = text.replace('"value":"old"', '"value":"own"')
+else:
+    own = '{"task":"local-task","id":"not-the-task-name","value":"own"}'
+    entry = '"record-own" : ' + own if shape == 'object' else own
+    text = text.rstrip()[:-1] + ',' + entry + ('}' if shape == 'object' else ']') + '\n'
+p.write_text(text)
 PYFIX
   git -C "$WT" add .
   git -C "$WT" commit -qm task
@@ -1203,16 +1230,197 @@ PYFIX
   record_done || fail 'record fixture readiness refused'
   printf 'approved X\n' > "$PROJ/approved.txt"
   printf '\n## lane-two\nKeep second lane exactly.\n' >> "$PROJ/$HOFF"
-  python3 - "$PROJ/$TINDEX" <<'PYFIX'
+  python3 - "$PROJ/$TINDEX" "$shape" <<'PYFIX'
 import pathlib, sys
 p = pathlib.Path(sys.argv[1])
-p.write_text(p.read_text().replace('] }', ',{ "id": "lane-two", "value": 2.00 }] }'))
+shape = sys.argv[2]
+text = p.read_text()
+if shape == 'wrapped':
+    text = text.replace('] }', ',{ "id": "lane-two", "value": 2.00 }] }')
+else:
+    two = '{ "task": "lane-two", "value": 2.00 }'
+    entry = '"record-two" : ' + two if shape == 'object' else two
+    # Prepend the new lane so the own entry has a different position on the line.
+    text = text[0] + entry + ',' + text[1:]
+p.write_text(text)
 PYFIX
   git -C "$PROJ" add .
   git -C "$PROJ" commit -qm other-lane
   BASE=$(git -C "$PROJ" rev-parse HEAD)
   cp "$PROJ/$HOFF" "$CASE/line-note"
   cp "$PROJ/$TINDEX" "$CASE/line-index"
+}
+
+
+test_record_index_shapes_preserve_other_lanes() {
+  local shape action out
+  for shape in object array; do
+    for action in append replace; do
+      make_record_case "shape-$shape-$action" HANDOFF.md orchestrator/tasks.json "$shape" "$action"
+      out=$(land 2>&1) || fail "$shape $action replay refused: $out"
+      python3 - "$CASE/line-index" "$WT/$TINDEX" "$PROJ/$TINDEX" "$shape" <<'PYFIX' || fail "$shape $action changed another entry"
+import json, pathlib, sys
+old, worker, new = [pathlib.Path(p).read_bytes() for p in sys.argv[1:4]]
+shape = sys.argv[4]
+own = b'{"task":"local-task","id":"not-the-task-name","value":"own"}'
+assert own in worker and own in new
+# Exact expected bytes: only the task's own span is replaced or appended.
+entry = b'"record-own" : ' + own if shape == 'object' else own
+previous = entry.replace(b'"value":"own"', b'"value":"old"')
+if previous in old:
+    expected = old.replace(previous, entry)
+else:
+    pos = old.rfind(b'}' if shape == 'object' else b']')
+    expected = old[:pos] + b',\n' + entry + b'\n' + old[pos:]
+assert new == expected, (new, expected)
+values = json.loads(new)
+values = [v for v in values.values() if isinstance(v, dict) and 'task' in v] if shape == 'object' else values
+assert {v['task'] for v in values} == {'lane-one', 'lane-two', 'local-task'}
+assert next(v for v in values if v['task'] == 'local-task')['value'] == 'own'
+PYFIX
+      ID=local-task FM_HOME="$HOME_DIR" fm_dod_local_content_in_line "$WT" "$PROJ" "$X" "$(git -C "$PROJ" rev-parse HEAD)" \
+        || fail "$shape $action containment proof refused"
+    done
+  done
+  pass 'keyed objects and plain arrays append or replace by task name, preserving every other byte and proving containment'
+}
+
+test_record_index_shapes_refuse_bad_entries() {
+  local shape mode out rc expected
+  for shape in object array; do
+    for mode in drop rewrite reformat missing-name empty-name non-string-name duplicate duplicate-key syntax invalid-root invalid metadata-drop metadata-rewrite collision conflict; do
+      case "$shape:$mode" in array:metadata-*|array:collision) continue ;; esac
+      make_record_case "shape-bad-$shape-$mode" HANDOFF.md orchestrator/tasks.json "$shape"
+      python3 - "$WT/$TINDEX" "$shape" "$mode" <<'PYFIX'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+shape, mode = sys.argv[2:]
+text = p.read_text()
+one = '{ "task" : "lane-one", "value" : "\\u0061", "number": 1.00 }'
+own = '{"task":"local-task","id":"not-the-task-name","value":"own"}'
+if mode == 'invalid-root':
+    text = '7'
+elif mode == 'syntax':
+    text = text[:-3]
+elif mode == 'duplicate-key':
+    text = text.replace('"task":"local-task"', '"task":"local-task","task":"local-task"')
+elif mode == 'drop':
+    entry = '"record-one" : ' + one if shape == 'object' else one
+    assert entry + ',' in text
+    text = text.replace(entry + ',', '')
+elif mode == 'rewrite':
+    text = text.replace('"number": 1.00', '"number": 9.00')
+elif mode == 'reformat':
+    text = text.replace('1.00', '1.0')
+elif mode == 'missing-name':
+    text = text.replace('"task":"local-task",', '')
+elif mode == 'empty-name':
+    text = text.replace('"task":"local-task"', '"task":""')
+elif mode == 'non-string-name':
+    text = text.replace('"task":"local-task"', '"task":7')
+elif mode == 'duplicate':
+    if shape == 'object':
+        text = text.rstrip()[:-1] + ',"duplicate-own":' + own + '}\n'
+    else:
+        text = text.replace('"task":"local-task"', '"task":"lane-one"')
+elif mode == 'invalid':
+    text = text.replace(own, '7')
+elif mode == 'metadata-drop':
+    text = text.replace(',"reports":[{"id":"report-a"}]', '')
+elif mode == 'metadata-rewrite':
+    text = text.replace('"reports":[{"id":"report-a"}]', '"reports":[{"id":"other-report"}]')
+elif mode == 'collision':
+    text = text.replace('"record-own"', '"record-one"')
+elif mode == 'conflict':
+    text = text.replace('"value":"own"', '"value":"conflicting own"')
+p.write_text(text)
+PYFIX
+      if [ "$mode" = conflict ]; then
+        # The line independently acquired a different version of this task.
+        cp "$WT/$TINDEX" "$PROJ/$TINDEX"
+        git -C "$PROJ" add .
+        git -C "$PROJ" commit -qm conflict
+        BASE=$(git -C "$PROJ" rev-parse HEAD)
+        cp "$PROJ/$TINDEX" "$CASE/line-index"
+        git -C "$WT" checkout "$X" -- "$TINDEX"
+      else
+        git -C "$WT" add .
+        git -C "$WT" commit -qm bad-index
+        X=$(git -C "$WT" rev-parse HEAD)
+        perl -pi -e "s/^local_done_head=.*/local_done_head=$X/" "$META"
+      fi
+      rc=0
+      out=$(land 2>&1) || rc=$?
+      [ "$rc" -ne 0 ] || fail "$shape $mode landed"
+      case "$mode" in
+        drop|rewrite|reformat) expected='lane-one' ;;
+        missing-name) expected='branch has no entry for task local-task' ;;
+        empty-name|non-string-name) expected='non-empty string' ;;
+        duplicate) expected='duplicate task' ;;
+        duplicate-key|collision) expected='duplicate JSON key' ;;
+        metadata-drop|metadata-rewrite) expected='reports' ;;
+        syntax) expected='malformed task index' ;;
+        invalid-root) expected='task index must be a JSON object or array' ;;
+        invalid)
+          if [ "$shape" = object ]; then expected='branch has no entry for task local-task'; else expected='task entry must be an object'; fi
+          ;;
+        conflict) expected='conflicting entry for task local-task' ;;
+      esac
+      assert_contains "$out" "$expected" "$shape $mode refusal omitted reason"
+      [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail "$shape $mode moved line"
+      cmp "$CASE/line-index" "$PROJ/$TINDEX" || fail "$shape $mode changed line index"
+      cmp "$CASE/line-note" "$PROJ/$HOFF" || fail "$shape $mode changed line handover"
+      [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail "$shape $mode dirtied line"
+    done
+  done
+  pass 'both task-index shapes refuse foreign loss, rewriting, malformed entries, duplicate task names and conflicting own entries with reasons'
+}
+
+test_fast_forward_index_shapes_preserve_other_lanes() {
+  local shape mode out rc
+  for shape in object array; do
+    for mode in own drop malformed; do
+      make_record_case "shape-ff-$shape-$mode" HANDOFF.md orchestrator/tasks.json "$shape"
+      git -C "$WT" reset -q --hard main
+      python3 - "$WT/$TINDEX" "$mode" <<'PYFIX'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+text = p.read_text()
+mode = sys.argv[2]
+if mode == 'own':
+    # Add an approved own entry without touching any existing bytes.
+    own = '{"task":"local-task","value":"own"}'
+    entry = '"record-own" : ' + own if text.startswith('{') else own
+    pos = len(text.rstrip()) - 1
+    text = text[:pos] + ',' + entry + text[pos:]
+elif mode == 'drop':
+    text = text.replace('"task" : "lane-one"', '"task" : "local-task"')
+else:
+    text = text[:-3]
+p.write_text(text)
+PYFIX
+      git -C "$WT" add .
+      git -C "$WT" commit -qm fast-forward-index
+      X=$(git -C "$WT" rev-parse HEAD)
+      perl -pi -e "s/^local_done_head=.*/local_done_head=$X/" "$META"
+      rc=0
+      out=$(land 2>&1) || rc=$?
+      if [ "$mode" = own ]; then
+        [ "$rc" -eq 0 ] || fail "$shape own fast-forward refused: $out"
+        cmp "$WT/$TINDEX" "$PROJ/$TINDEX" || fail "$shape fast-forward changed approved bytes"
+      else
+        [ "$rc" -ne 0 ] || fail "$shape $mode fast-forward landed"
+        if [ "$mode" = drop ]; then
+          assert_contains "$out" 'lane-one' "$shape fast-forward omitted lost identity"
+        else
+          assert_contains "$out" 'malformed task index' "$shape fast-forward omitted malformed reason"
+        fi
+        cmp "$CASE/line-index" "$PROJ/$TINDEX" || fail "$shape fast-forward changed index on refusal"
+        [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail "$shape fast-forward refusal moved line"
+      fi
+    done
+  done
+  pass 'both index shapes allow approved own-entry fast-forwards and refuse foreign loss or malformed records'
 }
 
 test_stale_record_replay_lands_and_contains() {
@@ -1392,7 +1600,7 @@ test_record_replay_freeform_markdown() {
   pass 'free-form task notes replay paragraphs and subheadings without requiring a heading format'
 }
 
-fm_test_run test_record_replay_freeform_markdown test_record_replay_branch_race_refuses test_new_shared_files_fast_forward test_record_replay_preserves_new_line_only_index test_fast_forward_record_loss_refuses test_stale_record_replay_lands_and_contains test_record_replay_refuses_lost_lines_and_objects \
+fm_test_run test_fast_forward_index_shapes_preserve_other_lanes test_record_index_shapes_preserve_other_lanes test_record_index_shapes_refuse_bad_entries test_record_replay_freeform_markdown test_record_replay_branch_race_refuses test_new_shared_files_fast_forward test_record_replay_preserves_new_line_only_index test_fast_forward_record_loss_refuses test_stale_record_replay_lands_and_contains test_record_replay_refuses_lost_lines_and_objects \
   test_record_replay_configuration_and_bad_records test_newer_report_of_already_landed_rebase test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
   test_missing_and_malformed_head_refuse test_refused_then_accepted_landing_keeps_whole_record \
   test_change_after_hold_check_refuses \
