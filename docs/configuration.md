@@ -1203,6 +1203,26 @@ The flag is per home and is not inherited by secondmate homes, which keep their 
 Only its presence is read, at each fresh spawn, review, and promotion.
 The [`fm-spawn.sh` header](../bin/fm-spawn.sh) owns the exact base rule, and the [`fm-review-diff.sh` header](../bin/fm-review-diff.sh) owns the review anchor.
 
+## Local landing records (config/local-landing-records.json)
+
+This optional home-local JSON file configures the shared record paths for approved local-only landings and their cleanup proof.
+It is an array of objects with exactly `path` and `kind` fields.
+Paths are unique repository-relative file paths without empty, `.` or `..` components.
+Kinds are `handover` or `task-index`.
+Without the file, the default list is:
+
+```json
+[
+  {"path": "HANDOFF.md", "kind": "handover"},
+  {"path": "orchestrator/tasks.json", "kind": "task-index"}
+]
+```
+
+A configured path absent from all compared trees has nothing to preserve.
+An empty list disables record exceptions; it does not relax the ordinary content proof.
+Invalid configuration or unreadable present records refuse landing.
+The [`fm-local-record-replay.py` header](../bin/fm-local-record-replay.py) owns supported entry formats, task identity and preservation proofs; the [`fm-merge-local.sh` header](../bin/fm-merge-local.sh) owns approval and landing serialization.
+
 ## Gate defaults (.no-mistakes.yaml)
 
 The tracked [`.no-mistakes.yaml`](../.no-mistakes.yaml) sets `test.evidence.store_in_repo: true` and runs the canonical [shell/workflow lint](../bin/fm-lint.sh) followed by the [Pi production-consumer typecheck](../tests/fm-pi-primary-types.test.sh) in the compiler-owning lint phase.

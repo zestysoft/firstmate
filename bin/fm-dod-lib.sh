@@ -934,10 +934,11 @@ fm_dod_project_default_branch() {  # <project>
 # independent pool copies; never fetch, move refs, or update a checkout.
 # stdout is a refusal clause; unreadable objects, conflicts and unsupported Git
 # fail closed. The merge writes only derived Git objects in the first copy.
-fm_dod_local_content_in_line() (  # <worker-copy> <owning-checkout> <head> <line-head>
+fm_dod_local_content_in_line_strict() (  # <worker-copy> <owning-checkout> <head> <line-head>
   local wt=$1 project=$2 head=$3 line=$4 objects merged tree path mode_head mode_line
   objects=$(git -C "$project" rev-parse --path-format=absolute --git-path objects) || return 1
   case "$objects" in *:*) printf 'owning object path cannot be represented as a Git alternate'; return 1 ;; esac
+  # shellcheck disable=SC2030 # Alternate is intentionally local to this proof subshell.
   export GIT_ALTERNATE_OBJECT_DIRECTORIES="$objects${GIT_ALTERNATE_OBJECT_DIRECTORIES:+:$GIT_ALTERNATE_OBJECT_DIRECTORIES}"
   tree=$(git -C "$wt" rev-parse --verify "$line^{tree}") || return 1
   merged=$(git -C "$wt" merge-tree --write-tree "$line" "$head" 2>/dev/null) || {
@@ -958,6 +959,24 @@ fm_dod_local_content_in_line() (  # <worker-copy> <owning-checkout> <head> <line
     [ "$mode_head" = "$mode_line" ] || { printf 'worker path %s has a different mode on the local line' "$path"; return 1; }
   done < "$paths"
 )
+
+# A record-only replay keeps the worker branch intact. Prove its original
+# content again with the same record parser used at landing; never trust a stamp.
+fm_dod_local_content_in_line() {  # <worker-copy> <owning-checkout> <head> <line-head>
+  local reason helper objects task
+  if reason=$(fm_dod_local_content_in_line_strict "$@"); then return 0; fi
+  helper="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/fm-local-record-replay.py"
+  task=${ID:-}
+  if [ -z "$task" ]; then printf '%s' "$reason"; return 1; fi
+  objects=$(git -C "$2" rev-parse --path-format=absolute --git-path objects) || return 1
+  case "$objects" in *:*) printf '%s' "$reason"; return 1 ;; esac
+  # shellcheck disable=SC2031 # The strict proof subshell never changes the caller's alternates.
+  GIT_ALTERNATE_OBJECT_DIRECTORIES="$objects${GIT_ALTERNATE_OBJECT_DIRECTORIES:+:$GIT_ALTERNATE_OBJECT_DIRECTORIES}" \
+    python3 "$helper" "$1" "$task" "$3" "$4" "${FM_CONFIG_OVERRIDE:-${FM_HOME:-$2}/config}/local-landing-records.json" --contained >/dev/null 2>&1 \
+    && return 0
+  printf '%s' "$reason"
+  return 1
+}
 
 # Why the last supersede rule below refused, one short clause; each rule sets it
 # through fm_dod_supersede_refuse before returning 1, and

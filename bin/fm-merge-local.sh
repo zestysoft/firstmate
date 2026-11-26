@@ -16,6 +16,12 @@
 # commit, a branch tree that differs, or merge commits above the default branch
 # refuse; a resolved conflict is new content that needs a newer readiness
 # report to re-record the head.
+# A stale branch still at the recorded head may instead replay only its own
+# records when every other changed path is proven present on the line.
+# bin/fm-local-record-replay.py owns configuration, record parsing and proofs.
+# This creates a linear commit on the line without moving the worker branch or
+# changing its checkout or readiness record. Its original head is verified in
+# the same ref transaction as the landing. Cleanup re-proves record containment.
 # A merge result equal to the default branch's own tree means the change is
 # already there, so it refuses rather than landing the same content twice.
 # Either way, a landing that would remove any path the default branch has
@@ -109,6 +115,8 @@ MERGE_CONTROL_LOCK=
 MERGE_META_LOCK=
 MERGE_PROJECT_LOCK=
 MERGE_DELETIONS_TMP=
+MERGE_REPLAY=0
+MERGE_BRANCH_HEAD=
 # shellcheck disable=SC2329 # Invoked by the EXIT trap below.
 merge_control_cleanup() {
   local result=$? candidate=unresolved line=${before:-unresolved}
@@ -181,7 +189,7 @@ branch_tip() {
   git -C "$PROJ" rev-parse --verify --quiet "refs/heads/$BRANCH^{commit}"
 }
 local_head_matches() {
-  [ -n "$MERGE_LAND" ] && [ "$(branch_tip)" = "$MERGE_LAND" ]
+  [ -n "$MERGE_LAND" ] && [ "$(branch_tip)" = "${MERGE_BRANCH_HEAD:-$MERGE_LAND}" ]
 }
 project_git_dir=$(git -C "$PROJ" rev-parse --absolute-git-dir) || {
   echo "error: cannot determine the project checkout's Git directory" >&2
@@ -259,7 +267,17 @@ case "$ancestor_status" in
     MERGE_LAND=$MERGE_HEAD
     local_head_matches || { echo "error: branch $BRANCH differs from the recorded local done head; refusing" >&2; exit 1; }
     ;;
-  1) content_equal_land_candidate ;;
+  1)
+    MERGE_BRANCH_HEAD=$(branch_tip) || exit 1
+    if [ "$MERGE_BRANCH_HEAD" = "$MERGE_HEAD" ]; then
+      replay_tree=$(python3 "$SCRIPT_DIR/fm-local-record-replay.py" "$PROJ" "$ID" "$MERGE_HEAD" "$before" "${FM_CONFIG_OVERRIDE:-$FM_HOME/config}/local-landing-records.json") || exit 1
+      MERGE_LAND=$(printf 'Replay records for task %s from %s\n' "$ID" "$MERGE_HEAD" | git -C "$PROJ" commit-tree "$replay_tree" -p "$before") || exit 1
+      MERGE_REPLAY=1
+    else
+      MERGE_BRANCH_HEAD=
+      content_equal_land_candidate
+    fi
+    ;;
   *)
     echo "error: could not compare $DEFAULT with the recorded local done head; refusing" >&2
     exit 1
@@ -312,6 +330,8 @@ refuse_unconfirmed_deletions() {
   exit 1
 }
 refuse_unconfirmed_deletions
+# Even a fast-forward snapshot must not silently delete shared record content.
+python3 "$SCRIPT_DIR/fm-local-record-replay.py" "$PROJ" "$ID" "$MERGE_LAND" "$before" "${FM_CONFIG_OVERRIDE:-$FM_HOME/config}/local-landing-records.json" --validate-records || exit 1
 
 hold_status=0
 FM_HOME="$FM_HOME" FM_STATE_OVERRIDE="$STATE" \
@@ -339,7 +359,7 @@ merge_status=0
 git -C "$PROJ" read-tree -m -u "$before" "$MERGE_LAND" || exit $?
 git -C "$PROJ" update-ref -m "merge $BRANCH: Fast-forward" --stdin >/dev/null <<EOF || merge_status=$?
 start
-verify refs/heads/$BRANCH $MERGE_LAND
+verify refs/heads/$BRANCH ${MERGE_BRANCH_HEAD:-$MERGE_LAND}
 update refs/heads/$DEFAULT $MERGE_LAND $before
 prepare
 commit
@@ -364,13 +384,17 @@ MERGE_PROJECT_LOCK=
 [ ! -e "${FM_CONFIG_OVERRIDE:-$FM_HOME/config}/fleet-ledger" ] || FM_HOME=$FM_HOME FM_STATE_OVERRIDE=$STATE "$SCRIPT_DIR/fm-fleet-ledger.sh" merged "$ID" local || true
 [ "${#REMOVED_PATHS[@]}" -eq 0 ] \
   || echo "note: landing deleted ${#REMOVED_PATHS[@]} path(s) the operator confirmed as deliberate" >&2
-[ "$MERGE_LAND" = "$MERGE_HEAD" ] \
-  || echo "note: landed $BRANCH at $MERGE_LAND, whose tree equals recorded done head $MERGE_HEAD applied to $DEFAULT" >&2
+[ "$MERGE_REPLAY" -eq 0 ] || echo "proof: replay preserved every line and task object belonging to other tasks"
+if [ "$MERGE_REPLAY" -eq 1 ]; then
+  echo "note: replayed $BRANCH at $MERGE_LAND, preserving records from $DEFAULT and entry from recorded done head $MERGE_HEAD" >&2
+elif [ "$MERGE_LAND" != "$MERGE_HEAD" ]; then
+  echo "note: landed $BRANCH at $MERGE_LAND, whose tree equals recorded done head $MERGE_HEAD applied to $DEFAULT" >&2
+fi
 # A content-equal landing proves both directions from the landed state: the
 # checkout and index are byte-identical to the landed branch tip, and every path
 # the default branch had before is still there unless confirmed as deleted.
 content_equal_landing_proof() {
-  local files before_paths path lost=()
+  local files before_paths path proof_target="branch $BRANCH at $MERGE_LAND" lost=()
   if [ "$(git -C "$PROJ" rev-parse --verify --quiet "$DEFAULT^{tree}")" != "$(git -C "$PROJ" rev-parse --verify --quiet "$MERGE_LAND^{tree}")" ] \
     || ! git -C "$PROJ" diff --quiet --no-ext-diff --no-textconv "$MERGE_LAND" -- \
     || ! git -C "$PROJ" diff --cached --quiet --no-ext-diff "$MERGE_LAND" --; then
@@ -378,7 +402,8 @@ content_equal_landing_proof() {
     return 1
   fi
   files=$(git -C "$PROJ" ls-tree -r -z --name-only "$MERGE_LAND" | tr -cd '\0' | wc -c | tr -d ' ')
-  echo "proof: all $files file(s) in the landed $DEFAULT index and checkout are byte-identical to branch $BRANCH at $MERGE_LAND"
+  [ "$MERGE_REPLAY" -eq 0 ] || proof_target="record replay $MERGE_LAND for branch $BRANCH"
+  echo "proof: all $files file(s) in the landed $DEFAULT index and checkout are byte-identical to $proof_target"
   before_paths=$(git -C "$PROJ" ls-tree -r -z --name-only "$before" | tr -cd '\0' | wc -c | tr -d ' ')
   while IFS= read -r -d '' path; do
     path_listed "$path" ${REMOVED_PATHS[@]+"${REMOVED_PATHS[@]}"} || lost+=("$path")

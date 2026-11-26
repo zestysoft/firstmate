@@ -1177,7 +1177,223 @@ test_no_refused_landing_changed_its_record() {
   pass 'every refused landing in this suite left its task record byte-identical'
 }
 
-fm_test_run test_newer_report_of_already_landed_rebase test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
+# Record replays use real repositories and the public landing/containment gates.
+make_record_case() {
+  make_case "$1"
+  HOFF=${2:-HANDOFF.md}
+  TINDEX=${3:-orchestrator/tasks.json}
+  git -C "$WT" reset -q --hard "$BASE"
+  mkdir -p "$PROJ/$(dirname "$TINDEX")"
+  printf '# Handover\n\n## lane-one\nKept first lane line.\n' > "$PROJ/$HOFF"
+  printf '{"version":1,"tasks":[{ "id" : "lane-one", "value" : "\\u0061" }] }\n' > "$PROJ/$TINDEX"
+  git -C "$PROJ" add .
+  git -C "$PROJ" commit -qm records
+  git -C "$WT" reset -q --hard main
+  cp "$PROJ/$HOFF" "$CASE/base-note"
+  printf 'approved X\n' > "$WT/approved.txt"
+  printf '\n## local-task\nOnly this task entry.\n' >> "$WT/$HOFF"
+  python3 - "$WT/$TINDEX" <<'PYFIX'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+p.write_text(p.read_text().replace('] }', ',{"id":"local-task","value":"own"}] }'))
+PYFIX
+  git -C "$WT" add .
+  git -C "$WT" commit -qm task
+  X=$(git -C "$WT" rev-parse HEAD)
+  record_done || fail 'record fixture readiness refused'
+  printf 'approved X\n' > "$PROJ/approved.txt"
+  printf '\n## lane-two\nKeep second lane exactly.\n' >> "$PROJ/$HOFF"
+  python3 - "$PROJ/$TINDEX" <<'PYFIX'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+p.write_text(p.read_text().replace('] }', ',{ "id": "lane-two", "value": 2.00 }] }'))
+PYFIX
+  git -C "$PROJ" add .
+  git -C "$PROJ" commit -qm other-lane
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+  cp "$PROJ/$HOFF" "$CASE/line-note"
+  cp "$PROJ/$TINDEX" "$CASE/line-index"
+}
+
+test_stale_record_replay_lands_and_contains() {
+  local out
+  make_record_case replay-records
+  out=$(land 2>&1) || fail "record replay refused: $out"
+  cat "$CASE/line-note" > "$CASE/expected-note"
+  printf '\n## local-task\nOnly this task entry.\n' >> "$CASE/expected-note"
+  cmp "$CASE/expected-note" "$PROJ/$HOFF" || fail 'handover was not an exact append to the line'
+  python3 - "$CASE/line-index" "$PROJ/$TINDEX" <<'PYFIX' || fail 'replay rewrote or lost task objects'
+import json, pathlib, sys
+old, new = [pathlib.Path(p).read_text() for p in sys.argv[1:]]
+assert '{ "id" : "lane-one", "value" : "\\u0061" }' in new
+assert '{ "id": "lane-two", "value": 2.00 }' in new
+obj = json.loads(new)
+assert [t['id'] for t in obj['tasks']] == ['lane-one', 'lane-two', 'local-task']
+assert obj['version'] == 1
+PYFIX
+  [ "$(git -C "$WT" rev-parse HEAD)" = "$X" ] || fail 'replay moved worker branch'
+  [ -z "$(git -C "$WT" status --porcelain)" ] || fail 'replay changed worker checkout'
+  [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail 'replay left dirty line'
+  [ "$(git -C "$PROJ" rev-parse HEAD^)" = "$BASE" ] || fail 'replay is not linear above current line'
+  ID=local-task FM_HOME="$HOME_DIR" fm_dod_local_content_in_line "$WT" "$PROJ" "$X" "$(git -C "$PROJ" rev-parse HEAD)" \
+    || fail 'cleanup cannot prove replayed original head is contained'
+  git clone -q --no-local --single-branch --branch fm/local-task "$PROJ" "$CASE/pool"
+  git -C "$CASE/pool" cat-file -e "$(git -C "$PROJ" rev-parse HEAD)^{commit}" 2>/dev/null \
+    && fail 'pool unexpectedly has the landed commit'
+  ID=local-task FM_HOME="$HOME_DIR" fm_dod_local_content_in_line "$CASE/pool" "$PROJ" "$X" "$(git -C "$PROJ" rev-parse HEAD)" \
+    || fail 'independent pool cannot prove replay containment through owning objects'
+  land > "$CASE/repeat.out" 2>&1 && fail 'same records landed twice'
+  assert_contains "$out" 'replay preserved every line' 'replay did not report preservation proof'
+  pass 'stale proven records replay line bytes, preserve other objects, leave worker intact, and pass cleanup proof'
+}
+
+test_record_replay_refuses_lost_lines_and_objects() {
+  local kind out rc
+  for kind in note note-extra index content; do
+    make_record_case "replay-loss-$kind"
+    case "$kind" in
+      note) printf '# Handover\n\n## local-task\nOnly this task entry.\n' > "$WT/$HOFF" ;;
+      note-extra) printf '\nAlso lane-two.\n' >> "$WT/$HOFF" ;;
+      index) printf '{"tasks":[{"id":"local-task"}]}\n' > "$WT/$TINDEX" ;;
+      content) printf 'would remove real content\n' > "$WT/approved.txt" ;;
+    esac
+    git -C "$WT" add .
+    git -C "$WT" commit -qm bad
+    X=$(git -C "$WT" rev-parse HEAD)
+    # This fixture deliberately approves the bad snapshot to exercise landing.
+    perl -pi -e "s/^local_done_head=.*/local_done_head=$X/" "$META"
+    rc=0
+    out=$(land 2>&1) || rc=$?
+    [ "$rc" -ne 0 ] || fail "$kind deletion replay landed"
+    case "$kind" in
+      note) assert_contains "$out" 'Kept first lane line.' 'refusal omitted lost handover line' ;;
+      note-extra) assert_contains "$out" 'lane-two' 'refusal omitted foreign task identity' ;;
+      index) assert_contains "$out" 'lane-one' 'refusal omitted lost task identity' ;;
+      content) assert_contains "$out" 'approved X' 'refusal omitted lost non-record line' ;;
+    esac
+    [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'bad replay moved line'
+    cmp "$CASE/line-note" "$PROJ/$HOFF" || fail 'bad replay changed handover'
+    cmp "$CASE/line-index" "$PROJ/$TINDEX" || fail 'bad replay changed task index'
+  done
+  pass 'replay refuses lost handover lines, other task objects and real content, naming the loss'
+}
+
+test_record_replay_configuration_and_bad_records() {
+  local mode out rc
+  make_record_case replay-config NOTES.md tasks.json
+  printf '[{"path":"NOTES.md","kind":"handover"},{"path":"tasks.json","kind":"task-index"}]\n' \
+    > "$HOME_DIR/config/local-landing-records.json"
+  land >/dev/null || fail 'configured record paths did not replay'
+  for mode in malformed duplicate conflict config; do
+    make_record_case "replay-invalid-$mode"
+    case "$mode" in
+      malformed) printf '{bad\n' > "$PROJ/$TINDEX" ;;
+      duplicate) printf '{"tasks":[{"id":"lane-one"},{"id":"lane-one"}]}\n' > "$PROJ/$TINDEX" ;;
+      conflict) printf '\n## local-task\nConflicting entry.\n' >> "$PROJ/$HOFF" ;;
+      config) printf '[{"path":"../HANDOFF.md","kind":"handover"}]' > "$HOME_DIR/config/local-landing-records.json" ;;
+    esac
+    git -C "$PROJ" add .
+    git -C "$PROJ" commit -qm invalid --allow-empty
+    BASE=$(git -C "$PROJ" rev-parse HEAD)
+    rc=0
+    out=$(land 2>&1) || rc=$?
+    [ "$rc" -ne 0 ] || fail "invalid $mode records landed: $out"
+    [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'invalid records moved line'
+    [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail 'invalid records dirtied checkout'
+  done
+  pass 'configured paths replay; malformed JSON, duplicate ids, own-entry conflicts and invalid configuration refuse'
+}
+
+test_fast_forward_record_loss_refuses() {
+  local out rc=0
+  make_record_case replay-ff-loss
+  git -C "$WT" reset -q --hard main
+  cat "$CASE/base-note" > "$WT/$HOFF"
+  printf '\n## local-task\nOnly this task entry.\n' >> "$WT/$HOFF"
+  git -C "$WT" add .
+  git -C "$WT" commit -qm stale-snapshot
+  X=$(git -C "$WT" rev-parse HEAD)
+  perl -pi -e "s/^local_done_head=.*/local_done_head=$X/" "$META"
+  out=$(land 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail 'fast-forward lost another lane handover'
+  assert_contains "$out" 'Keep second lane exactly.' 'fast-forward refusal omitted lost line'
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'fast-forward refusal moved line'
+  pass 'even an approved fast-forward snapshot cannot drop another lane handover line'
+}
+
+test_record_replay_preserves_new_line_only_index() {
+  local out
+  make_record_case replay-line-only-index
+  printf '[{"path":"later.json","kind":"task-index"},{"path":"HANDOFF.md","kind":"handover"},{"path":"orchestrator/tasks.json","kind":"task-index"}]\n' > "$HOME_DIR/config/local-landing-records.json"
+  cp "$CASE/line-index" "$PROJ/later.json"
+  git -C "$PROJ" add later.json
+  git -C "$PROJ" commit -qm later-index
+  BASE=$(git -C "$PROJ" rev-parse HEAD)
+  out=$(land 2>&1) || fail "line-only record refused: $out"
+  cmp "$CASE/line-index" "$PROJ/later.json" || fail 'line-only index changed'
+  pass 'a configured index absent in the task base and head preserves the line file byte-for-byte'
+}
+
+test_new_shared_files_fast_forward() {
+  make_case new-records
+  mkdir -p "$WT/orchestrator"
+  printf '# Initial handover\n' > "$WT/HANDOFF.md"
+  printf '{"tasks":[{"id":"initial-task"}]}' > "$WT/orchestrator/tasks.json"
+  git -C "$WT" add .
+  git -C "$WT" commit -qm initial-records
+  X=$(git -C "$WT" rev-parse HEAD)
+  record_done || fail 'new record fixture not approved'
+  land >/dev/null || fail 'new approved shared files could not fast-forward'
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$X" ] || fail 'new record landing changed approved head'
+  pass 'absent shared files have nothing to preserve in an ordinary approved fast-forward'
+}
+
+test_record_replay_branch_race_refuses() {
+  local real_git out rc=0
+  make_record_case replay-branch-race
+  real_git=$(command -v git)
+  Y=$(printf 'racing branch\n' | git -C "$PROJ" commit-tree "$X^{tree}" -p "$X")
+  mkdir -p "$CASE/fakebin"
+  cat > "$CASE/fakebin/git" <<'SH'
+#!/usr/bin/env bash
+case "$*" in
+  *' update-ref '*' --stdin')
+    "$REAL_GIT" -C "$RACE_PROJ" update-ref refs/heads/fm/local-task "$RACE_Y" || exit $?
+    printf 'moved\n' > "$RACE_MARKER"
+    ;;
+esac
+exec "$REAL_GIT" "$@"
+SH
+  chmod +x "$CASE/fakebin/git"
+  out=$(PATH="$CASE/fakebin:$PATH" REAL_GIT="$real_git" RACE_PROJ="$PROJ" RACE_Y="$Y" RACE_MARKER="$CASE/moved" land 2>&1) || rc=$?
+  [ -f "$CASE/moved" ] || fail 'replay race did not reach ref transaction'
+  [ "$rc" -ne 0 ] || fail "racing replay landed: $out"
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'racing replay moved main'
+  [ "$(git -C "$PROJ" rev-parse refs/heads/fm/local-task)" = "$Y" ] || fail 'racing replay overwrote newer worker head'
+  cmp "$CASE/line-note" "$PROJ/$HOFF" || fail 'racing replay lost handover'
+  cmp "$CASE/line-index" "$PROJ/$TINDEX" || fail 'racing replay lost index'
+  [ -z "$(git -C "$PROJ" status --porcelain)" ] || fail 'racing replay left dirty checkout'
+  pass 'a worker ref race rolls back only the staged record replay and retains the newer branch'
+}
+
+test_record_replay_freeform_markdown() {
+  local out
+  make_record_case replay-freeform
+  cat "$CASE/base-note" > "$WT/$HOFF"
+  printf '\nFinished local-task.\n\nMore than one paragraph.\n\n### Verification\nChecks passed.\n\n### Notes\nFree-form markdown stays intact.\n' >> "$WT/$HOFF"
+  git -C "$WT" add .
+  git -C "$WT" commit -qm freeform
+  X=$(git -C "$WT" rev-parse HEAD)
+  perl -pi -e "s/^local_done_head=.*/local_done_head=$X/" "$META"
+  out=$(land 2>&1) || fail "free-form note refused: $out"
+  cat "$CASE/line-note" > "$CASE/freeform-expected"
+  printf '\nFinished local-task.\n\nMore than one paragraph.\n\n### Verification\nChecks passed.\n\n### Notes\nFree-form markdown stays intact.\n' >> "$CASE/freeform-expected"
+  cmp "$CASE/freeform-expected" "$PROJ/$HOFF" || fail 'free-form note changed bytes'
+  pass 'free-form task notes replay paragraphs and subheadings without requiring a heading format'
+}
+
+fm_test_run test_record_replay_freeform_markdown test_record_replay_branch_race_refuses test_new_shared_files_fast_forward test_record_replay_preserves_new_line_only_index test_fast_forward_record_loss_refuses test_stale_record_replay_lands_and_contains test_record_replay_refuses_lost_lines_and_objects \
+  test_record_replay_configuration_and_bad_records test_newer_report_of_already_landed_rebase test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
   test_missing_and_malformed_head_refuse test_refused_then_accepted_landing_keeps_whole_record \
   test_change_after_hold_check_refuses \
   test_diverged_default_refuses test_change_during_approval_check_refuses \
